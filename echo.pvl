@@ -89,6 +89,22 @@ otherwise forall x:bitstring;
       hash(StrongHash,x) = hash_ideal(x).
 
 (********************************************************)
+(* HKDF *)
+(********************************************************)
+
+letfun prf(k:bitstring,x:bitstring) =
+  hmac(StrongHash,b2mk(k),x).
+
+letfun hkdf_extract(s:bitstring,k:bitstring) =
+  prf(s,k).
+
+type HkdfLabel.
+const info_hash_lbl,secret_lbl,key_lbl,base_nonce_lbl,exp_lbl: HkdfLabel.
+
+letfun hkdf_expand_label(k:bitstring,l:label,h:bitstring) =
+  prf(k,(l,h)).
+
+(********************************************************)
 (* HPKE *)
 (********************************************************)
 
@@ -102,7 +118,7 @@ type HpkeMode.
 const R,S:HpkeMode
 
 type HpkeLabel.
-const info_hash_lbl,secret_lbl,key_lbl,base_nonce_lbl,exp_lbl:HpkeLabel.
+const :HpkeLabel.
 
 type HpkeContext.
 fun hpke_context(mode,ae_key,bitstring,bitstring):HpkeContext [data].
