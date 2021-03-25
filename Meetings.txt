@@ -1,0 +1,72 @@
+15/02
+
+Public key in the server
+
+- Encrypt hello under it.
+- client sends a key identifier to say which key it uses.
+- In draft 9, the identifier is a hash of the public key.
+- Above 9, it just a byte (255 possibility)
+- The client knows corresponding table (given by the server)
+
+- In term of security: An attacker could use ECH as a way to identify connexion.
+
+
+- Say only 2 servers A and B. It should not be possible to learn which server the client was connect to. Ideally, it should not also be linkable.
+
+- From the client side:
+
+There is something as "encrypted hello" ... wonder what's the purpose.
+
+The client Hello encrypts with the public key. It is send in another client hello not encrypted. The server upon the huddle, try to decrypt the inner CH otherwise tries with the outer CH. Since it's not encrypted, minimal informations in the outer ECH.
+
+	Secret information:
+		- Preshared keys
+		- Application Layer Protocol N (Something of TLS)
+		-
+
+
+22/02:
+	BLog to read: https://blog.cloudflare.com/encrypted-client-hello/
+	TLS 1.3 https://tools.ietf.org/html/rfc8446
+
+24/02:
+	- What are the tx_in, tx_inner, tx_outer : transcript ?
+	- The ch_outer regroup here is the ch_inner.
+
+	Objectives:
+	- Want to be faithful to TLS 1.3
+	- Adding Client Certificates ?
+	- Shall we consider TLS 1.2 in the model ?
+	- We should model also the old ESNI to find the corresponding attacks
+
+03/03:
+	- Why the functions RSA, DHE, DHE_13 are [data] ? More specifically, what do
+	they represents.
+
+	- For instance, in clinet13(), the variable [eee] of [DHE_13(g,eee)]
+	is never used. => We allow the attacker to choose g but not the element (replaced by gx)
+
+	- Details on the HPKE ? I think I got it
+	- Why the structure of the Client Hello does not really correspond to the RFC ?
+	- [psk_type] seems to correspond to Pre Shared Key extension ?
+
+	- For the outer message, use the SNI of the front end
+		Cipher suite should be the same for inner and outer, i.e; hhh, aaa and g
+		For gx, let's see.
+
+	- Encrypted ClientHello Configuration
+			-> Just a configuration file shared between server and client (synchronised by third party means)
+			-> In the extension, it is represented by config_id (it's a hash of the config).
+
+
+	- For pre shared key:
+			Normally, client stores pre shared key and a ticket (tkt)
+			In the first message, the client send the ticket and compute the pre shared key.
+
+
+15/03:
+	- Need to check the difference between the pk_frontend and gx_outer.
+	- In the inner offer, the extension ECH should be a constant 'ech_is_inner'
+
+22/03:
+	- Need explanation w.r.t. 5.1. (EncodedClientHelloInner)
