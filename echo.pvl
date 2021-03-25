@@ -1,6 +1,8 @@
 free io:channel.
 const zero: bitstring.
 
+type random.
+
 (********************************************************)
 (* Authenticated Encryption with Additional Data *)
 (* extended with with weak/strong algorithms: See Lucky13, Beast, RC4 *)
@@ -12,7 +14,7 @@ type aead_alg.
 const WeakAE, StrongAE: aead_alg.
 
 type aead_key.
-fun b2ae(bitstring):aead_key [data].
+fun b2ae(bitstring):aead_key [data]. (* QUESTION : Is it reallay data or type convertor ? *)
 
 fun aead_enc(aead_alg, aead_key, bitstring, bitstring, bitstring): bitstring.
 fun aead_forged(bitstring,bitstring): bitstring.
@@ -89,8 +91,100 @@ otherwise forall x:bitstring;
       hash(StrongHash,x) = hash_ideal(x).
 
 (********************************************************)
+(* HMAC *)
+(********************************************************)
+
+type mac_key.
+fun b2mk(bitstring):mac_key [data,typeConverter].
+
+fun hmac_ideal(mac_key,bitstring): bitstring.
+
+fun hmac(hash_alg,mac_key,bitstring):bitstring
+reduc forall k:mac_key, x:bitstring;
+  hmac(WeakHash,k, x) = collision
+otherwise forall x:bitstring, k:mac_key;
+  hmac(StrongHash,k, x) = hmac_ideal(k,x).
+
+(********************************************************)
+(* Public Key Signatures *)
+(********************************************************)
+
+type privkey.
+type pubkey.
+fun pk(privkey): pubkey.
+const NoPubKey:pubkey.
+
+(* RSA Signatures, typically the argument is a hash over some data *)
+
+fun sign(privkey,bitstring):bitstring.
+fun verify(pubkey,bitstring,bitstring): bool
+reduc forall k:privkey, x:bitstring;
+      verify(pk(k),x,sign(k,x)) = true.
+
+(********************************************************)
+(* Public Key Encryption with decryption and signing oracle *)
+(* for weak decrytion algorithsm (PKCS1). See DROWN/Bleichenbacher *)
+(********************************************************)
+
+type rsa_alg.
+const WeakRSAKey: privkey.
+const WeakRSADecryption, StrongRSADecryption:rsa_alg.
+
+fun rsa_enc(pubkey,bitstring): bitstring.
+
+type result.
+fun success(bitstring,bitstring):result [data].
+fun failure(bitstring):result [data].
+
+fun rsa_dec(rsa_alg,privkey,bitstring): result
+reduc forall k:privkey, x:bitstring;
+      rsa_dec(StrongRSADecryption,k,rsa_enc(pk(k),x)) = success(x,zero)
+otherwise forall k:privkey, x:bitstring;
+      rsa_dec(WeakRSADecryption,k,rsa_enc(pk(k),x)) = success(x,(x,sign(k,x))).
+
+
+(********************************************************)
+(* Long term keys *)
+(********************************************************)
+
+type prin.
+fun prin2b(prin):bitstring [data].
+table longTermKeys(prin,privkey,pubkey).
+table esniKeys(prin,group,bitstring,element).
+table ticketEncryptionKeys(prin,aead_key).
+
+type preSharedKey.
+const NoPSK: preSharedKey.
+fun PSK(bitstring): preSharedKey [data].
+fun psk2b(preSharedKey): bitstring
+reduc forall b:bitstring; psk2b(PSK(b)) = b
+otherwise psk2b(NoPSK) = zero.
+
+table preSharedKeys(prin,prin,bitstring,preSharedKey).
+
+(********************************************************)
 (* HKDF *)
 (********************************************************)
+
+type label.
+
+(* Labels of ECHO *)
+const info_hash_lbl,secret_lbl,key_lbl,base_nonce_lbl,exp_lbl: label.
+
+(* Labels of TLS *)
+const client_finished, server_finished, master_secret,
+      client_key_expansion, server_key_expansion: label.
+const tls13_client_handshake_traffic_secret,
+      tls13_server_handshake_traffic_secret,
+      tls13_client_early_traffic_secret,
+      tls13_client_application_traffic_secret,
+      tls13_server_application_traffic_secret,
+      tls13_key, tls13_iv,
+      tls13_early_exporter_master_secret,
+      tls13_exporter_master_secret,
+      tls13_resumption_master_secret,
+      tls13_resumption_psk_binder_key,
+      tls13_finished,tls13_derived,tls13_esni_key,tls13_esni_iv: label.
 
 letfun prf(k:bitstring,x:bitstring) =
   hmac(StrongHash,b2mk(k),x).
@@ -98,11 +192,16 @@ letfun prf(k:bitstring,x:bitstring) =
 letfun hkdf_extract(s:bitstring,k:bitstring) =
   prf(s,k).
 
-type HkdfLabel.
-const info_hash_lbl,secret_lbl,key_lbl,base_nonce_lbl,exp_lbl: HkdfLabel.
-
 letfun hkdf_expand_label(k:bitstring,l:label,h:bitstring) =
   prf(k,(l,h)).
+
+letfun derive_secret(k:bitstring,l:label,m:bitstring) =
+       hkdf_expand_label(k,l,hash(StrongHash,m)).
+
+letfun kdf_es(psk:preSharedKey) =
+       let es = hkdf_extract(zero,psk2b(psk)) in
+       let kb = derive_secret(es,tls13_resumption_psk_binder_key,zero) in
+       (es,b2mk(kb)).
 
 (********************************************************)
 (* HPKE *)
@@ -115,45 +214,42 @@ letfun hkdf_expand_label(k:bitstring,l:label,h:bitstring) =
    simplified to remove all references to pre shared key. *)
 
 type HpkeMode.
-const R,S:HpkeMode
-
-type HpkeLabel.
-const :HpkeLabel.
+const R,S:HpkeMode.
 
 type HpkeContext.
-fun hpke_context(mode,ae_key,bitstring,bitstring):HpkeContext [data].
+fun hpke_context(HpkeMode,aead_key,bitstring,bitstring):HpkeContext [data].
 
 const nonce_for_seal_open:bitstring. (* Temporary until I understant how to model
   the nonce that are generated from the internal sequence *)
 
-letfun kpke_seal(context:HpkeContextS,aad:bitstring,pt:bitstring) =
+letfun kpke_seal(context:HpkeContext,aad:bitstring,pt:bitstring) =
   let hpke_context(=S,key,nonce,exporter) = context in
   aead_enc(StrongAE,key,nonce_for_seal_open,aad,pt).
 
-letfun hpke_open(context:HpkeContextR,aad:bitstring,ct:bitstring) =
+letfun hpke_open(context:HpkeContext,aad:bitstring,ct:bitstring) =
   let hpke_context(=R,key,nonce,exporter) = context in
-  aead_dec(StrongAE,key,nonce_for_seal_open,aad,pt).
+  aead_dec(StrongAE,key,nonce_for_seal_open,aad,ct).
 
 
-letfun hpke_key_schedule(m:mode,shared_secret:element,info:bitstring) =
+letfun hpke_key_schedule(m:HpkeMode,shared_secret:element,info:bitstring) =
   let info_hash = hkdf_extract(zero,(info_hash_lbl,info)) in
-  let secret = hkdf_extract(shared_secret,(secret_lbl,zero)) in
+  let xsecret = hkdf_extract(e2b(shared_secret),(secret_lbl,zero)) in
 
-  let key = hkdf_expand_label(secret,key_lbl,info_hash) in
-  let base_nonce = hkdf_expand_label(secret,base_nonce_lbl,info_hash) in
-  let exporter_secret = hkdf_expand_label(secret,exp_lbl,info_hash) in
+  let key = b2ae(hkdf_expand_label(xsecret,key_lbl,info_hash)) in
+  let base_nonce = hkdf_expand_label(xsecret,base_nonce_lbl,info_hash) in
+  let exporter_secret = hkdf_expand_label(xsecret,exp_lbl,info_hash) in
 
-  hpke_context(m,ae_key,base_nonce,exporter_secret).
+  hpke_context(m,key,base_nonce,exporter_secret).
 
 (* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
 
 letfun hpke_setup_base_S(pkR:element,info:bitstring) =
   let (shared_secret:element,enc:element) = dh_encap(StrongDH,pkR) in
-  (enc,key_schedule_S(S,shared_secret,info)).
+  (enc,hpke_key_schedule(S,shared_secret,info)).
 
 letfun hpke_setup_base_R(enc:element,skR:element,info:bitstring) =
-  let shared_secret:element = dh_decap(StrongDH,enc,skR) in
-  (enc,key_schedule_R(R,shared_secret,info)).
+  let shared_secret:element = dh_decap(StrongDH,enc,e2b(skR)) in
+  hpke_key_schedule(R,shared_secret,info).
 
 (***************************************
   The Encrypted Client Hello functions
@@ -170,10 +266,15 @@ letfun hpke_setup_base_R(enc:element,skR:element,info:bitstring) =
       can use for encrypting ClientHelloInner."
 *)
 
+(* TODO : For now, ProVerif does not allow the syntax
+  type AeadId = ae_alg.
+  I would like to push for it but for now I comment the part and replace it with
+  something that ProVerif accepts *)
+
 type HpkeKdfId.
-type AeadId = ae_alg.
+(*type AeadId = ae_alg.*)
 type HpkeSymmetricCipherSuite.
-fun hpke_symmetric_cipher_suite(HpkeKdfId,AeadId):HpkeSymmetricCipherSuite [data].
+fun hpke_symmetric_cipher_suite(HpkeKdfId, aead_alg (* AeadId *) ):HpkeSymmetricCipherSuite [data].
 
 (* Data structure of HpkeKeyConfig
     We consider all elements of [HpkeKeyConfig] of the RFC (Section 4.):
@@ -183,11 +284,11 @@ fun hpke_symmetric_cipher_suite(HpkeKdfId,AeadId):HpkeSymmetricCipherSuite [data
       - cipher_suites of type [HpkeSymmetricCipherSuite] in RFC
 *)
 
-type domain
-type HpkeKemId
-type HpkePublicKey = element.
+type domain.
+type HpkeKemId.
+(* type HpkePublicKey = element. *)
 type HpkeKeyConfig.
-fun hpke_key_config(nat,HpkeKemId,HpkePublicKey,HpkeSymmetricCipherSuite):HpkeKeyConfig [data].
+fun hpke_key_config(nat,HpkeKemId, element (* HpkePublicKey *) ,HpkeSymmetricCipherSuite):HpkeKeyConfig [data].
 
 (* Data structure of ECHConfigContents (Section 4 of ECH RFC)
     We only consider the following elements:
@@ -210,16 +311,16 @@ type ECHConfig.
 fun ECH_config(ECH_version,ECHConfigContents):ECHConfig [data].
 
 (* Some useful access functions *)
-let get_public_key(ech_config:ECHConfig) =
-  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),domain)) = ech_config in
+letfun get_public_key(ech_config:ECHConfig) =
+  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),dom)) = ech_config in
   public_key.
 
-let get_hpke_cipher_suite(ech_config:ECHConfig) =
-  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),domain)) = ech_config in
+letfun get_hpke_cipher_suite(ech_config:ECHConfig) =
+  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),dom)) = ech_config in
   ciphersuite.
 
-let get_config_id(ech_config:ECHConfig) =
-  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),domain)) = ech_config in
+letfun get_config_id(ech_config:ECHConfig) =
+  let ECH_config(v,ECH_config_contents(hpke_key_config(config_id,kemid,public_key,ciphersuite),dom)) = ech_config in
   config_id.
 
 (*****************************************************)
@@ -228,7 +329,7 @@ let get_config_id(ech_config:ECHConfig) =
 type EncryptedClientHelloExt.
 
 (* Represents the absence of extension *)
-const none_ECHExt: EncryptedClientHelloExt
+const none_ECHExt: EncryptedClientHelloExt.
 
 (* This extension should only occur in the ClientHelloInner. *)
 const ech_is_inner: EncryptedClientHelloExt.
@@ -250,7 +351,7 @@ fun client_ECH(HpkeSymmetricCipherSuite,nat,element,bitstring): EncryptedClientH
 ****************************************)
 
 type TLS_version.
-const TLS12, TLS13: version.
+const TLS12, TLS13: TLS_version.
 
 (* COMMENT Vincent: We keep for now almost the same structure as the original
   file to reuse as much as possible but it would be nicer if we get as close as
@@ -265,8 +366,6 @@ We would use that rather than the current function nego.
 *)
 
 type kex_alg.
-fun RSA(rsa_alg):kex_alg [data].
-fun DHE(group):kex_alg [data].
 fun DHE_13(group,element): kex_alg [data].
 
 (* The SNI extension *)
@@ -283,18 +382,12 @@ fun NoBinder(): psk_type [data].
 (* The function negotiation is extended to contain the ECHO extension *)
 
 type params.
-fun nego(TLS_version,kex_alg,hash_alg,ae_alg,sni,EncryptedClientHelloExt,psk_type): params [data].
+fun nego(TLS_version,kex_alg,hash_alg,aead_alg,sni,EncryptedClientHelloExt,psk_type): params [data].
 
 type msg.
-fun msg2bytes(msg):bitstring [typeConverter].
+fun msg2bitstring(msg):bitstring [typeConverter].
 fun CH(random,params):msg [data].
 fun SH(random,params):msg [data].
-fun EE(random):msg [data]. (* Just for ESNI nonce ; can have other extensions in general*)
-fun CRT(bitstring,pubkey):msg       [data].
-fun SKE(group,element,bitstring):msg [data].
-fun CKE(bitstring): msg [data].
-fun CV(bitstring):msg [data].
-fun FIN(bitstring):msg [data].
 
 (*****************************************************)
 (* Authenticating the ClientHelloOuter. Section 5.1 *)
@@ -305,15 +398,16 @@ fun FIN(bitstring):msg [data].
 *)
 
 type ClientHelloOuterAAD.
-
+fun ChoAAD2bitstring(ClientHelloOuterAAD):bitstring [typeConverter].
 fun client_hello_outer_AAD(HpkeSymmetricCipherSuite,nat,element,msg):ClientHelloOuterAAD [data].
 
+
 letfun mk_client_hello_outer_AAD(client_hello_outer:msg) =
-  let CH(r,nego(version,k_alg,h_alg,ae_alg,sni,echo,psk)) = client_hello_outer in
+  let CH(r,nego(version,k_alg,h_alg,ae_alg,xsni,echo,psk)) = client_hello_outer in
   let client_ECH(cipher_suite,config_id,enc,payload) = echo in
 
   (* The client_hello_outer with extension removed *)
-  let client_hello_outer' = CH(r,nego(version,k_alg,h_alg,ae_alg,sni,none_ECHExt,psk)) in
+  let client_hello_outer' = CH(r,nego(version,k_alg,h_alg,ae_alg,xsni,none_ECHExt,psk)) in
 
   client_hello_outer_AAD(cipher_suite,config_id,enc,client_hello_outer').
 
@@ -341,18 +435,18 @@ letfun mk_encrypted_client_hello(
 
 
   (* Client Hello Inner *)
-  let (i_x:bitstring,i_gx) = dh_keygen(i_g) in
+  let (i_x:bitstring,i_gx:element) = dh_keygen(i_g) in
   let (early_secret:bitstring,kb:mac_key) = kdf_es(psk) in (* For Pre Shared Keys *)
   new i_r:random;
   let i_offer1 = nego(TLS13,DHE_13(i_g,i_gx),i_hash,i_aead,SNI(i_domain),ech_is_inner,Binder(zero)) in
-  let preshared_ext = Binder(hmac(StrongHash,kb,msg2bytes(CH(i_r,i_offer1)))) in
-  let i_offer2 = nego(TLS13,DHE_13(i_g,i_gx),i_hash,i_aead,i_sni,ech_is_inner,preshared_ext) in
+  let preshared_ext = Binder(hmac(StrongHash,kb,msg2bitstring(CH(i_r,i_offer1)))) in
+  let i_offer2 = nego(TLS13,DHE_13(i_g,i_gx),i_hash,i_aead,SNI(i_domain),ech_is_inner,preshared_ext) in
   let i_client_hello = CH(i_r,i_offer2) in
 
   (* TODO : The Encoded Client Hello Inner is not done yet. Need to understand what to do *)
 
   (* Generation of the Client Hello Outer with a dummy ECHO extension *)
-  let (o_x:bitstring,o_gx) = dh_keygen(o_g) in
+  let (o_x:bitstring,o_gx:element) = dh_keygen(o_g) in
   new o_r:random;
   let o_offer1 = nego(TLS13,DHE_13(o_g,o_gx),o_hash,o_aead,SNI(o_domain),none_ECHExt,Binder(zero)) in
   let o_client_hello1 = CH(o_r,o_offer1) in
@@ -361,8 +455,8 @@ letfun mk_encrypted_client_hello(
 
   (* Generating the HPKE Context (Section 6.1 in RFC)*)
   let pkR = get_public_key(ech_config) in
-  let (enc,context) = hpke_setup_base_S(pkR,(tls_ech_str,ECHConfig)) in
-  let payload = kpke_seal(context,client_hello_AAD,i_client_hello) in
+  let (enc:element,context:HpkeContext) = hpke_setup_base_S(pkR,(tls_ech_str,ech_config)) in
+  let payload = kpke_seal(context,ChoAAD2bitstring(client_hello_AAD),msg2bitstring(i_client_hello)) in
 
   let cipher_suite = get_hpke_cipher_suite(ech_config) in
   let config_id = get_config_id(ech_config) in
@@ -395,8 +489,8 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
   let cipher_suite = get_hpke_cipher_suite(ech_config) in
 
   let CH(r,offer) = client_hello_outer in
-  let nego(=TLS13,DHE_13(g,gx),hash_alg,aead_alg,sni_ext,ech_ext,pre_shared_key) = offer in
-  let (=cipher_suite,=config_id,enc,payload) = ech_ext in
+  let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
+  let client_ECH(=cipher_suite,=config_id,enc,payload) = ech_ext in
 
   (* QUESTION : In the RFC it is written that :
       The server verifies that the ECHConfig supports the cipher suite
@@ -409,8 +503,8 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
     *)
 
   let client_hello_AAD = mk_client_hello_outer_AAD(client_hello_outer) in
-  let context = hpke_setup_base_R(enc,(tls_ech_str,ECHConfig)) in
-  let ch_inner = hpke_open(context,ch_outer_AAD,payload) in
+  let context = hpke_setup_base_R(enc,skR,(tls_ech_str,ech_config)) in
+  let ch_inner = hpke_open(context,ChoAAD2bitstring(client_hello_AAD),payload) in
 
   (* The verification succeed hence the server must forward the message to
      the backend server.
@@ -429,7 +523,14 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
   The Backend Server in ECHO (Section 7.2 of RFC)
 ******************************************************)
 
-let ECH_Backend_Server = 0.
+let ECH_Backend_Server(offer:params) = 0.
+
+(*****************************************************
+  The Standard TLS Server
+******************************************************)
+
+let StandardServer(offer:params) = 0.
+
 
 
 
@@ -444,7 +545,7 @@ let ECH_client(
   ) =
 
   (* Compute the client hello *)
-  let client_hello = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_has,i_aead,ech_config) in
+  let client_hello = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
   out(io,client_hello);
   0.
 
@@ -462,10 +563,10 @@ let ECH_client(
 let ECH_server(ech_config:ECHConfig,skR:element) =
 
   in(io,CH(r,offer));
-  let nego(=TLS13,DHE_13(g,gx),hash_alg,aead_alg,sni_ext,ech_ext,pre_shared_key) = offer in
+  let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
 
   if ech_ext = none_ECHExt
   then StandardServer(offer)
   else if ech_ext = ech_is_inner
   then ECH_Backend_Server(offer)
-  else ECH_Client_Facing_Server(ech_config,skR,offer).
+  else ECH_Client_Facing_Server(ech_config,skR,CH(r,offer)).
