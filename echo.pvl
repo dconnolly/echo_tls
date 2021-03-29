@@ -1,4 +1,5 @@
 free io:channel.
+free att_choice:channel.
 const zero: bitstring.
 
 type random.
@@ -202,6 +203,39 @@ letfun kdf_es(psk:preSharedKey) =
        let es = hkdf_extract(zero,psk2b(psk)) in
        let kb = derive_secret(es,tls13_resumption_psk_binder_key,zero) in
        (es,b2mk(kb)).
+
+letfun kdf_k0(es:bitstring,log:bitstring) =
+       let atsc0 = derive_secret(es, tls13_client_early_traffic_secret, log) in
+       let kc0   = hkdf_expand_label(atsc0,tls13_key,zero) in
+       let ems0   = derive_secret(es,tls13_early_exporter_master_secret,log) in
+       (b2ae(kc0),ems0).
+
+
+letfun kdf_hs(es:bitstring,e:bitstring) =
+       let extra = derive_secret(es,tls13_derived,hash(StrongHash,zero)) in
+       hkdf_extract(extra,e).
+
+letfun kdf_ms(hs:bitstring,log:bitstring) =
+       let extra = derive_secret(hs,tls13_derived,hash(StrongHash,zero)) in
+       let ms =   hkdf_extract(hs , zero) in
+       let htsc = derive_secret(hs, tls13_client_handshake_traffic_secret, log) in
+       let htss = derive_secret(hs, tls13_server_handshake_traffic_secret, log) in
+       let kch =  hkdf_expand_label(htsc,tls13_key,zero) in
+       let kcm =  hkdf_expand_label(htsc,tls13_finished,zero) in
+       let ksh =  hkdf_expand_label(htss,tls13_key,zero) in
+       let ksm =  hkdf_expand_label(htss,tls13_finished,zero) in
+       (ms,b2ae(kch),b2ae(ksh),b2mk(kcm),b2mk(ksm)).
+
+letfun kdf_k(ms:bitstring,log:bitstring) =
+       let atsc = derive_secret(ms, tls13_client_application_traffic_secret, log) in
+       let atss = derive_secret(ms, tls13_server_application_traffic_secret, log) in
+       let ems 	= derive_secret(ms, tls13_exporter_master_secret, log) in
+       let kc   = hkdf_expand_label(atsc,tls13_key,zero) in
+       let ks   = hkdf_expand_label(atss,tls13_key,zero) in
+       (b2ae(kc),b2ae(ks),ems).
+
+letfun kdf_psk(ms:bitstring, log:bitstring) =
+       derive_secret(ms,tls13_resumption_master_secret,log).
 
 (********************************************************)
 (* HPKE *)
@@ -430,7 +464,9 @@ letfun mk_encrypted_client_hello(
   *)
 
   (* Retrieve the pre-shared key *)
-  (* TODO : Shouldn't the preshared key be parametrised in the table by the user / server ? *)
+  (* TODO : Shouldn't the preshared key be parametrised in the table by the user / server ?
+    Question : From what I understood, the model A and SN represents the client and the server.
+    However, I don't see where in the model where they are used.*)
   get preSharedKeys(a,sn,tkt,psk) in
 
 
@@ -468,7 +504,7 @@ letfun mk_encrypted_client_hello(
       to generate the client hello AAD.
    *)
   let offer = nego(TLS13,DHE_13(o_g,o_gx),o_hash,o_aead,SNI(o_domain),ech_ext,Binder(zero)) in
-  CH(o_r,offer).
+  (CH(o_r,offer),i_x,o_x).
 
 (*****************************************************
   The Client-Facing Server in ECHO (Section 7.1 of RFC)
@@ -504,17 +540,24 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
 
   let client_hello_AAD = mk_client_hello_outer_AAD(client_hello_outer) in
   let context = hpke_setup_base_R(enc,skR,(tls_ech_str,ech_config)) in
+
   let ch_inner = hpke_open(context,ChoAAD2bitstring(client_hello_AAD),payload) in
+    (* The verification succeed hence the server must forward the message to
+       the backend server.
 
-  (* The verification succeed hence the server must forward the message to
-     the backend server.
-
-     Question : Is the forwarding done on a public channel ? private channel ?
-     If it's on a public channel, should we consider that the attacker will do
-     the forwarding itself if he wants to so we don't need to write anything
-     anymore.
-  *)
-  out(io,ch_inner)
+       Question : Is the forwarding done on a public channel ? private channel ?
+       If it's on a public channel, should we consider that the attacker will do
+       the forwarding itself if he wants to so we don't need to write anything
+       anymore.
+    *)
+    out(io,ch_inner)
+  else
+    (* The decryption failed. According to the Echo RFC, the server must ignore
+    the extension and proceed as usual with ClientHellOuter, "except the server
+    MUST include the "encrypted_client_hello" extension in its EncryptedExtensions
+    with the "retry_configs" field set to one or more ECHConfig structures
+    with up-to-date keys"
+    *)
 .
 
 
@@ -523,13 +566,56 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
   The Backend Server in ECHO (Section 7.2 of RFC)
 ******************************************************)
 
-let ECH_Backend_Server(offer:params) = 0.
+let ECH_Backend_Server(client_hello:msg) =
+  let CH(rc,mode:params) = client_hello in
+
+
+0.
 
 (*****************************************************
   The Standard TLS Server
 ******************************************************)
 
-let StandardServer(offer:params) = 0.
+let StandardServer(client_hello:msg) =
+  let CH(r,offer) = client_hello in
+  let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),=none_ECHExt,Binder(m)) = offer in
+
+  (* Retreive the pre_shared_keys *)
+  (* QUESTION: I'm very much confused with the way preSharedKeys are mdoeled in the
+    tls model. I will stick to the TLS code for now but an explanation would be
+    much needed.*)
+  get preSharedKeys(a,sn,tkt,psk) in
+
+  let (early_secret:bitstring,kb:mac_key) = kdf_es(psk) in
+  let zoffer = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),none_ECHExt,Binder(zero)) in
+  if m = hmac(StrongHash,kb,msg2bytes(CH(r,zoffer))) then
+  let (kc0:ae_key,ems0:bitstring) = kdf_k0(early_secret,msg2bytes(client_hello)) in
+
+  (* The serveur must choose the configuration from the set of cipher suite
+  provided by the client. In the previous TLS model, the attacker were choosing
+  the configuration. For equivalence properties, we may want to also have an honest
+  server in the mix in case it is too strong to always let the attacker choose.
+
+  Question : why in original TLS model, the group is not chosen by the attcker ? *)
+
+  in(att_choice,(mode:params));
+  let nego(=TLS13,DHE_13(=g,gx_srv),h_alg_srv,a_alg_srv,sni_srv,=none_ECHExt,pre_shared_key) = mode in
+
+  let (gxy:element,gy:element) = dh_encap(g,gx) in
+
+  new sr:random;
+  let offer = nego(TLS13,DHE_13(g,gy),h_alg_srv,a_alg_srv,sni_srv,i_aead,SNI(i_domain),none_ECHExt,pre_shared_key) in
+  let server_hello = SH(sr,offer) in
+
+  out(io,server_offer);
+
+  (* Question : I should be able to copy most of the original TLS from now ?
+    On the other hand, I don't see the retry part. From what i understood in thr RFC,
+    the retry part of the server should come after the SH message in an encrypted
+    extension.
+  *)
+  0
+  .
 
 
 
@@ -545,8 +631,46 @@ let ECH_client(
   ) =
 
   (* Compute the client hello *)
-  let client_hello = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
+  let (client_hello,i_x,o_x) = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
   out(io,client_hello);
+
+  (* Receive the answer from the server *)
+  in(io,server_hello:msg);
+
+  let SH(sr,mode) = server_hello in
+  (
+    let nego(=TLS13,DHE_13(=i_g,gy_srv),h_srv,a_srv,sni_srv,presharedkey_srv) = mode in
+
+    (* let log = (ch,server_hello) in
+
+    let gxy = e2b(dh_decap(g,gy_srv,i_x)) in
+    let handshake_secret = kdf_hs(early_secret,gxy) in
+    let (master_secret:bitstring,chk:ae_key,shk:ae_key,cfin:mac_key,sfin:mac_key) = kdf_ms(handshake_secret,log) in *)
+
+          (*     out(io,(chk,shk));*)
+
+      (* in(io,crt_msg:bitstring);
+      let msg2bytes(CRT(hn,p)) = aead_dec(StrongAE,shk,zero,zero,crt_msg) in
+      let log = (log,CRT(hn,p)) in
+      get longTermKeys(sn,xxx,=p) in
+
+      in(io,CV(s));
+      if verify(p,hash(h,log),s) = true then
+      let log = (log,CV(s)) in
+      in(io,FIN(m1));
+      if m1 = hmac(StrongHash,sfin,log) then (
+         let log = (log,FIN(m1)) in
+         let (cak:ae_key,sak:ae_key,ems:bitstring) = kdf_k(master_secret,log) in
+         let m2 = hmac(StrongHash,cfin,log) in
+         let log = (log,FIN(m2)) in
+         let rms =  kdf_psk(master_secret,log) in
+
+         event ClientFinished(TLS13,cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
+         insert clientSession(cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
+         out(io,FIN(m2)))). *)
+  )
+  else
+    (* Received something other than server hello *)
   0.
 
 (* The ECH server should behave differently depending on the client hello
@@ -566,7 +690,7 @@ let ECH_server(ech_config:ECHConfig,skR:element) =
   let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
 
   if ech_ext = none_ECHExt
-  then StandardServer(offer)
+  then StandardServer(CH(r,offer))
   else if ech_ext = ech_is_inner
-  then ECH_Backend_Server(offer)
+  then ECH_Backend_Server(CH(r,offer))
   else ECH_Client_Facing_Server(ech_config,skR,CH(r,offer)).
