@@ -438,6 +438,10 @@ const ech_is_inner: EncryptedClientHelloExt.
 *)
 fun client_ECH(HpkeSymmetricCipherSuite,nat,element,bitstring): EncryptedClientHelloExt [data].
 
+(* The Encrypted Client Hello extension for the server. It should normally include
+  a list of accepted ECHConfig but we only model one here.*)
+fun server_ECH(ECHConfig): EncryptedClientHelloExt [data].
+
 (***************************************
   TLS message formats
 ****************************************)
@@ -574,61 +578,6 @@ letfun mk_encrypted_client_hello(
   let offer = nego(TLS13,DHE_13(o_g,o_gx),o_hash,o_aead,SNI(o_domain),ech_ext,Binder(zero)) in
   (CH(o_r,offer),i_client_hello,i_x,o_x,early_secret).
 
-(*****************************************************
-  The Client-Facing Server in ECHO (Section 7.1 of RFC)
-******************************************************)
-
-let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer:msg) =
-
-  (* Verify that the ECH_config corresponds to the client hello message and that
-    the decryption works.
-    If the verification does not match then the server should continue the
-    connection with the ClientHelloOuter. In RFC it is added that:
-      This connection proceeds as usual, except the server MUST include the
-      "encrypted_client_hello" extension in its EncryptedExtensions with
-      the "retry_configs" field set to one or more ECHConfig structures
-      with up-to-date keys.
-  *)
-  let config_id = get_config_id(ech_config) in
-  let cipher_suite = get_hpke_cipher_suite(ech_config) in
-
-  let CH(r,offer) = client_hello_outer in
-  let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
-    let client_ECH(=cipher_suite,=config_id,enc,payload) = ech_ext in
-    (
-
-      let client_hello_AAD = mk_client_hello_outer_AAD(client_hello_outer) in
-      let context = hpke_setup_base_R(enc,skR,(tls_ech_str,ech_config)) in
-
-      let ch_inner = hpke_open(context,ChoAAD2bitstring(client_hello_AAD),payload) in
-        (* The verification succeed hence the server must forward the message to
-           the backend server.
-
-           Question : Is the forwarding done on a public channel ? private channel ?
-           If it's on a public channel, should we consider that the attacker will do
-           the forwarding itself if he wants to so we don't need to write anything
-           anymore.
-
-           Answer : Should be sent on a private channel to the backend (currently).
-        *)
-        out(srv_ch,ch_inner);
-        (* After that the server forwards messages between client and backend server
-          The modeling is quite generic. Will be restricted if necessary for proofs. *)
-        (! in(srv_ch,x:bitstring); out(io,x)) |
-        (! in(io,x:bitstring); out(srv_ch,x))
-      else
-        (* The decryption failed. According to the Echo RFC, the server must ignore
-        the extension and proceed as usual with ClientHellOuter, "except the server
-        MUST include the "encrypted_client_hello" extension in its EncryptedExtensions
-        with the "retry_configs" field set to one or more ECHConfig structures
-        with up-to-date keys"
-        *)
-        0
-    )
-    else 0
-  else 0
-  .
-
 (****************************************************************************
   The Standard TLS Server or the Backend Server in ECHO (Section 7.2 of RFC)
 *****************************************************************************)
@@ -636,14 +585,12 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
 (* A backend-server plays the same role as a standard server with two key-distinctions:
   - Check that the ECHO extension is "ech_is_inner".
   - Compute an accept_confirmation message
+  We assume that the check on the ECHO extension is done beforehand
 *)
 
-let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
+let Standard_or_Backend_Server(is_std:bool,use_psk:bool,client_hello:msg,ech_ext_srv:EncryptedClientHelloExt) =
   let CH(cr,offer) = client_hello in
   let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),ech_ext,Binder(m)) = offer in
-
-  (* Checking the ECHO extension *)
-  if (none_ECHExt = ech_ext && is_std) || (ech_is_inner = ech_ext && not(is_std)) then
 
   (* QUESTION : Identification of the server.
     I believe that the SNI could play the "identifier" that determines which keys
@@ -653,7 +600,11 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
   (* QUESTION: I'm very much confused with the way preSharedKeys are modeled in the
     tls model. I will stick to the TLS code for now but an explanation would be
     much needed.*)
-  get preSharedKeys(a,sn,tkt,psk) in
+  let psk =
+    if use_psk
+    then get preSharedKeys(a,sn,tkt,psk) in psk
+    else NoPSK
+  in
 
   let (early_secret:bitstring,kb:mac_key) = kdf_es(psk) in
   let zoffer = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),ech_ext,Binder(zero)) in
@@ -663,9 +614,7 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
   (* The serveur must choose the configuration from the set of cipher suite
   provided by the client. In the previous TLS model, the attacker were choosing
   the configuration. For equivalence properties, we may want to also have an honest
-  server in the mix in case it is too strong to always let the attacker choose.
-
-  Question : why in original TLS model, the group is not chosen by the attcker ? *)
+  server in the mix in case it is too strong to always let the attacker choose. *)
 
   in(att_choice,(mode:params));
   let nego(=TLS13,DHE_13(=g,gx_srv),h_alg_srv,a_alg_srv,sni_srv,=none_ECHExt,pre_shared_key) = mode in
@@ -674,7 +623,7 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
 
   let handshake_secret = kdf_hs(early_secret,gxy) in
 
-  let srv_offer = nego(TLS13,DHE_13(g,gy),h_alg_srv,a_alg_srv,sni_srv,none_ECHExt,pre_shared_key) in
+  let srv_offer = nego(TLS13,DHE_13(g,gy),h_alg_srv,a_alg_srv,sni_srv,ech_ext_srv,pre_shared_key) in
   let sr =
     if is_std
     then gen_B32_random()
@@ -757,6 +706,61 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
   else 0
   .
 
+(*****************************************************
+  The Client-Facing Server in ECHO (Section 7.1 of RFC)
+******************************************************)
+
+let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer:msg) =
+
+  (* Verify that the ECH_config corresponds to the client hello message and that
+    the decryption works.
+    If the verification does not match then the server should continue the
+    connection with the ClientHelloOuter. In RFC it is added that:
+      This connection proceeds as usual, except the server MUST include the
+      "encrypted_client_hello" extension in its EncryptedExtensions with
+      the "retry_configs" field set to one or more ECHConfig structures
+      with up-to-date keys.
+  *)
+  let config_id = get_config_id(ech_config) in
+  let cipher_suite = get_hpke_cipher_suite(ech_config) in
+
+  let CH(r,offer) = client_hello_outer in
+  let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
+    let client_ECH(=cipher_suite,=config_id,enc,payload) = ech_ext in
+    (
+
+      let client_hello_AAD = mk_client_hello_outer_AAD(client_hello_outer) in
+      let context = hpke_setup_base_R(enc,skR,(tls_ech_str,ech_config)) in
+
+      let ch_inner = hpke_open(context,ChoAAD2bitstring(client_hello_AAD),payload) in
+        (* The verification succeed hence the server must forward the message to
+           the backend server.
+
+           Question : Is the forwarding done on a public channel ? private channel ?
+           If it's on a public channel, should we consider that the attacker will do
+           the forwarding itself if he wants to so we don't need to write anything
+           anymore.
+
+           Answer : Should be sent on a private channel to the backend (currently).
+        *)
+        out(srv_ch,ch_inner);
+        (* After that the server forwards messages between client and backend server
+          The modeling is quite generic. Will be restricted if necessary for proofs. *)
+        (! in(srv_ch,x:bitstring); out(io,x)) |
+        (! in(io,x:bitstring); out(srv_ch,x))
+      else
+        (* The decryption failed. According to the Echo RFC, the server must ignore
+        the extension and proceed as usual with ClientHellOuter, "except the server
+        MUST include the "encrypted_client_hello" extension in its EncryptedExtensions
+        with the "retry_configs" field set to one or more ECHConfig structures
+        with up-to-date keys"
+        *)
+        Standard_or_Backend_Server(true,false,client_hello_outer,server_ECH(ech_config))
+    )
+    else Standard_or_Backend_Server(true,false,client_hello_outer,server_ECH(ech_config))
+  else Standard_or_Backend_Server(true,false,client_hello_outer,server_ECH(ech_config))
+  .
+
 (****************************************************************************
   The Standard TLS Client connection after dealing with ECH
 *****************************************************************************)
@@ -818,6 +822,28 @@ let Standard_Client(
   The main protocol
 ******************************************************)
 
+let ECH_client_rejected(
+  o_g:group,o_domain:domain,o_x:bitstring,gy_srv:element,
+  h_srv:hash_alg,a_srv:aead_alg,
+  o_client_hello,server_hello:msg
+  ) =
+
+  (* Section 6.1.3.2 and 6.1.3.3 of ECHO RFC - Rejected ECH *)
+  (* Question: Section 6.1.3.3 not clear what it means "MUST verify that
+    the certificate is valid for ECHConfig.contents.public_name". Is it
+    third party verification ? (hence represented here by an access to
+    the long term keys table) *)
+
+  (* Compute the early secret *)
+  let (o_early_secret:bitstring,o_kb:mac_key) = kdf_es(NoPSK) in
+  (* Compute the handshake secret *)
+  let o_gxy = dh_decap(o_g,gy_srv,o_x) in
+  let o_handshake_secret = kdf_hs(o_early_secret,o_gxy) in
+  (* QUESTION: We need to model the abort and the signal ech_required.
+  What do we do with the insertion in the table clientSession ?*)
+  Standard_Client(o_domain,h_srv,a_srv,NoPSK,o_handshake_secret,o_client_hello,server_hello)
+  .
+
 let ECH_client(
   o_g:group,o_domain:domain,o_hash:hash_alg,o_aead:aead_alg,
   i_g:group,i_domain:domain,i_hash:hash_alg,i_aead:aead_alg,
@@ -858,14 +884,19 @@ let ECH_client(
         (* Proceeds with the connection as usual *)
         Standard_Client(i_domain,h_srv,a_srv,i_psk,i_handshake_secret,i_client_hello,server_hello)
       else
-        (* Section 6.1.3.2 of ECHO RFC - Rejected ECH *)
-        (* TODO *)
-        0
+        let server_ECH(new_ech_config) = ech_ext in
+        (* QUESTION: What shall we do with the new ech config ? Do we want to
+        model a server that goes through the two connection? Or do we model it
+        just with an event ? Maybe it can play a role for equivalence properties.
+        We should also consider the case where ech_ext is empty which would
+        mean that the server does not accept ECH. *)
+        ECH_client_rejected(o_g,o_domain,o_x,gy_srv,h_srv,a_srv,o_client_hello,server_hello)
       )
     else
       (* Section 6.1.3.2 of ECHO RFC - Rejected ECH *)
-      (* TODO *)
-      0
+      let server_ECH(new_ech_config) = ech_ext in
+      (* QUESTION: Same as above *)
+      ECH_client_rejected(o_g,o_domain,o_x,gy_srv,h_srv,a_srv,o_client_hello,server_hello)
   )
   else
     (* Received something other than server hello *)
@@ -888,7 +919,7 @@ let ECH_server(ech_config:ECHConfig,skR:element) =
   let nego(=TLS13,DHE_13(g,gx),h_alg,a_alg,sni_ext,ech_ext,pre_shared_key) = offer in
 
   if ech_ext = none_ECHExt
-  then Standard_or_Backend_Server(true,CH(r,offer))
+  then Standard_or_Backend_Server(true,true,CH(r,offer),none_ECHExt)
   else if ech_ext = ech_is_inner
-  then Standard_or_Backend_Server(false,CH(r,offer))
+  then Standard_or_Backend_Server(false,true,CH(r,offer),none_ECHExt)
   else ECH_Client_Facing_Server(ech_config,skR,CH(r,offer)).
