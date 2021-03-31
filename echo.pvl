@@ -572,7 +572,7 @@ letfun mk_encrypted_client_hello(
       to generate the client hello AAD.
    *)
   let offer = nego(TLS13,DHE_13(o_g,o_gx),o_hash,o_aead,SNI(o_domain),ech_ext,Binder(zero)) in
-  (CH(o_r,offer),i_x,o_x).
+  (CH(o_r,offer),i_client_hello,i_x,o_x,early_secret).
 
 (*****************************************************
   The Client-Facing Server in ECHO (Section 7.1 of RFC)
@@ -656,7 +656,7 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
   get preSharedKeys(a,sn,tkt,psk) in
 
   let (early_secret:bitstring,kb:mac_key) = kdf_es(psk) in
-  let zoffer = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),none_ECHExt,Binder(zero)) in
+  let zoffer = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),ech_ext,Binder(zero)) in
   if m = hmac(StrongHash,kb,msg2bitstring(CH(cr,zoffer))) then
   let (kc0:aead_key,ems0:bitstring) = kdf_k0(early_secret,msg2bitstring(client_hello)) in
 
@@ -757,6 +757,63 @@ let Standard_or_Backend_Server(is_std:bool,client_hello:msg) =
   else 0
   .
 
+(****************************************************************************
+  The Standard TLS Client connection after dealing with ECH
+*****************************************************************************)
+
+let Standard_Client(
+  dom:domain,h_alg:hash_alg,a_alg:aead_alg,
+  psk:preSharedKey, handshake_secret:bitstring,
+  client_hello:msg,server_hello:msg
+  ) =
+  let CH(cr,offer) = client_hello in
+  let SH(sr,mode) = server_hello in
+
+  let log_1 = (client_hello,server_hello) in
+  let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
+    kdf_ms(handshake_secret,log_1)
+  in
+
+  (* Process the Certificate message *)
+  in(io,enc_crt_msg:bitstring);
+  let msg2bitstring(certificate_msg) = aead_dec(StrongAE,shk,zero,zero,enc_crt_msg) in
+  (* QUESTION: Usual question about the host name *)
+  let CRT(hn,srv_public_key) = certificate_msg in
+  let log_2 = (log_1,certificate_msg) in
+
+  (* QUESTION : In the model tls-lib.pvl, the client access the table longTermKeys
+  and checks whether the public key is in the table. Should i understand that this
+  corresponds to checking that the certificate for the public key is valid ? *)
+  (* QUESTION: Usual question about the server name. *)
+  get longTermKeys(srv_name,srv_secret_key,=srv_public_key) in
+
+  (* Process the Certificate Verify message *)
+  in(io,enc_crt_verif_msg:bitstring);
+  let msg2bitstring(certificate_verify_msg) = aead_dec(StrongAE,shk,zero,zero,enc_crt_verif_msg) in
+  let CV(signed_log) = certificate_verify_msg in
+  if verify(srv_public_key,hash(h_alg,log_2),signed_log) then
+  let log_3 = (log_2,certificate_verify_msg) in
+
+  (* Process the Finished message *)
+  in(io,enc_finished_msg:bitstring);
+  let msg2bitstring(finished_msg) = aead_dec(StrongAE,shk,zero,zero,enc_finished_msg) in
+  let FIN(hash_msg) = finished_msg in
+  if hash_msg = hmac(StrongHash,sfin,log_3) then
+  let log_4 = (log_3,finished_msg) in
+
+  (* Send the Client Finished message *)
+  let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(master_secret,log_4) in
+  let client_hash_msg = hmac(StrongHash,cfin,log_4) in
+  let client_finished_msg = FIN(client_hash_msg) in
+
+  let log_5 = (log_4,client_finished_msg) in
+  let rms = kdf_psk(master_secret,log_5) in
+  insert clientSession(cr,sr,psk,srv_public_key,offer,mode,cak,sak,ems,rms);
+
+  let enc_client_finished_msg = aead_enc(StrongAE,chk,zero,zero,msg2bitstring(client_finished_msg)) in
+  out(io,enc_client_finished_msg)
+  .
+
 (*****************************************************
   The main protocol
 ******************************************************)
@@ -766,45 +823,49 @@ let ECH_client(
   i_g:group,i_domain:domain,i_hash:hash_alg,i_aead:aead_alg,
   ech_config:ECHConfig
   ) =
+  (* QUESTION: Can ge group for inner and outer be different ? *)
 
   (* Compute the client hello *)
-  let (client_hello:msg,i_x:bitstring,o_x:bitstring) = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
-  out(io,client_hello);
+  let (o_client_hello:msg,i_client_hello:msg,i_x:bitstring,o_x:bitstring,i_psk:preSharedKey,i_early_secret:bitstring) = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
+  out(io,o_client_hello);
 
   (* Receive the answer from the server *)
   in(io,server_hello:msg);
 
-  let SH(sr,mode) = server_hello in
+  (* QUESTION: In the tls-lib.pvl, a clientSession0 is inserted. Need to see
+  what we will do with it since may need to insert it after knowing if the server
+  accepted the ECH or not. *)
+
+  let SH(B32(sr24,sr8),mode) = server_hello in
   (
-    let nego(=TLS13,DHE_13(=i_g,gy_srv),h_srv,a_srv,sni_srv,ech_ext,presharedkey_srv) = mode in
-    0
-    (* let log = (ch,server_hello) in
+    let nego(=TLS13,DHE_13(g_srv,gy_srv),h_srv,a_srv,sni_srv,ech_ext,presharedkey_srv) = mode in
 
-    let gxy = e2b(dh_decap(g,gy_srv,i_x)) in
-    let handshake_secret = kdf_hs(early_secret,gxy) in
-    let (master_secret:bitstring,chk:ae_key,shk:ae_key,cfin:mac_key,sfin:mac_key) = kdf_ms(handshake_secret,log) in *)
+    if g_srv = i_g
+    then (
+      (* Compute the handshake secret *)
+      let i_gxy = dh_decap(i_g,gy_srv,i_x) in
+      let i_handshake_secret = kdf_hs(i_early_secret,i_gxy) in
 
-          (*     out(io,(chk,shk));*)
+      (* Determinaing whether ECH was accepted or not *)
+      let is_accepted:bool =
+        let SH_ECHConf = SH(B32(sr24,zero8),mode) in
+        let accept_confirmation = derive_secret(i_handshake_secret,ech_accept_confirmation,(i_client_hello,SH_ECHConf)) in
+        sr8 = crop_into_bytes8(accept_confirmation)
+      in
 
-      (* in(io,crt_msg:bitstring);
-      let msg2bytes(CRT(hn,p)) = aead_dec(StrongAE,shk,zero,zero,crt_msg) in
-      let log = (log,CRT(hn,p)) in
-      get longTermKeys(sn,xxx,=p) in
-
-      in(io,CV(s));
-      if verify(p,hash(h,log),s) = true then
-      let log = (log,CV(s)) in
-      in(io,FIN(m1));
-      if m1 = hmac(StrongHash,sfin,log) then (
-         let log = (log,FIN(m1)) in
-         let (cak:ae_key,sak:ae_key,ems:bitstring) = kdf_k(master_secret,log) in
-         let m2 = hmac(StrongHash,cfin,log) in
-         let log = (log,FIN(m2)) in
-         let rms =  kdf_psk(master_secret,log) in
-
-         event ClientFinished(TLS13,cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
-         insert clientSession(cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
-         out(io,FIN(m2)))). *)
+      if is_accepted
+      then
+        (* Proceeds with the connection as usual *)
+        Standard_Client(i_domain,h_srv,a_srv,i_psk,i_handshake_secret,i_client_hello,server_hello)
+      else
+        (* Section 6.1.3.2 of ECHO RFC - Rejected ECH *)
+        (* TODO *)
+        0
+      )
+    else
+      (* Section 6.1.3.2 of ECHO RFC - Rejected ECH *)
+      (* TODO *)
+      0
   )
   else
     (* Received something other than server hello *)
