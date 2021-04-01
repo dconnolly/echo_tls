@@ -600,6 +600,9 @@ let Standard_or_Backend_Server(is_std:bool,use_psk:bool,client_hello:msg,ech_ext
   (* QUESTION: I'm very much confused with the way preSharedKeys are modeled in the
     tls model. I will stick to the TLS code for now but an explanation would be
     much needed.*)
+
+  (* QUESTION: Using a psk = NoPSK should not be the same as ignoring the psk entirely. So when
+  does the check is done with the psk being in fact zero ? *)
   let psk =
     if use_psk
     then get preSharedKeys(a,sn,tkt,psk) in psk
@@ -765,7 +768,7 @@ let ECH_Client_Facing_Server(ech_config:ECHConfig,skR:element,client_hello_outer
   The Standard TLS Client connection after dealing with ECH
 *****************************************************************************)
 
-let Standard_Client(
+let Standard_Client_after_SH(
   dom:domain,h_alg:hash_alg,a_alg:aead_alg,
   psk:preSharedKey, handshake_secret:bitstring,
   client_hello:msg,server_hello:msg
@@ -818,6 +821,50 @@ let Standard_Client(
   out(io,enc_client_finished_msg)
   .
 
+(* QUESTION: Similar question as above.
+  Can the client decide to generate a binder with psk = NoPSK or
+  when the binder is there then it implies that there is a real psk ? *)
+let Standard_Client(use_psk:bool,g:group, dom:domain, h_alg:hash_alg, a_alg:aead_alg) =
+
+  (* Retrieve the pre-shared key *
+  (* QUESTION: Usual question about client identifier *)
+
+  let (x:bitstring,gx:element) = dh_keygen(g) in
+
+  let r = gen_B32_random() in
+  let (offer:params,early_secret:bitstring,pre_shared_key:preSharedKey) =
+    if use_psk
+    then (
+      get preSharedKeys(id_client,srv_name,tkt,psk) in
+      let (es:bitstring,kb:mac_key) = kdf_es(psk) in
+      let offer_1 = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),none_ECHExt,Binder(zero)) in
+      let preshared_ext = Binder(hmac(StrongHash,kb,msg2bitstring(CH(r,offer_1)))) in
+      let offer_2 = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),none_ECHExt,preshared_ext) in
+      (offer_2,es,psk)
+      )
+    else (
+      let (es:bitstring,kb:mac_key) = kdf_es(NoPSK) in
+      let offer = nego(TLS13,DHE_13(g,gx),h_alg,a_alg,SNI(dom),none_ECHExt,NoBinder()) in
+      (offer,es,NoPSK)
+      )
+  in
+
+  let client_hello = CH(r,offer) in
+  out(io,client_hello);
+
+  in(io,server_hello:msg);
+
+  let SH(sr,mode) = server_hello in
+  let nego(=TLS13,DHE_13(=g,gy_srv),h_srv,a_srv,sni_srv,ech_ext,presharedkey_srv) = mode in
+
+  (* Compute the handshake secret *)
+  let gxy = dh_decap(g,gy_srv,x) in
+  let handshake_secret = kdf_hs(early_secret,gxy) in
+
+  (* Proceeds with the connection as usual *)
+  Standard_Client_after_SH(dom,h_srv,a_srv,pre_shared_key,handshake_secret,client_hello,server_hello)
+  .
+
 (*****************************************************
   The main protocol
 ******************************************************)
@@ -841,7 +888,7 @@ let ECH_client_rejected(
   let o_handshake_secret = kdf_hs(o_early_secret,o_gxy) in
   (* QUESTION: We need to model the abort and the signal ech_required.
   What do we do with the insertion in the table clientSession ?*)
-  Standard_Client(o_domain,h_srv,a_srv,NoPSK,o_handshake_secret,o_client_hello,server_hello)
+  Standard_Client_after_SH(o_domain,h_srv,a_srv,NoPSK,o_handshake_secret,o_client_hello,server_hello)
   .
 
 let ECH_client(
@@ -849,7 +896,7 @@ let ECH_client(
   i_g:group,i_domain:domain,i_hash:hash_alg,i_aead:aead_alg,
   ech_config:ECHConfig
   ) =
-  (* QUESTION: Can ge group for inner and outer be different ? *)
+  (* QUESTION: Can we group for inner and outer be different ? *)
 
   (* Compute the client hello *)
   let (o_client_hello:msg,i_client_hello:msg,i_x:bitstring,o_x:bitstring,i_psk:preSharedKey,i_early_secret:bitstring) = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
@@ -861,6 +908,17 @@ let ECH_client(
   (* QUESTION: In the tls-lib.pvl, a clientSession0 is inserted. Need to see
   what we will do with it since may need to insert it after knowing if the server
   accepted the ECH or not. *)
+
+  (* TODO: Some cases of failure are not properly handled here. *)
+
+  (* QUESTION: Some part of the RFC is unclear (Page 17, Echo RFC):
+
+      Clients SHOULD implement a limit on retries caused by
+     "ech_retry_request" or servers which do not acknowledge the
+     "encrypted_client_hello" extension.
+
+    Where is this "ech_retry_request" defined ?
+  *)
 
   let SH(B32(sr24,sr8),mode) = server_hello in
   (
@@ -882,7 +940,7 @@ let ECH_client(
       if is_accepted
       then
         (* Proceeds with the connection as usual *)
-        Standard_Client(i_domain,h_srv,a_srv,i_psk,i_handshake_secret,i_client_hello,server_hello)
+        Standard_Client_after_SH(i_domain,h_srv,a_srv,i_psk,i_handshake_secret,i_client_hello,server_hello)
       else
         let server_ECH(new_ech_config) = ech_ext in
         (* QUESTION: What shall we do with the new ech config ? Do we want to
