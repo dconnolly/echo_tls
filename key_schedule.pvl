@@ -1,0 +1,90 @@
+(********************************************************)
+(* Key Schedule of TLS (Section 7.1 of RFC)             *)
+(********************************************************)
+
+const
+  tls13_client_handshake_traffic_secret,
+  tls13_server_handshake_traffic_secret,
+  tls13_client_early_traffic_secret,
+  tls13_client_application_traffic_secret,
+  tls13_server_application_traffic_secret,
+  tls13_key, tls13_iv,
+  tls13_early_exporter_master_secret,
+  tls13_exporter_master_secret,
+  tls13_resumption_master_secret,
+  tls13_resumption_psk_binder_key,
+  tls13_finished,tls13_derived,tls13_esni_key,tls13_esni_iv: label.
+
+(** Key Schedule. TLS 1.3 RFC Section 7.1 *)
+
+letfun derive_secret(a:hash_alg,k:bitstring,l:label,m:bitstring) =
+  hkdf_expand_label(a,k,l,hash(a,m)).
+
+(* Function to generate "Early Secret" + binder_key *)
+letfun kdf_es(h:hash_alg,psk:preSharedKey) =
+  let early_secret = hkdf_extract(h,zero,psk2b(psk)) in
+  let binder_key = derive_secret(h,early_secret,tls13_resumption_psk_binder_key,zero) in
+  (early_secret,b2mk(binder_key)).
+
+letfun kdf_k0(h:hash_alg,early_secret:bitstring,client_hello:bitstring) =
+  (* client_early_traffic_secret *)
+  let atsc0 = derive_secret(h,early_secret,tls13_client_early_traffic_secret,client_hello) in
+
+  (* QUESTION: What is kc0 ? Is it the Traffic Key Calculation (Section 7.3 in TLS RFC) *)
+  let kc0   = hkdf_expand_label(h,atsc0,tls13_key,zero) in
+
+  (* early_exporter_master_secret*)
+  let ems0   = derive_secret(h,early_secret,tls13_early_exporter_master_secret,client_hello) in
+
+  (b2ae(kc0),ems0).
+
+(* Function to generate Handshake Secret. *)
+letfun kdf_hs(h:hash_alg,early_secret:bitstring,e:element) =
+  let extra = derive_secret(h,early_secret,tls13_derived,hash(h,zero)) in
+  hkdf_extract(h,extra,e2b(e)).
+
+(* Function to generate
+  - Master Secret
+  - client_handshake_traffic_secret
+  - server_handshake_traffic_secret
+  - client_write_key for handshake record (Section 7.3 of TLS RFC)
+  - server_write_key for handshake record  (Section 7.3 of TLS RFC)
+  - client_finished_key (Section 4.4.4 of TLS RFC)
+  - server_finished_key (Section 4.4.4 of TLS RFC)
+  The log should contain the client_hello and the server hello. *)
+letfun kdf_ms(h:hash_alg,handshake_secret:bitstring,log:bitstring) =
+  let extra = derive_secret(h,handshake_secret,tls13_derived,hash(h,zero)) in
+  let master_secret = hkdf_extract(h,handshake_secret, zero) in
+  let client_hts = derive_secret(h,handshake_secret, tls13_client_handshake_traffic_secret, log) in
+  let server_hts = derive_secret(h,handshake_secret, tls13_server_handshake_traffic_secret, log) in
+
+  (* [sender]_write_key for handshake record *)
+  let client_wkh =  hkdf_expand_label(h,client_hts,tls13_key,zero) in
+  let server_wkh =  hkdf_expand_label(h,server_hts,tls13_key,zero) in
+
+  (* [sender]_finished_key *)
+  let client_fk =  hkdf_expand_label(h,client_hts,tls13_finished,zero) in
+  let server_fk =  hkdf_expand_label(h,server_hts,tls13_finished,zero) in
+  (master_secret,b2ae(client_wkh),b2ae(server_wkh),b2mk(client_fk),b2mk(server_fk)).
+
+(* Function to generate:
+  - client_write_key for Application Data record
+  - server_write_key for Application Data record
+  - exporter_master_secret
+  The log must contain ClientHello up to server Finished.
+  *)
+letfun kdf_k(h:hash_alg,master_secret:bitstring,log:bitstring) =
+  let client_ats = derive_secret(h,master_secret, tls13_client_application_traffic_secret, log) in
+  let server_ats = derive_secret(h,master_secret, tls13_server_application_traffic_secret, log) in
+
+  let ems	= derive_secret(h,master_secret, tls13_exporter_master_secret, log) in
+
+  let client_wkad = hkdf_expand_label(h,client_ats,tls13_key,zero) in
+  let server_wkad = hkdf_expand_label(h,server_ats,tls13_key,zero) in
+
+  (b2ae(client_wkad),b2ae(server_wkad),ems).
+
+(* Function to generate resumption_master_secret. The log must contain:
+  ClientHello up to client Finished. *)
+letfun kdf_psk(h:hash_alg,master_secret:bitstring, log:bitstring) =
+  derive_secret(h,master_secret,tls13_resumption_master_secret,log).

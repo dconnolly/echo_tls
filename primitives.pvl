@@ -1,0 +1,204 @@
+const zero:bitstring [data].
+
+(********************************************************)
+(* Generation of random                                 *)
+(********************************************************)
+
+type bytes24.
+type bytes8.
+
+type bytes32.
+
+const zero8:bytes8.
+fun B32(bytes24,bytes8):bytes32 [data].
+
+letfun gen_B32_random() =
+  new rand24:bytes24;
+  new rand8:bytes8;
+  B32(rand24,rand8).
+
+fun crop_into_bytes8(bitstring):bytes8.
+
+(********************************************************)
+(* Authenticated Encryption with Additional Data        *)
+(********************************************************)
+
+(* Aead algorithm. Abstracted into whether we consider strong or weak security
+    guarantees. We also consider multiple algorithms.  *)
+
+type aead_strengh.
+const WeakAE, StrongAE: aead_strengh [data].
+
+type aead_alg.
+fun id_aead_alg(aead_strengh,nat):aead_alg [data].
+
+type aead_key.
+fun b2ae(bitstring):aead_key [typeConverter].
+
+fun aead_enc(aead_alg, aead_key, bitstring, bitstring, bitstring): bitstring.
+fun aead_forged(bitstring,bitstring): bitstring.
+
+fun aead_dec(aead_alg, aead_key, bitstring, bitstring, bitstring): bitstring
+reduc forall a:aead_alg, k:aead_key, n,p,ad:bitstring;
+  aead_dec(a, k, n, ad, aead_enc(a, k, n, ad, p)) = p
+otherwise forall i:nat, k:aead_key, n,p,p',ad,ad':bitstring;
+  aead_dec(id_aead_alg(WeakAE,i), k, n, ad, aead_forged(p,aead_enc(id_aead_alg(WeakAE,i), k, n, ad', p'))) = p.
+
+fun aead_leak(bitstring):bitstring
+reduc forall i:nat, k:aead_key, n,ad,x:bitstring;
+  aead_leak(aead_enc(id_aead_alg(WeakAE,i),k,n,ad,x)) = x.
+
+(********************************************************)
+(* Diffie-Hellman, modeled as a KEM                     *)
+(* Include a small/bad subgroup attacks.                *)
+(********************************************************)
+
+type group_strengh.
+const WeakDH, StrongDH: group_strengh [data].
+
+type group.
+fun id_group(group_strengh,nat):group [data].
+
+type element.
+const guessable: element.
+fun e2b(element): bitstring [typeConverter].
+
+(* Key Generation *)
+fun dh_pub(group,bitstring): element.
+
+fun discrete_log(element): bitstring
+reduc forall i:nat, x:bitstring;
+  discrete_log(dh_pub(id_group(WeakDH,i),x)) = x.
+
+letfun dh_keygen(g:group) =
+  new x:bitstring;
+  let gx = dh_pub(g,x) in
+  (x,gx).
+
+(* Encap/Decap Functionality *)
+fun dh_encap_fun(group,element,element):element.
+fun dh_decap_fun(group,element,bitstring): element
+reduc forall g:group, x:bitstring, gxy:element;
+  dh_decap_fun(g,dh_encap_fun(g,dh_pub(g,x),gxy),x) = gxy.
+
+(* Generate then Encap *)
+letfun dh_encap(g:group,gx:element) =
+  new gxy:element;
+  (gxy, dh_encap_fun(g,gx,gxy)).
+
+(* Decap: never fails *)
+letfun dh_decap(g:group,gy:element,x:bitstring) =
+  let gxy = dh_decap_fun(g,gy,x) in
+    gxy
+  else (
+    new gxy:element;
+    gxy).
+
+(**************************************************************)
+(* Hash Functions, including those with collisions. See SLOTH *)
+(**************************************************************)
+
+type hash_strengh.
+const StrongHash, WeakHash:hash_strengh [data].
+
+type hash_alg.
+fun id_hash(hash_strengh,nat):hash_alg [data].
+
+const collision:bitstring [data].
+fun hash_ideal(bitstring):bitstring.
+
+fun hash(hash_alg,bitstring): bitstring
+reduc forall i:nat, x:bitstring;
+  hash(id_hash(WeakHash,i),x) = collision
+otherwise forall i:nat, x:bitstring;
+  hash(id_hash(StrongHash,i),x) = hash_ideal(x).
+
+(********************************************************)
+(* HMAC                                                 *)
+(********************************************************)
+
+type mac_key.
+fun b2mk(bitstring):mac_key [typeConverter].
+
+fun hmac_ideal(mac_key,bitstring): bitstring.
+
+fun hmac(hash_alg,mac_key,bitstring):bitstring
+reduc forall i:nat, k:mac_key, x:bitstring;
+  hmac(id_hash(WeakHash,i),k, x) = collision
+otherwise forall i:nat, x:bitstring, k:mac_key;
+  hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(k,x).
+
+(********************************************************)
+(* Public Key Signatures                                *)
+(********************************************************)
+
+type privkey.
+type pubkey.
+const NoPubKey: pubkey.
+fun pk(privkey): pubkey.
+
+(* RSA Signatures, typically the argument is a hash over some data *)
+
+fun sign(privkey,bitstring):bitstring.
+fun verify(pubkey,bitstring,bitstring): bool
+reduc forall k:privkey, x:bitstring;
+  verify(pk(k),x,sign(k,x)) = true.
+
+(********************************************************
+  HKDF
+*********************************************************)
+
+type label.
+
+letfun prf(a:hash_alg,k:bitstring,x:bitstring) = hmac(a,b2mk(k),x).
+
+letfun hkdf_extract(a:hash_alg,s:bitstring,k:bitstring) = prf(a,s,k).
+letfun hkdf_expand_label(a:hash_alg,k:bitstring,l:label,h:bitstring) = prf(a,k,(l,h)).
+
+(********************************************************)
+(* HPKE *)
+(********************************************************)
+
+(* We consider here the HPKE without pre shared key so the functions are
+   simplified to remove all references to pre shared key. *)
+
+type hpkeMode.
+const R,S:hpkeMode.
+
+type hpkeContext.
+fun hpke_context(hpkeMode,aead_key,bitstring,bitstring):hpkeContext [data].
+
+const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
+
+const nonce_for_seal_open:bitstring.
+(* Temporary until I understant how to model the nonce that are generated from
+  the internal sequence *)
+
+letfun kpke_seal(a:aead_alg,context:hpkeContext,i:nat,aad:bitstring,pt:bitstring) =
+  let hpke_context(=S,key,nonce,exporter) = context in
+  aead_enc(a,key,nonce_for_seal_open,aad,pt).
+
+letfun hpke_open(a:aead_alg,context:hpkeContext,aad:bitstring,ct:bitstring) =
+  let hpke_context(=R,key,nonce,exporter) = context in
+  aead_dec(a,key,nonce_for_seal_open,aad,ct).
+
+
+letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstring) =
+  let info_hash = hkdf_extract(h,zero,(hpke_info_hash,info)) in
+  let xsecret = hkdf_extract(h,e2b(shared_secret),(hpke_secret,zero)) in
+
+  let key = b2ae(hkdf_expand_label(h,xsecret,hpke_key,info_hash)) in
+  let base_nonce = hkdf_expand_label(h,xsecret,hpke_base_nonce,info_hash) in
+  let exporter_secret = hkdf_expand_label(h,xsecret,hpke_exp,info_hash) in
+
+  hpke_context(m,key,base_nonce,exporter_secret).
+
+(* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
+
+letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
+  let (shared_secret:element,enc:element) = dh_encap(g,pkR) in
+  (enc,hpke_key_schedule(h,S,shared_secret,info)).
+
+letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:element,info:bitstring) =
+  let shared_secret:element = dh_decap(g,enc,e2b(skR)) in
+  hpke_key_schedule(h,R,shared_secret,info).

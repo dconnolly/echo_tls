@@ -1,1 +1,49 @@
-process 0
+event A(bitstring,bitstring,bitstring).
+event B(bitstring,bitstring).
+event C(bitstring).
+free a,b,c,ok:bitstring.
+channel io.
+
+table tbl(bitstring,bitstring).
+
+let setting(x:bitstring) =
+  new sk1:bitstring;
+  new sk2:bitstring;
+  insert tbl(a,sk1);
+  insert tbl(a,sk2).
+
+let getprocess(x:bitstring) =
+  event C(x);
+  get tbl(x',sk) [precise] in
+  event A(x',sk,x);
+  out(io,sk).
+
+let trick =
+  get tbl(x1:bitstring,y1:bitstring) in
+  get tbl(x2:bitstring,y2:bitstring) in
+  insert tbl(diff[x1,x2],diff[y1,y2]);
+  insert tbl(diff[x2,x1],diff[y2,y1])
+.
+
+lemma x,x',x'',sk,sk':bitstring;
+  event(C(diff[x,x'])) ==> event(B(diff[x,x''],diff[sk,sk']));
+  event(C(diff[x,x'])) ==> event(B(diff[x'',x'],diff[sk,sk'])).
+
+restriction x,x',y,y',sk:bitstring;
+  event(A(diff[x,x'],sk,diff[y,y'])) ==> x = y && x' = y'.
+
+
+process
+  new sk1:bitstring;
+  new sk2:bitstring;
+  new sk3:bitstring;
+  new sk4:bitstring;
+  event B(a,sk1);
+  insert tbl(a,sk1);
+  event B(a,sk2);
+  insert tbl(a,sk2);
+  event B(b,sk3);
+  insert tbl(b,sk3);
+  event B(b,sk4);
+  insert tbl(b,sk4);
+  (getprocess(diff[a,b]) | !trick)

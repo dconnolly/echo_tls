@@ -227,8 +227,7 @@ letfun hkdf_expand_label(k:bitstring,l:label,h:bitstring) =
 letfun derive_secret(k:bitstring,l:label,m:bitstring) =
   hkdf_expand_label(k,l,hash(StrongHash,m)).
 
-(* Function to generate "Early Secret" + binder_key
- *)
+(* Function to generate "Early Secret" + binder_key *)
 letfun kdf_es(psk:preSharedKey) =
   let early_secret = hkdf_extract(zero,psk2b(psk)) in
   let binder_key = derive_secret(early_secret,tls13_resumption_psk_binder_key,zero) in
@@ -447,7 +446,7 @@ fun server_ECH(ECHConfig): EncryptedClientHelloExt [data].
 ****************************************)
 
 type TLS_version.
-const TLS12, TLS13: TLS_version.
+const TLS13: TLS_version.
 
 (* COMMENT Vincent: We keep for now almost the same structure as the original
   file to reuse as much as possible but it would be nicer if we get as close as
@@ -523,7 +522,7 @@ letfun mk_client_hello_outer_AAD(client_hello_outer:msg) =
 
 const tls_ech_str:bitstring.
 
-letfun mk_encrypted_client_hello(
+letfun mk_encrypted_client_hello(id_client:bitstring,
   o_g:group,o_domain:domain,o_hash:hash_alg,o_aead:aead_alg,
   i_g:group,i_domain:domain,i_hash:hash_alg,i_aead:aead_alg,
   ech_config:ECHConfig
@@ -539,7 +538,8 @@ letfun mk_encrypted_client_hello(
   (* TODO : Shouldn't the preshared key be parametrised in the table by the user / server ?
     Question : From what I understood, the model A and SN represents the client and the server.
     However, I don't see where in the model where they are used.*)
-  get preSharedKeys(id_client,srv_name,tkt,psk) in
+  (* TODO : Add the tkt . Binder should have two arguments. Check RFC. *)
+  get preSharedKeys(=id_client,=i_domain,tkt,psk) in
 
 
   (* Client Hello Inner *)
@@ -668,12 +668,7 @@ let Standard_or_Backend_Server(is_std:bool,use_psk:bool,client_hello:msg,ech_ext
   out(io,encrypted_certificate_msg);
 
   (* The CertificateVerify message *)
-  (* QUESTION : Why is the CertificateVerify and Finished message in tls-lib are not encrypted ?
-  From the TLS RFC page 10, it seems to me that they should be encrypted like the certificate message.
-  It's not done in tls-lib.pvl *)
-  (* QUESTION : I'm not sure whether the log should contain the messages or the encrypted message.
-  From the TLS RFC and the model, I have the impression that it should be the non-encrypted version
-  but I would like to be sure. *)
+
   let log_2 = (log_1,certificate_msg) in
   let signed_log = sign(srv_secret_key,hash(h_alg_srv,log_2)) in
   let certificate_verify_msg = CV(signed_log) in
@@ -785,20 +780,23 @@ let Standard_Client_after_SH(
   in(io,enc_crt_msg:bitstring);
   let msg2bitstring(certificate_msg) = aead_dec(StrongAE,shk,zero,zero,enc_crt_msg) in
   (* QUESTION: Usual question about the host name *)
+  (* ANSWER : Test after *)
   let CRT(hn,srv_public_key) = certificate_msg in
   let log_2 = (log_1,certificate_msg) in
 
   (* QUESTION : In the model tls-lib.pvl, the client access the table longTermKeys
   and checks whether the public key is in the table. Should i understand that this
   corresponds to checking that the certificate for the public key is valid ? *)
-  (* QUESTION: Usual question about the server name. *)
+  (* ANSWER : Model with function and destructor *)
+  (* QUESTION: Usual question about the server name.
+    ANSWER : YES CHECK *)
   get longTermKeys(srv_name,srv_secret_key,=srv_public_key) in
 
   (* Process the Certificate Verify message *)
   in(io,enc_crt_verif_msg:bitstring);
   let msg2bitstring(certificate_verify_msg) = aead_dec(StrongAE,shk,zero,zero,enc_crt_verif_msg) in
   let CV(signed_log) = certificate_verify_msg in
-  if verify(srv_public_key,hash(h_alg,log_2),signed_log) then
+  if verify(srv_public_key,hash(h_alg,log_2),signed_log) && hn = dom && srv_name = hn then
   let log_3 = (log_2,certificate_verify_msg) in
 
   (* Process the Finished message *)
@@ -896,7 +894,9 @@ let ECH_client(
   i_g:group,i_domain:domain,i_hash:hash_alg,i_aead:aead_alg,
   ech_config:ECHConfig
   ) =
-  (* QUESTION: Can we group for inner and outer be different ? *)
+  (* QUESTION: Can we group for inner and outer be different ?
+    ANSWER: YES
+  *)
 
   (* Compute the client hello *)
   let (o_client_hello:msg,i_client_hello:msg,i_x:bitstring,o_x:bitstring,i_psk:preSharedKey,i_early_secret:bitstring) = mk_encrypted_client_hello(o_g,o_domain,o_hash,o_aead,i_g,i_domain,i_hash,i_aead,ech_config) in
@@ -907,7 +907,9 @@ let ECH_client(
 
   (* QUESTION: In the tls-lib.pvl, a clientSession0 is inserted. Need to see
   what we will do with it since may need to insert it after knowing if the server
-  accepted the ECH or not. *)
+  accepted the ECH or not.
+
+  CHECK THE RFC*)
 
   (* TODO: Some cases of failure are not properly handled here. *)
 

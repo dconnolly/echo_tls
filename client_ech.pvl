@@ -1,0 +1,67 @@
+(********************************************************)
+(* Client ECH                                          *)
+(********************************************************)
+
+
+
+(* Generate the key share extension for ECH. *)
+letfun make_one_key_share_ech(kex:kex_alg) =
+  let DHE_group(g) = kex in (
+    let (i_x:bitstring,i_gx:element) = dh_keygen(g) in
+    let (o_x:bitstring,o_gx:element) = dh_keygen(g) in
+    (DHE_group(g),DHE_group(g), (i_x,o_x,g))
+  )
+  else let DHE_kex(g,e) = kex in
+    let (i_x:bitstring,i_gx:element) = dh_keygen(g) in
+    let (o_x:bitstring,o_gx:element) = dh_keygen(g) in
+    (DHE_kex(g,gx),DHE_kex(g,gy), (i_x,o_x,g))
+.
+
+letfun make_key_share_extension_ech(kl:kList) =
+  let kpair(kex1,kex2) = kl in
+
+  let (i_kex1:kex_alg,o_kex1:key_alg,(i_x1:bitstring,o_x1:bitstring,g1:group)) = make_one_key_share_ech(kex1) in
+
+  let (i_kex2:kex_alg,o_kex2:key_alg,(i_x2:bitstring,o_x2:bitstring,g2:group)) =
+    if kex1 = kex2
+    then (i_kex1,o_kex1,(i_x1,o_x1,g1))
+    else make_one_key_share_ech(kex2)
+  in
+
+  (client_kex_ext(kpair(i_kex1,i_kex2)),
+    client_kex_ext(kpair(o_kex1,o_kex2)),
+    bpair((i_x1,o_x1,g1),(i_x2,o_x2,g2))
+  )
+.
+
+(* Authenticating the ClientHelloOuter. Section 5.1 *)
+
+type ClientHelloOuterAAD.
+fun aad2b(ClientHelloOuterAAD):bitstring [typeConverter].
+fun client_hello_outer_AAD(cipherSuite,nat,element,msg):ClientHelloOuterAAD [data].
+
+letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
+  let CH(r,nego(version,cs,kex_ext,sni_ext,ech_ext,extra,psk_ext)) = client_hello_outer in
+  let client_ECH(cs_ech,config_id,enc,payload) = ech_ext in
+
+  (* The client_hello_outer with extension removed *)
+  let client_hello_outer' = CH(r,nego(version,cs,kex_ext,sni_ext,empty_ech_ext,psk_ext)) in
+
+  client_hello_outer_AAD(cipher_suite,config_id,enc,client_hello_outer').
+
+let generate_ech_client_hello_message (
+  use_psk:bool,c_dom,i_dom:domain,
+  kl:kList,hl:hList,al:aList, (* For main configuration *)
+  ech_config:echConfig,h_alg:hash_alg,a_alg:aead_alg (* For ech *)
+  extra:bitstring, cur_log:bitstring
+  ) =
+
+  (* The ciper suite *)
+  let cs = client_cs(hl,al) in
+
+  (* The key share extension *)
+  let (i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bList) = make_key_share_extension_ech(kl) in
+
+  (* Generate Client Hello Inner *)
+  let i_cr = gen_B32_random () in
+  (* The cipher suite *)

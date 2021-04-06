@@ -70,3 +70,96 @@ The client Hello encrypts with the public key. It is send in another client hell
 
 22/03:
 	- Need explanation w.r.t. 5.1. (EncodedClientHelloInner)
+
+02/04:
+	- We don't model the resume pre shared key but that may be difficult as it will
+	 	introduce an obvious loop if we compute the preshared key with previous session.
+
+	- Weird thing about CertificateRequest.
+		Servers which are authenticating with a PSK MUST NOT send the
+   CertificateRequest message in the main handshake, though they MAY
+   send it in post-handshake authentication (see Section 4.6.2) provided
+   that the client has sent the "post_handshake_auth" extension (see
+   Section 4.2.6).
+
+	 		-> Follow the RFC :
+					- Either PSK and no Certificate on both server or client
+					- or no PSK and Certificate on server but maybe not on client.
+
+	- Other weird stuff about CertificateRequest:
+	The certificate_request_context MUST be
+		unique within the scope of this connection (thus preventing replay
+		of client CertificateVerify messages).  This field SHALL be zero
+		length unless used for the post-handshake authentication exchanges
+		described in Section 4.6.2.  When requesting post-handshake
+		authentication, the server SHOULD make the context unpredictable
+		to the client (e.g., by randomly generating it) in order to
+		prevent an attacker who has temporary access to the client's
+		private key from pre-computing valid CertificateVerify messages.
+
+			-> Value of certificate request context should be 0
+
+	- Do we want to model the Grease ?
+
+			-> Yes specially for indistinguishability properties.
+
+	- Question : in HPKE, what is the use of base_nonce and exporter_secret ?
+
+
+
+	- Which hash to use in the client for generating the PSK ?
+		From what I understand, the hash algorithm should be defined before hand,
+		either externally or with the ticket system.
+		So if the client offers a cipher suite and some psk that does not match
+
+		Moreover, there is this RFC TLS:
+						Servers SHOULD NOT attempt to validate multiple binders;
+				rather, they SHOULD select a single PSK and validate solely the
+				binder that corresponds to that PSK.  See Section 8.2 and
+				Appendix E.6 for the security rationale for this requirement.  In
+				order to accept PSK key establishment, the server sends a
+				"pre_shared_key" extension indicating the selected identity.
+
+		So in our case, the selection of ciphersuite / presharedkey should go as:
+
+			1) get non deterministically a preshared identity from CH
+			2) get the corresponding presharedkey and hash_alg in the table
+			3) Check that hash_alg is in the offered cipher suite
+			4) Non deterministically select the aead_alg
+			5) Verify the binder of the preshared
+
+			4 and 5 could be inverted.
+
+	- For equivalence, it would be good if we specify the error message, in particular
+	how do we model "handshake aborded"
+
+	- In ECHO, put the same cipher suite + DH group in the inner and outer.
+
+NEXT MEETING:
+	-
+	(* QUESTION : I'm not sure whether the log should contain the messages or the encrypted message.
+  From the TLS RFC and the model, I have the impression that it should be the non-encrypted version
+  but I would like to be sure. *)
+
+
+	Assume that client sends a client hello and receive an HRR. It does not know if it comes from outer or inner. In such a case, which transcript does he uses ?
+
+Normally, with a standard server, if an HRR is sent by the server then the transcript should contain:
+ClientHello1 - HRR - ClientHello2.
+
+In a normal ECH connexion (without an HRR), there is a split of log if I'm not mistaken:
+
+- If everything goes well (I.e. connexion with Backend server), the log is ClientHelloInner - ServerHello (From backend server) - ...
+- If something goes wrong on the client facing server side, the log should be with the client facing server so it would be ClientHelloOuter - ServerHello (from Client-facing server)
+
+So now if the client receive an HRR:
+1) If the HRR comes from the backend server, the log (for the backend server) should be : ClientHelloInner1 - HRR - ClientHelloInner2 - ServerHello - ...
+2) If the HRR comes from the client facing server side and is the second client hello is accepted by the client-facing server, then the log (for the backend server) should be ClientHelloInner2 - ServerHello - ... (If I'm not mistaken, the backend server does not know that the client-facing server sent an HRR)
+For this case, I'm not completely sure of what is written in section 7.1.1.  "Handling HelloRetryRequest". Is it possible for a client facing server to accept ECH but still send an HRR ? If not than this second case does not occur.
+3) If the HRR comes from the client facing server side and ECH was rejected in the first ClientHelloOuter then the client facing server does not even try to do a ECH connexion and continue as a standard TLS connexion. Page 23:
+
+If the client-facing server rejected ECH, or if the first ClientHello
+   did not include an "encrypted_client_hello" extension, the client-
+   facing server proceeds with the connection as usual.  The server does
+   not decrypt the second ClientHello's ClientECH.payload value, if
+   there is one.

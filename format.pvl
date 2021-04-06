@@ -1,0 +1,234 @@
+channel io.
+
+type domain.
+fun d2b(domain):bitstring [typeConverter].
+
+(********************************************************)
+(* List of elements                                     *)
+(********************************************************)
+
+(* Selection non determinist *)
+
+(* Table should only contain 0 or 1. For equivalence, we can
+  either make it that diff[0,0] and diff[1,1] are recorded or something
+  stronger, that is to record diff[0,1] and diff[1,0] also.*)
+table ndchoice(nat).
+
+def set_as_pair(t_elt,t_set,nil,single,pair,select,nth,is_in) {
+
+  type t_set.
+
+  const nil:t_set [data].
+  fun pair(t_elt,t_elt):t_set [data].
+  letfun single(x:t_elt) = pair(x,x).
+
+  letfun select(l:t_set) =
+    get ndchoice(i) in
+    let pair(x1,x2) = l in
+    if i = 0 then (0,x1) else (1,x2).
+
+  fun nth(nat,t_set):t_elt
+  reduc
+    forall x,x':t_elt; nth(0,pair(x,x')) = x
+    otherwise forall x:t_elt; nth(1,pair(x,x)) = fail
+    otherwise forall x,x':t_elt; nth(1,pair(x,x')) = x'.
+
+  fun is_in(t_elt,t_set):bool
+  reduc forall x,x':t_elt; is_in(x,pair(x,x')) = true
+  otherwise forall x,x':t_elt; is_in(x,pair(x',x)) = true
+  otherwise forall x:t_elt,s:t_set; is_in(x,s) = false.
+}
+
+expand set_as_pair(bitstring,bList,bnil,bsingle,bpair,bselect,bnth,bis_in).
+expand set_as_pair(hash_alg,hList,hnil,hsingle,hpair,hselect,hnth,his_in).
+expand set_as_pair(aead_alg,aList,anil,asingle,apair,aselect,anth,ais_in).
+
+(********************************************************)
+(* Key Share Extension                                  *)
+(********************************************************)
+
+type kex_alg.
+fun DHE_group(group): kex_alg [data].
+fun DHE_kex(group,element) : kex_alg [data].
+
+expand set_as_pair(kex_alg,kList,knil,ksingle,kpair,kselect,knth,kis_in).
+
+type keyShareExt.
+fun client_kex_ext(kList): keyShareExt [data].
+fun server_kex_ext(kex_alg): keyShareExt [data].
+fun hrr_kex_ext(group): keyShareExt [data].
+
+fun distinct_group(kex_alg,kex_alg):bool
+reduc forall kex:kex_alg; distinct_group(kex,kex) = false
+otherwise forall g:group,x:element; distinct_group(DHE_group(g),DHE_kex(g,x)) = false
+otherwise forall g:group,x:element; distinct_group(DHE_kex(g,x),DHE_group(g)) = false
+otherwise forall g:group,x,y:element; distinct_group(DHE_kex(g,x),DHE_kex(g,y)) = false
+otherwise forall kex,kex':kex_alg; distinct_group(kex,kex') = true.
+
+(********************************************************)
+(* CipherSuite                                          *)
+(********************************************************)
+
+type cipherSuite.
+fun client_cs(hList,aList): cipherSuite [data].
+fun server_cs(hash_alg,aead_alg): cipherSuite [data].
+
+(********************************************************)
+(* Pre Shared Keys Extension                            *)
+(********************************************************)
+
+type preSharedKey.
+const NoPSK: preSharedKey.
+fun PSK(bitstring): preSharedKey [data].
+
+type identityPsk.
+
+expand set_as_pair(identityPsk,iList,inil,isingle,ipair,iselect,inth,iis_in).
+
+fun psk2b(preSharedKey): bitstring
+reduc forall b:bitstring; psk2b(PSK(b)) = b
+otherwise psk2b(NoPSK) = zero.
+
+type preSharedKeyExt.
+const empty_psk_ext: preSharedKeyExt [data].
+fun trunc_client_psk_ext(iList):preSharedKeyExt [data].
+fun client_psk_ext(iList,bList):preSharedKeyExt [data].
+fun server_psk_ext(nat):preSharedKeyExt [data].
+
+table pre_shared_keys(domain,domain,hash_alg,identityPsk,preSharedKey).
+
+(********************************************************)
+(* Long term keys and certificates                      *)
+(********************************************************)
+
+type certificate.
+fun valid_cert(domain,pubkey):certificate [private].
+fun cert(domain,pubkey):certificate.
+
+fun get_pkey(certificate):pubkey
+reduc
+  forall d:domain, pkey:pubkey; get_pkey(valid_cert(d,pkey)) = pkey
+  otherwise forall d:domain, pkey:pubkey; get_pkey(cert(d,pkey)) = pkey.
+
+fun get_domain(certificate):domain
+reduc
+  forall d:domain, pkey:pubkey; get_domain(valid_cert(d,pkey)) = d
+  otherwise forall d:domain, pkey:pubkey; get_domain(cert(d,pkey)) = d.
+
+fun verify_cert(certificate):bool
+reduc forall d:domain, p:pubkey;
+  verify_cert(valid_cert(d,p)) = true .
+
+table long_term_keys(domain,privkey,pubkey,certificate).
+
+(***************************************
+  Echo Configuration
+****************************************)
+
+(* Data structure of ECHConfig. We flatten the data structure with respect to the
+  RFC. In particular, in the RFC, HpkeSymmetricCipherSuite is composed of an id
+  for aead and kdf. Our kdf being based on the hash function, we parametrise it
+  by hash_alg.
+  Similarly, the HpkeKemId will be determined by a DH group.
+*)
+
+type echConfig.
+fun ech_config(nat,group,element,domain,hList,aList):echConfig [data].
+
+letfun get_public_key(conf:echConfig) =
+  let ech_config(id,g,public_key,dom,hl,al) = conf in
+  public_key.
+
+letfun get_cipher_suite(conf:echConfig) =
+  let ech_config(id,g,public_key,dom,hl,al) = conf in
+  (hl,al).
+
+letfun get_config_id(conf:echConfig) =
+  let ech_config(id,g,public_key,dom,hl,al) = conf in
+  id.
+
+(***************************************
+  Encrypted Client Hello Extension
+****************************************)
+
+type echExt.
+
+(* Represents the absence of extension *)
+const empty_ech_ext: echExt.
+
+(* This extension should only occur in the ClientHelloInner. *)
+const ech_is_inner: echExt.
+
+(* This extension should only occur in the ClientHelloOuter. *)
+(* This includes the following element
+    - cipher_suite of type [cipherSuite];
+    - config_id of type [uint8] in RFC ([nat] in this model). Should be the same
+      as in the ECH config.
+    - enc of type [opaque] in RFC ([element] in this model). It's the The HPKE encapsulated key
+    - payload of type [opaque] in RFC ([bitstring] in this model).
+*)
+fun client_ECH(hash_alg,aead_alg,nat,element,bitstring): echExt [data].
+
+(* The Encrypted Client Hello extension for the server. It should normally include
+  a list of accepted ECHConfig but we only model one here.*)
+fun server_ECH(echConfig): echExt [data].
+
+(***************************************
+  TLS messages
+****************************************)
+
+type TLS_version.
+const TLS13: TLS_version.
+
+const rand_HelloRetryRequest:bytes32.
+
+(* The SNI extension *)
+type sniExt.
+fun SNI(domain): sniExt [data].
+
+(* The parameters of the Client and Server Hello. The last argument can be used to
+  add any other informations *)
+type params.
+fun nego(TLS_version,cipherSuite,keyShareExt,sniExt,echExt,bitstring,preSharedKeyExt):params [data].
+
+type msg.
+fun m2b(msg):bitstring [typeConverter].
+fun CH(bytes32,params):msg [data].
+fun SH(bytes32,params):msg [data].
+
+(* Encrypted Extensions. Can contain zero or any additional extensions. *)
+fun EE(bitstring): msg [data].
+
+(* Certificate Request message. We only model the certificate_request_context
+  but not the extesions, even though in the RFC, it is indicated that
+    "the "signature_algorithms" extension MUST be specified"
+  Since we only model one signature algorithm, we omit it *)
+fun CRTR(bitstring): msg [data].
+
+(* The first argument of certificate corresponds to certificate_request_context *)
+fun CRT(bitstring,certificate):msg [data].
+
+(* Corresponds to the Certificate Verify message. We only consider the signature
+  since we model only one signature algorithm. *)
+fun CV(bitstring):msg [data].
+
+(* The Finished message *)
+fun FIN(bitstring):msg [data].
+
+type error_signal.
+const
+  illegal_parameter,unsupported_certificate,decode_error,
+  unexpected_message,
+  abort_error: error_signal.
+
+(***************************************
+  Session states
+****************************************)
+
+table clientSession(bytes32,bytes32,
+  preSharedKey,pubkey,pubkey,
+  aead_key,aead_key,bitstring,bitstring).
+
+table serverSession(bytes32,bytes32,
+  preSharedKey,pubkey,pubkey,
+  aead_key,aead_key,bitstring,bitstring).
