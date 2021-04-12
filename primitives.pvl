@@ -30,7 +30,7 @@ type aead_strengh.
 const WeakAE, StrongAE: aead_strengh [data].
 
 type aead_alg.
-fun id_aead_alg(aead_strengh,nat):aead_alg [data].
+fun id_aead(aead_strengh,nat):aead_alg [data].
 
 type aead_key.
 fun b2ae(bitstring):aead_key [typeConverter].
@@ -42,11 +42,11 @@ fun aead_dec(aead_alg, aead_key, bitstring, bitstring, bitstring): bitstring
 reduc forall a:aead_alg, k:aead_key, n,p,ad:bitstring;
   aead_dec(a, k, n, ad, aead_enc(a, k, n, ad, p)) = p
 otherwise forall i:nat, k:aead_key, n,p,p',ad,ad':bitstring;
-  aead_dec(id_aead_alg(WeakAE,i), k, n, ad, aead_forged(p,aead_enc(id_aead_alg(WeakAE,i), k, n, ad', p'))) = p.
+  aead_dec(id_aead(WeakAE,i), k, n, ad, aead_forged(p,aead_enc(id_aead(WeakAE,i), k, n, ad', p'))) = p.
 
 fun aead_leak(bitstring):bitstring
 reduc forall i:nat, k:aead_key, n,ad,x:bitstring;
-  aead_leak(aead_enc(id_aead_alg(WeakAE,i),k,n,ad,x)) = x.
+  aead_leak(aead_enc(id_aead(WeakAE,i),k,n,ad,x)) = x.
 
 (********************************************************)
 (* Diffie-Hellman, modeled as a KEM                     *)
@@ -174,7 +174,7 @@ const nonce_for_seal_open:bitstring.
 (* Temporary until I understant how to model the nonce that are generated from
   the internal sequence *)
 
-letfun kpke_seal(a:aead_alg,context:hpkeContext,i:nat,aad:bitstring,pt:bitstring) =
+letfun kpke_seal(a:aead_alg,context:hpkeContext,aad:bitstring,pt:bitstring) =
   let hpke_context(=S,key,nonce,exporter) = context in
   aead_enc(a,key,nonce_for_seal_open,aad,pt).
 

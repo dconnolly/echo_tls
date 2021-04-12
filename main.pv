@@ -6,15 +6,18 @@ process
   in(io,c_dom:domain);
   in(io,s_dom:domain);
   in(io,i_dom:domain);
-  in(io,h_alg:hash_alg);
-  in(io,a_alg:aead_alg);
+  in(io,i_h_alg:nat);
+  in(io,i_a_alg:nat);
   in(io,use_psk:bool);
-  in(io,g:group);
+  in(io,i_g:nat);
   in(io,send_kex:bool);
   in(io,i_extra:extraExt);
   in(io,o_extra:extraExt);
   in(io,ech_conf:echConfig);
   new e:extraExt;
+  let h_alg = id_hash(StrongHash,i_h_alg) in
+  let a_alg = id_aead(StrongAE,i_a_alg) in
+  let g = id_group(StrongDH,i_g) in
   (standard_client(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,e) |
   echo_client(use_psk,c_dom,i_dom,g,send_kex,h_alg,a_alg,ech_conf,i_extra,o_extra)
   )

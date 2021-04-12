@@ -192,7 +192,7 @@ type error_signal.
 const
   illegal_parameter,unsupported_certificate,decode_error,
   unexpected_message,
-  abort_error: error_signal.
+  abort_error,bad_record_mac: error_signal.
 
 (***************************************
   Session states

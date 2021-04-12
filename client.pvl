@@ -88,9 +88,6 @@ let send_certificate_message(
   out(io,encrypted_certificate_msg);
 
   (* The CertificateVerify message *)
-  (* QUESTION : I'm not sure whether the log should contain the messages or the encrypted message.
-  From the TLS RFC and the model, I have the impression that it should be the non-encrypted version
-  but I would like to be sure. *)
   let cur_log2 = (cur_log,certificate_msg) in
   let signed_log = sign(sk,hash(h_alg,cur_log2)) in
   let certificate_verify_msg = CV(signed_log) in
@@ -112,15 +109,16 @@ let receive_finished_message(
 
   in(io,enc_finished_msg:bitstring);
   let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
-  let FIN(hash_msg) = finished_msg in (
-    if hash_msg = hmac(h_alg,sfin,cur_log) then
-    let cur_log2 = (cur_log,finished_msg) in
+    let FIN(hash_msg) = finished_msg in (
+      if hash_msg = hmac(h_alg,sfin,cur_log) then
+      let cur_log2 = (cur_log,finished_msg) in
 
-    if cert_req
-    then send_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
-    else send_finished_message(cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2)
-  )
-  else out(io,unexpected_message)
+      if cert_req
+      then send_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
+      else send_finished_message(cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2)
+    )
+    else out(io,unexpected_message)
+  else out(io,bad_record_mac)
 .
 
 (* Process the certificate message and receive the certificate verify *)

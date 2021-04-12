@@ -55,7 +55,6 @@ let receive_encrypted_extension_message_ech (
     else ()
   in
 
-  (* Should we do something about [x] ? Do we test that it is empty else abort ? *)
   let cur_log2 = (cur_log,ee_msg) in
 
   receive_after_encrypted_extension(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
@@ -115,13 +114,16 @@ let process_server_hello_ech(
         kdf_ms(h_alg,handshake_secret,cur_log)
       in
 
-      receive_encrypted_extension_message_ech(
-        is_accepted,
-        cr,B32(sr24,sr8),h_alg,a_alg,
-        c_dom,s_dom,psk,
-        master_secret,chk,shk,cfin,sfin,
-        cur_log
-      )
+      if is_accepted || psk_ext = empty_psk_ext
+      then
+        receive_encrypted_extension_message_ech(
+          is_accepted,
+          cr,B32(sr24,sr8),h_alg,a_alg,
+          c_dom,s_dom,psk,
+          master_secret,chk,shk,cfin,sfin,
+          cur_log
+        )
+      else out(io,illegal_parameter)
     )
     else out(io,illegal_parameter)
   )
@@ -159,19 +161,18 @@ letfun generate_client_hello_message_ech (
   (* Generating the HPKE Context (Section 6.1 in RFC)*)
   let ech_config(config_id,g_ech,pkR,o_dom,h_alg_ech,a_alg_ech) = ech_conf in
 
-  let (enc:element,context:HpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
+  let (enc:element,context:hpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
 
   (* Generation of the Client Hello Outer with a dummy ECHO extension *)
   let o_cr = gen_B32_random () in
   let dummy_ech_ext = client_ECH(h_alg_ech,a_alg_ech,config_id,enc,zero) in
 
-  (* TODO : Verify that the PSK extension should indeed be empty. *)
   let o_offer1 = nego(TLS13,h_alg,a_alg,o_kex_ext,SNI(o_dom),dummy_ech_ext,empty_psk_ext,o_extra) in
   let o_client_hello1 = CH(o_cr,o_offer1) in
 
-  let client_hello_AAD = mk_client_hello_outer_AAD(o_client_hello1) in
+  let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello1) in
 
-  let payload = kpke_seal(context,aad2b(client_hello_AAD),m2b(i_client_hello)) in
+  let payload = kpke_seal(a_alg_ech,context,aad2b(client_hello_AAD),m2b(i_client_hello)) in
 
   let ech_ext = client_ECH(h_alg_ech,a_alg_ech,config_id,enc,payload) in
 
@@ -188,7 +189,7 @@ let echo_client(use_psk:bool,c_dom,i_dom:domain,
   ) =
 
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
-    generate_ech_client_hello_message_ech (
+    generate_client_hello_message_ech (
       use_psk,c_dom,i_dom,
       g,send_kex,h_alg,a_alg, (* For main configuration *)
       ech_conf, (* For ech *)
