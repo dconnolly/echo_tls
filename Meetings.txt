@@ -154,7 +154,7 @@ In a normal ECH connexion (without an HRR), there is a split of log if I'm not m
 
 So now if the client receive an HRR:
 1) If the HRR comes from the backend server, the log (for the backend server) should be : ClientHelloInner1 - HRR - ClientHelloInner2 - ServerHello - ...
-2) If the HRR comes from the client facing server side and is the second client hello is accepted by the client-facing server, then the log (for the backend server) should be ClientHelloInner2 - ServerHello - ... (If I'm not mistaken, the backend server does not know that the client-facing server sent an HRR)
+2) If the HRR comes from the client facing server side and the second client hello is accepted by the client-facing server, then the log (for the backend server) should be ClientHelloInner2 - ServerHello - ... (If I'm not mistaken, the backend server does not know that the client-facing server sent an HRR)
 For this case, I'm not completely sure of what is written in section 7.1.1.  "Handling HelloRetryRequest". Is it possible for a client facing server to accept ECH but still send an HRR ? If not than this second case does not occur.
 3) If the HRR comes from the client facing server side and ECH was rejected in the first ClientHelloOuter then the client facing server does not even try to do a ECH connexion and continue as a standard TLS connexion. Page 23:
 
@@ -163,3 +163,8 @@ If the client-facing server rejected ECH, or if the first ClientHello
    facing server proceeds with the connection as usual.  The server does
    not decrypt the second ClientHello's ClientECH.payload value, if
    there is one.
+
+
+	 I seem to remember a conversation about the psk extension but i don't remember if it's the server that should
+	 send a dummy answer or if it's the client that need to send a dummy psk extension in the outer if
+	 it offers one in the inner.

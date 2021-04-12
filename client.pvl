@@ -21,62 +21,33 @@
 
 (* Generate the pre shared key extension *)
 letfun make_pre_shared_key_extension(
-  use_psk:bool,c_dom,s_dom:domain,cr:bytes32, kex:keyShareExt,cs:cipherSuite,ech_ext:echExt,
-  extra:bitstring,cur_log:bitstring
+  use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
+  extra:extraExt,cur_log:bitstring
   ) =
   if use_psk
   then (
-    let client_cs(hl,al) = cs in
-    get pre_shared_keys(=c_dom,=s_dom,hash1,id1,psk1) suchthat his_in(hash1,hl) in
-    get pre_shared_keys(=c_dom,=s_dom,hash2,id2,psk2) suchthat his_in(hash2,hl) in
-
-    let il = ipair(id1,id2) in
-    let offer = nego(TLS13,cs,kex,SNI(s_dom),ech_ext,extra,trunc_client_psk_ext(il)) in
-
+    get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk) in
+    let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
     let cur_log' = (cur_log,CH(cr,offer)) in
-
-    let (es1:bitstring,kb1:mac_key) = kdf_es(hash1,psk1) in
-    let binders1 = hmac(hash1,kb1,cur_log') in
-
-    let (es2:bitstring,kb2:mac_key) = kdf_es(hash2,psk2) in
-    let binders2 = hmac(hash2,kb2,cur_log') in
-
-    ((client_psk_ext(il,bpair(binders1,binders2)), bpair((hash1,psk1,es1),(hash2,psk2,es2))))
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+    let binders = hmac(h_alg,kb,cur_log') in
+    (client_psk_ext(id,binders), (h_alg,psk,es))
   )
-  else (empty_psk_ext,bnil)
+  else
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
+    (empty_psk_ext,(h_alg,NoPSK,es))
 .
 
 (* Generate the key share extension. *)
-letfun make_one_key_share(kex:kex_alg) =
-  let DHE_group(g) = kex in (
-    let (x:bitstring,gx:element) = dh_keygen(g) in
-    (DHE_group(g), (x,g))
-  )
-  else let DHE_kex(g,e) = kex in
-    let (x:bitstring,gx:element) = dh_keygen(g) in
-    (DHE_kex(g,gx), (x,g))
-.
-
-letfun make_key_share_extension(kl:kList) =
-  let kpair(kex1,kex2) = kl in
-
-  let (kex1':kex_alg,(x1:bitstring,g1:group)) = make_one_key_share(kex1) in
-
-  let (kex2':kex_alg,(x2:bitstring,g2:group)) =
-    if kex1 = kex2
-    then (kex1',(x1,g1))
-    else make_one_key_share(kex2)
+letfun make_key_share_extension(g:group,send_key_share:bool) =
+  let (x:bitstring,gx:element) = dh_keygen(g) in
+  let kex =
+    if send_key_share
+    then DHE_kex(g,gx)
+    else DHE_group(g)
   in
-
-  (client_kex_ext(kpair(kex1',kex2')), bpair((x1,g1),(x2,g2)))
+  (client_kex_ext(kex), (x,g,send_key_share))
 .
-
-fun find_kex_share(group,keyShareExt,bList):bitstring
-reduc
-  forall g1,g2:group, gx:element, x1,x2:bitstring, kex1,kex2:kex_alg;
-    find_kex_share(g1,client_kex_ext(kpair(DHE_kex(g1,gx),kex2)),bpair((x1,g1),(x2,g2))) = x1
-  otherwise forall g1,g2:group, gx:element, x1,x2:bitstring, kex1,kex2:kex_alg;
-    find_kex_share(g2,client_kex_ext(kpair(kex1,DHE_kex(g2,gx))),bpair((x1,g1),(x2,g2))) = x2.
 
 (* Finished *)
 
@@ -140,14 +111,16 @@ let receive_finished_message(
   =
 
   in(io,enc_finished_msg:bitstring);
-  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in
-  let FIN(hash_msg) = finished_msg in
-  if hash_msg = hmac(h_alg,sfin,cur_log) then
-  let cur_log2 = (cur_log,finished_msg) in
+  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
+  let FIN(hash_msg) = finished_msg in (
+    if hash_msg = hmac(h_alg,sfin,cur_log) then
+    let cur_log2 = (cur_log,finished_msg) in
 
-  if cert_req
-  then send_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
-  else send_finished_message(cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2)
+    if cert_req
+    then send_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
+    else send_finished_message(cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2)
+  )
+  else out(io,unexpected_message)
 .
 
 (* Process the certificate message and receive the certificate verify *)
@@ -212,7 +185,7 @@ let receive_after_encrypted_extension (
   else let CRT(=zero,crt) = msg' in (
     process_server_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg')
   )
-  else out(io,abort_error)
+  else out(io,unexpected_message)
 .
 
 (* Receiving the encrypted extension message *)
@@ -228,6 +201,7 @@ let receive_encrypted_extension_message (
   let m2b(ee_msg) = aead_dec(a_alg,shk,zero,zero,enc_ee_msg) in
 
   let EE(x) = ee_msg in
+  (* Should we do something about [x] ? Do we test that it is empty else abort ? *)
   let cur_log2 = (cur_log,ee_msg) in
 
   receive_after_encrypted_extension(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
@@ -257,109 +231,95 @@ let generate_keys_after_server_hello (
 let process_server_hello(
   use_psk:bool,
   cr:bytes32,c_dom,s_dom:domain,
-  c_kex_ext:keyShareExt,kex_data:bList,hl:hList,al:aList,psk_data:bList,
+  kex_data:bitstring,h_alg:hash_alg,a_alg:aead_alg,psk_data:bitstring,
   cur_log:bitstring,
   server_hello:msg)
   =
   let SH(sr,mode) = server_hello in
-  let nego(=TLS13,cs,kex_ext,SNI(=s_dom),ech_ext,extra,psk_ext) = mode in
-  let server_kex_ext(DHE_kex(g,gy)) = kex_ext in
-  let server_cs(h_alg,a_alg) = cs in
+  let (x:bitstring,g:group,=true) = kex_data in
+  let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy)),=empty_sni_ext,=empty_ech_ext,psk_ext,extra) = mode in (
+    let cur_log2 = (cur_log,server_hello) in
 
-  let cur_log2 = (cur_log,server_hello) in
-
-  (* The selected cipher suite is verified *)
-  if his_in(h_alg,hl) && ais_in(a_alg,al)
-  then
-    (* We retrieve the key share generated for the selected group *)
-    let x:bitstring = find_kex_share(g,c_kex_ext,kex_data) in
-      (* We retrieve the pre shared key if there is one. *)
+    (* We retrieve the pre shared key if there is one. *)
+    let (psk:preSharedKey,early_secret:bitstring,error:bool) =
       if psk_ext = empty_psk_ext
-      then (
-        (* In that case, the server decided to not select any of the offered pre shared key
-        or there were none to begin with. *)
-
-        let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        generate_keys_after_server_hello(cr,sr,h_alg,a_alg,c_dom,s_dom,NoPSK,g,x,gy,early_secret,cur_log2)
-      )
+      then
+        let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
+        (NoPSK,es,false)
       else
-        let server_psk_ext(i) = psk_ext in
-          if use_psk
-          then
-            (* We verify the hash algorithm for the selected pre shared key corresponds
-            to the hash algorithm selected by the server. *)
-            let (=h_alg,psk:preSharedKey,early_secret:bitstring) = bnth(i,psk_data) in
-              generate_keys_after_server_hello(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,g,x,gy,early_secret,cur_log2)
-            else out(io,illegal_parameter)
-          else out(io,illegal_parameter)
-        else out(io,illegal_parameter)
-      else out(io,illegal_parameter)
+        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring) = psk_data in
+        (psk,es,h'_alg = h_alg && server_psk_ext(1) = psk_ext && use_psk)
+    in
+
+    if not(error)
+    then generate_keys_after_server_hello(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,g,x,gy,early_secret,cur_log2)
     else out(io,illegal_parameter)
-  else out(io,illegal_parameter).
+  )
+  else out(io,illegal_parameter)
+.
 
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
   use_psk:bool,c_dom,s_dom:domain,
-  kl:kList,hl:hList,al:aList,extra:bitstring, cur_log:bitstring
+  g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
   )
   =
 
   let cr = gen_B32_random() in
 
-  (* The cipher suite *)
-  let cs = client_cs(hl,al) in
-
   (* The key share extension *)
-  let (kex_ext:keyShareExt,kex_data:bList) = make_key_share_extension(kl) in
+  let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
 
   (* The pre shared key extension *)
-  let (psk_ext:preSharedKeyExt,psk_data:bList) =
-    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,kex_ext,cs,empty_ech_ext,extra,cur_log)
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
   in
 
   (* The client hello *)
-  let offer = nego(TLS13,cs,kex_ext,SNI(s_dom),empty_ech_ext,extra,psk_ext) in
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,psk_ext,extra) in
   (CH(cr,offer),cr,kex_ext,kex_data,psk_data).
 
 (* The main standard client *)
 
-let standard_client(use_psk:bool,c_dom,s_dom:domain,kl:kList,hl:hList,al:aList,extra:bitstring) =
+let standard_client(use_psk:bool,c_dom,s_dom:domain,g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
 
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bList,psk_data:bList) = generate_client_hello_message(use_psk,c_dom,s_dom,kl,hl,al,extra,cur_log) in
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
 
   (* Message from server *)
   in(io,server_hello:msg);
-  let SH(sr,mode) = server_hello in
+  let SH(sr,mode) = server_hello in (
 
-  if sr = rand_HelloRetryRequest
-  then
-    (* We received a HelloRetryRequest *)
-    let nego(=TLS13,server_cs(h_alg,a_alg),hrr_kex_ext(g),SNI(=s_dom),=empty_ech_ext,=zero,=empty_psk_ext) = mode in
-    if kis_in(DHE_group(g),kl) && his_in(h_alg,hl) && ais_in(a_alg,al)
+    if sr = rand_HelloRetryRequest
     then (
-      let kl' = ksingle(DHE_group(g)) in
-      let hl' = hsingle(h_alg) in
-      let al' = asingle(a_alg) in
-      let cur_log3 = (cur_log2,server_hello) in
-      let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bList,psk_data':bList) = generate_client_hello_message(use_psk,c_dom,s_dom,kl',hl',al',extra,cur_log3) in
-      out(io,client_hello');
-      let cur_log4 = (cur_log3,client_hello') in
+      (* We received a HelloRetryRequest *)
+      let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
+        let cur_log3 = (cur_log2,server_hello) in
+        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+        out(io,client_hello');
+        let cur_log4 = (cur_log3,client_hello') in
 
-      (* Message from server *)
-      in(io,server_hello':msg);
-      let SH(sr',mode') = server_hello' in
-      if sr' = rand_HelloRetryRequest
-      then out(io,unexpected_message)
-      else process_server_hello(use_psk,cr',c_dom,s_dom,kex_ext',kex_data',hl',al',psk_data',cur_log4,server_hello')
+        (* Message from server *)
+        in(io,server_hello':msg);
+        let SH(sr',mode') = server_hello' in
+          if sr' = rand_HelloRetryRequest
+          then out(io,unexpected_message)
+          else process_server_hello(use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
+        else out(io,unexpected_message)
+      )
+      else out(io,illegal_parameter)
     )
-    else out(io,abort_error)
-  else
-    (* This is a normal server hello message *)
-    process_server_hello(use_psk,cr,c_dom,s_dom,kex_ext,kex_data,hl,al,psk_data,cur_log,server_hello)
+    else
+      if send_kex
+      then
+        (* This is a normal server hello message *)
+        process_server_hello(use_psk,cr,c_dom,s_dom,kex_data,h_alg,a_alg,psk_data,cur_log,server_hello)
+      else out(io,illegal_parameter)
+  )
+  else out(io,unexpected_message)
 .

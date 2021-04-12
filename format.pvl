@@ -4,44 +4,10 @@ type domain.
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
-(* List of elements                                     *)
+(* Extra extension                                      *)
 (********************************************************)
 
-(* Selection non determinist *)
-
-(* Table should only contain 0 or 1. For equivalence, we can
-  either make it that diff[0,0] and diff[1,1] are recorded or something
-  stronger, that is to record diff[0,1] and diff[1,0] also.*)
-table ndchoice(nat).
-
-def set_as_pair(t_elt,t_set,nil,single,pair,select,nth,is_in) {
-
-  type t_set.
-
-  const nil:t_set [data].
-  fun pair(t_elt,t_elt):t_set [data].
-  letfun single(x:t_elt) = pair(x,x).
-
-  letfun select(l:t_set) =
-    get ndchoice(i) in
-    let pair(x1,x2) = l in
-    if i = 0 then (0,x1) else (1,x2).
-
-  fun nth(nat,t_set):t_elt
-  reduc
-    forall x,x':t_elt; nth(0,pair(x,x')) = x
-    otherwise forall x:t_elt; nth(1,pair(x,x)) = fail
-    otherwise forall x,x':t_elt; nth(1,pair(x,x')) = x'.
-
-  fun is_in(t_elt,t_set):bool
-  reduc forall x,x':t_elt; is_in(x,pair(x,x')) = true
-  otherwise forall x,x':t_elt; is_in(x,pair(x',x)) = true
-  otherwise forall x:t_elt,s:t_set; is_in(x,s) = false.
-}
-
-expand set_as_pair(bitstring,bList,bnil,bsingle,bpair,bselect,bnth,bis_in).
-expand set_as_pair(hash_alg,hList,hnil,hsingle,hpair,hselect,hnth,his_in).
-expand set_as_pair(aead_alg,aList,anil,asingle,apair,aselect,anth,ais_in).
+type extraExt.
 
 (********************************************************)
 (* Key Share Extension                                  *)
@@ -51,27 +17,10 @@ type kex_alg.
 fun DHE_group(group): kex_alg [data].
 fun DHE_kex(group,element) : kex_alg [data].
 
-expand set_as_pair(kex_alg,kList,knil,ksingle,kpair,kselect,knth,kis_in).
-
 type keyShareExt.
-fun client_kex_ext(kList): keyShareExt [data].
+fun client_kex_ext(kex_alg): keyShareExt [data].
 fun server_kex_ext(kex_alg): keyShareExt [data].
 fun hrr_kex_ext(group): keyShareExt [data].
-
-fun distinct_group(kex_alg,kex_alg):bool
-reduc forall kex:kex_alg; distinct_group(kex,kex) = false
-otherwise forall g:group,x:element; distinct_group(DHE_group(g),DHE_kex(g,x)) = false
-otherwise forall g:group,x:element; distinct_group(DHE_kex(g,x),DHE_group(g)) = false
-otherwise forall g:group,x,y:element; distinct_group(DHE_kex(g,x),DHE_kex(g,y)) = false
-otherwise forall kex,kex':kex_alg; distinct_group(kex,kex') = true.
-
-(********************************************************)
-(* CipherSuite                                          *)
-(********************************************************)
-
-type cipherSuite.
-fun client_cs(hList,aList): cipherSuite [data].
-fun server_cs(hash_alg,aead_alg): cipherSuite [data].
 
 (********************************************************)
 (* Pre Shared Keys Extension                            *)
@@ -83,19 +32,24 @@ fun PSK(bitstring): preSharedKey [data].
 
 type identityPsk.
 
-expand set_as_pair(identityPsk,iList,inil,isingle,ipair,iselect,inth,iis_in).
-
 fun psk2b(preSharedKey): bitstring
 reduc forall b:bitstring; psk2b(PSK(b)) = b
 otherwise psk2b(NoPSK) = zero.
 
 type preSharedKeyExt.
 const empty_psk_ext: preSharedKeyExt [data].
-fun trunc_client_psk_ext(iList):preSharedKeyExt [data].
-fun client_psk_ext(iList,bList):preSharedKeyExt [data].
-fun server_psk_ext(nat):preSharedKeyExt [data].
+fun trunc_client_psk_ext(identityPsk):preSharedKeyExt [data].
+fun client_psk_ext(identityPsk,bitstring):preSharedKeyExt [data].
+fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk offered
+  by the client currently so the server is always suppose to send 1. *)
 
 table pre_shared_keys(domain,domain,hash_alg,identityPsk,preSharedKey).
+
+letfun dummy_preSharedKeyExt () =
+  new id:identityPsk;
+  new n:bitstring;
+  client_psk_ext(id,n)
+.
 
 (********************************************************)
 (* Long term keys and certificates                      *)
@@ -130,10 +84,20 @@ table long_term_keys(domain,privkey,pubkey,certificate).
   for aead and kdf. Our kdf being based on the hash function, we parametrise it
   by hash_alg.
   Similarly, the HpkeKemId will be determined by a DH group.
+
+  A server should be parametrised by its ech_config and the private key associated
+  to public_key.
 *)
 
 type echConfig.
-fun ech_config(nat,group,element,domain,hList,aList):echConfig [data].
+fun ech_config(
+  nat (* config id *),
+  group (* kem_id directly represented as a group *),
+  element (* public_key *),
+  domain (* public_name *),
+  hash_alg (* kdf_id *),
+  aead_alg (* aead_id *)
+):echConfig [data].
 
 letfun get_public_key(conf:echConfig) =
   let ech_config(id,g,public_key,dom,hl,al) = conf in
@@ -147,11 +111,19 @@ letfun get_config_id(conf:echConfig) =
   let ech_config(id,g,public_key,dom,hl,al) = conf in
   id.
 
+letfun get_public_name(conf:echConfig) =
+  let ech_config(id,g,public_key,dom,hl,al) = conf in
+  dom.
+
+const ech_accept_confirmation,tls_ech_str:label.
+
 (***************************************
   Encrypted Client Hello Extension
 ****************************************)
 
 type echExt.
+
+fun echExt2b(echExt):bitstring [typeConverter].
 
 (* Represents the absence of extension *)
 const empty_ech_ext: echExt.
@@ -185,11 +157,12 @@ const rand_HelloRetryRequest:bytes32.
 (* The SNI extension *)
 type sniExt.
 fun SNI(domain): sniExt [data].
+const empty_sni_ext: sniExt [data].
 
 (* The parameters of the Client and Server Hello. The last argument can be used to
   add any other informations *)
 type params.
-fun nego(TLS_version,cipherSuite,keyShareExt,sniExt,echExt,bitstring,preSharedKeyExt):params [data].
+fun nego(TLS_version,hash_alg,aead_alg,keyShareExt,sniExt,echExt,preSharedKeyExt,extraExt):params [data].
 
 type msg.
 fun m2b(msg):bitstring [typeConverter].
