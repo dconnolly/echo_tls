@@ -18,4 +18,9 @@
 - Update the generation of retry config. Currently the retry config is generated
 	but not saved anywhere.
 
+- Add the initialisation of the different tables:
+		* Long term keys
+		* Pre shared keys
+		* Ech config
+
 ----- Done ----
