@@ -21,7 +21,7 @@ letfun make_key_share_extension_ech(g:group,send_key_share:bool) =
 
 type ClientHelloOuterAAD.
 fun aad2b(ClientHelloOuterAAD):bitstring [typeConverter].
-fun client_hello_outer_AAD(hash_alg,aead_alg,nat,element,msg):ClientHelloOuterAAD [data].
+fun client_hello_outer_AAD(hash_alg,aead_alg,configId,element,msg):ClientHelloOuterAAD [data].
 
 letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
   let CH(r,nego(version,h_alg,a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra)) = client_hello_outer in

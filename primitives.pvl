@@ -199,6 +199,6 @@ letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
   let (shared_secret:element,enc:element) = dh_encap(g,pkR) in
   (enc,hpke_key_schedule(h,S,shared_secret,info)).
 
-letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:element,info:bitstring) =
-  let shared_secret:element = dh_decap(g,enc,e2b(skR)) in
+letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:bitstring,info:bitstring) =
+  let shared_secret:element = dh_decap(g,enc,skR) in
   hpke_key_schedule(h,R,shared_secret,info).

@@ -5,7 +5,6 @@
 (* Following the TLS RFC and ECHO RFC, we consider client process that can have
   the following parameters:
     - [use_psk] indicate if the client uses Pre Shared Key
-    - [use_ech] indicates if the client uses ECHO
 
   We consider that clients and servers always sends the key_share extension.
   We also consider that server always sends Certificate and CertificateVerify
@@ -173,17 +172,28 @@ let receive_after_encrypted_extension (
   cur_log:bitstring)
   =
 
-  in(io,enc_msg:bitstring);
-  let m2b(msg') = aead_dec(a_alg,shk,zero,zero,enc_msg) in
+  if psk = NoPSK
+  then (
+    (* If no PSK then we expect a certificate from the server *)
+    in(io,enc_msg:bitstring);
+    let m2b(msg') = aead_dec(a_alg,shk,zero,zero,enc_msg) in
 
-  let CRTR(=zero) = msg' in (
-    let cur_log2 = (cur_log,msg') in
-    receive_server_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2)
+    let CRTR(=zero) = msg' in (
+      let cur_log2 = (cur_log,msg') in
+      receive_server_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2)
+    )
+    else let CRT(=zero,crt) = msg' in (
+      process_server_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg')
+    )
+    else out(io,unexpected_message)
   )
-  else let CRT(=zero,crt) = msg' in (
-    process_server_certificate_message(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg')
-  )
-  else out(io,unexpected_message)
+  else
+    (* If there is a PSK, no certificate shall be sent. Directly receive the finish message *)
+    receive_finished_message(
+      cr,sr, h_alg,a_alg,
+      c_dom, psk, false, NoPubKey,
+      master_secret, chk,shk, cfin,sfin,
+      cur_log)
 .
 
 (* Receiving the encrypted extension message *)

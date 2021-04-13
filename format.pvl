@@ -1,6 +1,7 @@
 channel io.
 
 type domain.
+const NoDomain:domain [data].
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
@@ -8,6 +9,7 @@ fun d2b(domain):bitstring [typeConverter].
 (********************************************************)
 
 type extraExt.
+const empty_extra_ext:extraExt [data].
 
 (********************************************************)
 (* Key Share Extension                                  *)
@@ -89,9 +91,12 @@ table long_term_keys(domain,privkey,pubkey,certificate).
   to public_key.
 *)
 
+
+type configId.
+
 type echConfig.
 fun ech_config(
-  nat (* config id *),
+  configId (* config id *),
   group (* kem_id directly represented as a group *),
   element (* public_key *),
   domain (* public_name *),
@@ -117,6 +122,12 @@ letfun get_public_name(conf:echConfig) =
 
 const ech_accept_confirmation,tls_ech_str:label.
 
+table saved_ech_config(
+  domain, (* Client facing server *)
+  domain, (* Back end server *)
+  echConfig, (* Ech configuration *)
+  bitstring). (* The secret key skR *)
+
 (***************************************
   Encrypted Client Hello Extension
 ****************************************)
@@ -134,12 +145,12 @@ const ech_is_inner: echExt.
 (* This extension should only occur in the ClientHelloOuter. *)
 (* This includes the following element
     - cipher_suite of type [cipherSuite];
-    - config_id of type [uint8] in RFC ([nat] in this model). Should be the same
+    - config_id of type [uint8] in RFC ([configId] in this model). Should be the same
       as in the ECH config.
     - enc of type [opaque] in RFC ([element] in this model). It's the The HPKE encapsulated key
     - payload of type [opaque] in RFC ([bitstring] in this model).
 *)
-fun client_ECH(hash_alg,aead_alg,nat,element,bitstring): echExt [data].
+fun client_ECH(hash_alg,aead_alg,configId,element,bitstring): echExt [data].
 
 (* The Encrypted Client Hello extension for the server. It should normally include
   a list of accepted ECHConfig but we only model one here.*)
@@ -191,8 +202,10 @@ fun FIN(bitstring):msg [data].
 type error_signal.
 const
   illegal_parameter,unsupported_certificate,decode_error,
-  unexpected_message,
-  abort_error,bad_record_mac: error_signal.
+  unexpected_message, handshake_failure,
+  abort_error,bad_record_mac,
+  unrecognized_name, unsupported_extension
+  :error_signal.
 
 (***************************************
   Session states
