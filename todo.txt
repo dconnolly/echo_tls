@@ -1,0 +1,21 @@
+----- Todo list -----
+
+- Currently, the outer client must have an empty psk extension.
+	Need to update the model when it will be confirmed that the outer client shall
+	contain a psk extension.
+
+	@ Chris : Could you indicate here what shall be contained in the psk extension
+	of the outer client and how shall it be used ?
+
+- Add the handling of the HRR by ECH server and client.
+
+- Add the safety check properties.
+
+- Add the application data part of the tls model.
+
+- Add the different error messages. Lot of them are missing.
+
+- Update the generation of retry config. Currently the retry config is generated
+	but not saved anywhere.
+
+----- Done ----
