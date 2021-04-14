@@ -23,4 +23,10 @@
 		* Pre shared keys
 		* Ech config
 
+- Add Security properties
+
+- Add Grease in Client echo
+
+- Add compromised keys
+
 ----- Done ----

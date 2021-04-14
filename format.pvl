@@ -45,7 +45,10 @@ fun client_psk_ext(identityPsk,bitstring):preSharedKeyExt [data].
 fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk offered
   by the client currently so the server is always suppose to send 1. *)
 
-table pre_shared_keys(domain,domain,hash_alg,identityPsk,preSharedKey).
+table pre_shared_keys(
+  domain (* Client domain *),
+  domain (* Server domain *),
+  hash_alg,identityPsk,preSharedKey).
 
 letfun dummy_preSharedKeyExt () =
   new id:identityPsk;
@@ -122,9 +125,7 @@ letfun get_public_name(conf:echConfig) =
 
 const ech_accept_confirmation,tls_ech_str:label.
 
-table saved_ech_config(
-  domain, (* Client facing server *)
-  domain, (* Back end server *)
+table ech_configurations(
   echConfig, (* Ech configuration *)
   bitstring). (* The secret key skR *)
 

@@ -55,7 +55,7 @@ The client Hello encrypts with the public key. It is send in another client hell
 		For gx, let's see.
 
 	- Encrypted ClientHello Configuration
-			-> Just a configuration file shared between server and client (synchronised by third party means)
+			-> Just a configuration file shared between server and client (Sanityhronised by third party means)
 			-> In the extension, it is represented by config_id (it's a hash of the config).
 
 

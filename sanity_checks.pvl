@@ -1,0 +1,171 @@
+(* Sanity checks *)
+
+(* Secrecy assumption *)
+
+not attacker(new sk).
+not attacker(new psk).
+
+(* Events for control flow *)
+
+event SanityServerHRR(bool,bool,bool,domain,domain,bitstring).
+event SanityServerCH(bool,bool,bool,bytes32,domain,domain,preSharedKey,bitstring).
+event SanityServerSH(bool,bool,bool,bytes32,bytes32,domain,domain,bitstring,preSharedKey,bitstring).
+event SanityServerEE(
+  bool,bool,bool,
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  bitstring).
+event SanityServerCRTR(
+  bool,bool,bool,
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  bitstring).
+event SanityServerCRT(
+  bool,
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityServerCV(
+  bool,
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityServerFIN(
+  bool,
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityServerCCRT(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  bitstring).
+event SanityServerCCV(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  bitstring).
+event SanityServerCFIN(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  aead_key,aead_key,bitstring,bitstring,
+  bitstring).
+
+event SanityClientCH(bool,bool,bool,bytes32,domain,domain,preSharedKey,bitstring).
+event SanityClientHRR(bool,bool,domain,domain,bitstring).
+event SanityClientSH(bytes32,bytes32,domain,domain,bitstring,preSharedKey,bitstring).
+event SanityClientEE(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  bitstring).
+event SanityClientCRTR(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  bitstring).
+event SanityClientCRT(
+  bool,bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityClientCV(
+  bool,bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityClientFIN(
+  bool,bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,
+  bitstring).
+event SanityClientCCRT(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  bitstring).
+event SanityClientCCV(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  bitstring).
+event SanityClientCFIN(
+  bytes32,bytes32,preSharedKey,
+  bitstring,aead_key,aead_key,mac_key,mac_key,
+  pubkey,pubkey,
+  aead_key,aead_key,bitstring,bitstring,
+  bitstring).
+
+
+(* query
+  cr,sr:bytes32,
+  s_pkey,c_pkey:pubkey,
+  cak,sak,chk,shk:aead_key,
+  cfin,sfin:mac_key,
+  c_dom,s_dom:domain,
+  psk:preSharedKey,
+  is_backend,send_kex,use_ech,use_psk,cert_req:bool,
+  handshake,es,rms,cur_log,master_secret:bitstring;
+  event(SanityClientHRR(use_psk,send_kex,c_dom,s_dom,cur_log)) &&
+  event(SanityServerHRR(use_ech,use_psk,cert_req,c_dom,s_dom,cur_log));
+
+  event(SanityClientCH(use_ech,use_psk,send_kex,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityServerCH(use_psk,is_backend,cert_req,cr,c_dom,s_dom,psk,cur_log));
+
+  event(SanityClientSH(cr,sr,c_dom,s_dom,handshake,psk,cur_log)) &&
+  event(SanityServerSH(use_psk,is_backend,cert_req,cr,sr,c_dom,s_dom,handshake,psk,cur_log));
+
+  event(SanityClientEE(cr,sr,psk,master_secret,chk,shk,cfin,sfin,cur_log)) &&
+  event(SanityServerEE(use_psk,is_backend,cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,cur_log));
+
+  event(SanityClientCRTR(cr,sr,psk,master_secret,chk,shk,cfin,sfin,cur_log)) &&
+  event(SanityServerCRTR(use_psk,is_backend,cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,cur_log));
+
+  event(SanityClientCRT(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log)) &&
+  event(SanityServerCRT(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log));
+
+  event(SanityClientCV(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log)) &&
+  event(SanityServerCV(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log));
+
+  event(SanityClientFIN(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log)) &&
+  event(SanityServerFIN(cert_req,cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,cur_log));
+
+  event(SanityClientCCRT(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cur_log)) &&
+  event(SanityServerCCRT(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cur_log));
+
+  event(SanityClientCCV(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cur_log)) &&
+  event(SanityServerCCV(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cur_log));
+
+  event(SanityClientCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log)) &&
+  event(SanityServerCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log))
+. *)
+
+(* Client standard, PSK, KEX
+  Server standard, PSK
+*)
+query
+  cr,sr:bytes32,
+  s_pkey,c_pkey:pubkey,
+  cak,sak,chk,shk:aead_key,
+  cfin,sfin:mac_key,
+  c_dom,s_dom:domain,
+  psk:preSharedKey,
+  is_backend,send_kex,use_ech,use_psk,cert_req:bool,
+  handshake,es,rms,cur_log,cur_log1,cur_log2,master_secret:bitstring;
+
+  event(SanityClientCH(false,true,true,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityServerCH(true,false,false,cr,c_dom,s_dom,psk,cur_log))
+  ;
+  event(SanityClientCH(false,true,true,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityServerCH(true,false,false,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityClientCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
+  event(SanityServerCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
+  ;
+  event(SanityClientCH(false,true,true,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityServerCH(true,false,false,cr,c_dom,s_dom,psk,cur_log)) &&
+  event(SanityClientCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
+  event(SanityServerCFIN(cr,sr,psk,master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) ==>
+  s_pkey = NoPubKey && c_pkey = NoPubKey
+.
