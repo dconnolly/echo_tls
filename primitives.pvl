@@ -106,13 +106,13 @@ type hash_alg.
 fun id_hash(hash_strengh,nat):hash_alg [data].
 
 const collision:bitstring [data].
-fun hash_ideal(bitstring):bitstring.
+fun hash_ideal(nat,bitstring):bitstring.
 
 fun hash(hash_alg,bitstring): bitstring
 reduc forall i:nat, x:bitstring;
   hash(id_hash(WeakHash,i),x) = collision
 otherwise forall i:nat, x:bitstring;
-  hash(id_hash(StrongHash,i),x) = hash_ideal(x).
+  hash(id_hash(StrongHash,i),x) = hash_ideal(i,x).
 
 (********************************************************)
 (* HMAC                                                 *)
