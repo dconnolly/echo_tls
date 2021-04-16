@@ -10,6 +10,7 @@ type bytes8.
 type bytes32.
 
 const zero8:bytes8.
+const zero32:bytes32.
 fun B32(bytes24,bytes8):bytes32 [data].
 
 letfun gen_B32_random() =

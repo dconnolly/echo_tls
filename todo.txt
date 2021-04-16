@@ -9,8 +9,6 @@
 
 - Add the handling of the HRR by ECH server and client.
 
-- Add the safety check properties.
-
 - Add the application data part of the tls model.
 
 - Add the different error messages. Lot of them are missing.
@@ -18,15 +16,21 @@
 - Update the generation of retry config. Currently the retry config is generated
 	but not saved anywhere.
 
+- Add Security properties
+
+- Add Grease in Client echo
+
+- Add the safety check for Grease.
+
+- Add the safety check for ECH client that send outdated ECH config.
+
+- Add compromised keys
+
+----- Done ----
+
 - Add the initialisation of the different tables:
 		* Long term keys
 		* Pre shared keys
 		* Ech config
 
-- Add Security properties
-
-- Add Grease in Client echo
-
-- Add compromised keys
-
------ Done ----
+- Add the safety check properties.

@@ -34,7 +34,7 @@ letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
 
 (* Receiving the encrypted extension message *)
 
-let receive_encrypted_extension_message_ech (
+let receive_encrypted_extension_message_ech (id_client:idProc,
   is_accepted:bool,
   cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom,s_dom:domain, psk:preSharedKey,
@@ -46,23 +46,34 @@ let receive_encrypted_extension_message_ech (
   let m2b(ee_msg) = aead_dec(a_alg,shk,zero,zero,enc_ee_msg) in
 
   let EE(x) = ee_msg in
+
   let update_ech_conf =
     if not (is_accepted)
     then
       let echExt2b(server_ECH(ech_conf)) = x in
-      (* QUESTION : What do we do with it ?*)
-      ()
+        (* Case of a ECH Server / Client Facing server *)
+        (* QUESTION : What do we do with it ?*)
+        ()
+      else
+        (* Case of a Normal Server *)
+        ()
     else ()
   in
 
-  let cur_log2 = (cur_log,ee_msg) in
 
-  receive_after_encrypted_extension(cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
+
+  let cur_log2 = (cur_log,ee_msg) in
+  event SanityClientEE(id_client,
+    cr,sr,psk,
+    master_secret,chk,shk,cfin,sfin,
+    cur_log2);
+
+  receive_after_encrypted_extension(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
 .
 
 (* Process a server hello message *)
 
-let process_server_hello_ech(
+let process_server_hello_ech(id_client:idProc,
   use_psk:bool,
   i_cr,o_cr:bytes32,c_dom,i_dom,o_dom:domain,
   kex_data:bitstring,h_alg:hash_alg,a_alg:aead_alg,psk_data:bitstring,
@@ -74,35 +85,38 @@ let process_server_hello_ech(
   let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy_srv)),=empty_sni_ext,=empty_ech_ext,psk_ext,extra) = mode in (
 
     (* We retrieve the pre shared key if there is one. *)
-    let (psk:preSharedKey,early_secret:bitstring,error:bool) =
+    let (psk:preSharedKey,early_secret:bitstring,valid:bool) =
       if psk_ext = empty_psk_ext
-      then
+      then (
         let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        (NoPSK,es,false)
+        (NoPSK,es,true)
+      )
       else
         let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring) = psk_data in
         (psk,es,(h'_alg = h_alg && server_psk_ext(1) = psk_ext && use_psk))
     in
 
-    if not(error)
+    if valid
     then (
-
-      (* We check the acceptance of the backend *)
-
-      (* Compute the handshake secret *)
-      let i_gxy = dh_decap(g,gy_srv,i_x) in
-      let i_handshake_secret = kdf_hs(h_alg,early_secret,i_gxy) in
-
       (* Determinaing whether ECH was accepted or not *)
       let is_accepted:bool =
-        let SH_ECHConf = SH(B32(sr24,zero8),mode) in
-        let accept_confirmation = derive_secret(h_alg,i_handshake_secret,ech_accept_confirmation,(i_client_hello,SH_ECHConf)) in
-        sr8 = crop_into_bytes8(accept_confirmation)
+        (* Compute the handshake secret *)
+        let i_gxy = dh_decap(g,gy_srv,i_x) in (
+          let i_handshake_secret = kdf_hs(h_alg,early_secret,i_gxy) in
+          let SH_ECHConf = SH(B32(sr24,zero8),mode) in
+          let accept_confirmation = derive_secret(h_alg,i_handshake_secret,ech_accept_confirmation,(i_cur_log,SH_ECHConf)) in
+          sr8 = crop_into_bytes8(accept_confirmation)
+        )
+        else false
       in
 
       let (cr:bytes32,handshake_secret:bitstring,s_dom:domain,cur_log:bitstring) =
         if is_accepted
-        then (i_cr,i_handshake_secret,i_dom,(i_cur_log,server_hello))
+        then (
+          let i_gxy = dh_decap(g,gy_srv,i_x) in
+          let i_handshake_secret = kdf_hs(h_alg,early_secret,i_gxy) in
+          (i_cr,i_handshake_secret,i_dom,(i_cur_log,server_hello))
+        )
         else
           (* Must compute early secret with NoPSK *)
           let o_gxy = dh_decap(g,gy_srv,o_x) in
@@ -114,9 +128,11 @@ let process_server_hello_ech(
         kdf_ms(h_alg,handshake_secret,cur_log)
       in
 
+      event SanityClientSH(id_client,cr,B32(sr24,sr8),c_dom,s_dom,handshake_secret,psk,cur_log);
+
       if is_accepted || psk_ext = empty_psk_ext
       then
-        receive_encrypted_extension_message_ech(
+        receive_encrypted_extension_message_ech(id_client,
           is_accepted,
           cr,B32(sr24,sr8),h_alg,a_alg,
           c_dom,s_dom,psk,
@@ -129,8 +145,6 @@ let process_server_hello_ech(
   )
   else out(io,illegal_parameter)
 .
-
-
 
 (* Generate the client hello message *)
 
@@ -187,6 +201,11 @@ let echo_client(use_psk:bool,c_dom,i_dom:domain,
   ech_conf:echConfig,
   i_extra,o_extra:extraExt
   ) =
+  (****************************************************)
+  (* Only for sanity checks *)
+  new id_client:idProc;
+  event SanityClient(id_client,true,use_psk,send_kex);
+  (****************************************************)
 
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
     generate_client_hello_message_ech (
@@ -197,6 +216,12 @@ let echo_client(use_psk:bool,c_dom,i_dom:domain,
       )
   in
   out(io,o_client_hello);
+
+  (* For sanity checks*)
+  let (=h_alg,psk:preSharedKey,es:bitstring) = psk_data in
+  let o_dom = get_public_name(ech_conf) in
+  let ech_pk = get_public_key(ech_conf) in
+  event SanityClientCH_ECH(id_client,zero32,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,(zero,o_client_hello),(zero,i_client_hello));
 
   (* Message from server *)
   in(io,server_hello:msg);
@@ -211,7 +236,7 @@ let echo_client(use_psk:bool,c_dom,i_dom:domain,
     )
     else
       (* This is a normal server hello message *)
-      process_server_hello_ech(
+      process_server_hello_ech(id_client,
         use_psk,
         i_cr,o_cr,c_dom,i_dom,get_public_name(ech_conf),
         kex_data,h_alg,a_alg,psk_data,
