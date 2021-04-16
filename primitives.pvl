@@ -121,13 +121,13 @@ otherwise forall i:nat, x:bitstring;
 type mac_key.
 fun b2mk(bitstring):mac_key [typeConverter].
 
-fun hmac_ideal(mac_key,bitstring): bitstring.
+fun hmac_ideal(nat,mac_key,bitstring): bitstring.
 
 fun hmac(hash_alg,mac_key,bitstring):bitstring
 reduc forall i:nat, k:mac_key, x:bitstring;
   hmac(id_hash(WeakHash,i),k, x) = collision
 otherwise forall i:nat, x:bitstring, k:mac_key;
-  hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(k,x).
+  hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(i,k,x).
 
 (********************************************************)
 (* Public Key Signatures                                *)
