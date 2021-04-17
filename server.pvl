@@ -358,6 +358,11 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
   event SanityServer(id_server,use_ech,use_psk,cert_req);
   (****************************************************)
 
+  (****************************************************)
+  (* Forbiden combination of options                  *)
+  if not (use_psk && cert_req) then
+  (****************************************************)
+
   in(io,client_hello:msg);
   let CH(cr,offer) = client_hello in (
     let nego(=TLS13,c_h_alg,c_a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext) = offer in

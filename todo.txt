@@ -18,10 +18,6 @@
 
 - Add Security properties
 
-- Add Grease in Client echo
-
-- Add the safety check for Grease.
-
 - Add the safety check for ECH client that send outdated ECH config.
 
 - Add compromised keys
@@ -34,3 +30,7 @@
 		* Ech config
 
 - Add the safety check properties.
+
+- Add Grease in Client echo
+
+- Add the safety check for Grease.

@@ -312,7 +312,7 @@ let process_server_hello(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
-  use_psk:bool,c_dom,s_dom:domain,
+  use_grease:bool,use_psk:bool,c_dom,s_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
   )
   =
@@ -322,27 +322,45 @@ letfun generate_client_hello_message (
   (* The key share extension *)
   let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
 
+  let ech_ext =
+    if use_grease
+    then (
+      get ech_configurations(ech_config(config_id,g_ech,pkR,=s_dom,h_alg_ech,a_alg_ech),skR) in
+      let ech_conf = ech_config(config_id,g_ech,pkR,s_dom,h_alg_ech,a_alg_ech) in
+      let (enc:element,context:hpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
+      new payload:bitstring;
+      client_ECH(h_alg_ech,a_alg_ech,config_id,enc,payload)
+    )
+    else empty_ech_ext
+
+  in
+
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
+    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,ech_ext,extra,cur_log)
   in
 
   (* The client hello *)
-  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,psk_ext,extra) in
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),ech_ext,psk_ext,extra) in
   (CH(cr,offer),cr,kex_ext,kex_data,psk_data).
 
 (* The main standard client *)
 
-let standard_client(use_psk:bool,c_dom,s_dom:domain,g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+let standard_grease_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
   new id_client:idProc;
-  event SanityClient(id_client,false,use_psk,send_kex);
+  event SanityClient(id_client,use_grease,use_grease,use_psk,send_kex);
+  (****************************************************)
+
+  (****************************************************)
+  (* Forbiden combination of options                  *)
+  if not (use_grease && use_psk) then
   (****************************************************)
 
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_grease,use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
@@ -358,24 +376,27 @@ let standard_client(use_psk:bool,c_dom,s_dom:domain,g:group,send_kex:bool,h_alg:
     then (
       (* We received a HelloRetryRequest *)
       let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
-        let cur_log3 = (cur_log2,server_hello) in
-        event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
+        if use_grease
+        then out(io,abort_error)
+        else
+          let cur_log3 = (cur_log2,server_hello) in
+          event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
 
-        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
-        out(io,client_hello');
-        let cur_log4 = (cur_log3,client_hello') in
+          let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(false,use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+          out(io,client_hello');
+          let cur_log4 = (cur_log3,client_hello') in
 
-        (* For sanity checks*)
-        let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
-        event SanityClientCH(id_client,cr,cr',c_dom,s_dom,psk',cur_log4);
+          (* For sanity checks*)
+          let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
+          event SanityClientCH(id_client,cr,cr',c_dom,s_dom,psk',cur_log4);
 
-        (* Message from server *)
-        in(io,server_hello':msg);
-        let SH(sr',mode') = server_hello' in
-          if sr' = rand_HelloRetryRequest
-          then out(io,unexpected_message)
-          else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
-        else out(io,unexpected_message)
+          (* Message from server *)
+          in(io,server_hello':msg);
+          let SH(sr',mode') = server_hello' in
+            if sr' = rand_HelloRetryRequest
+            then out(io,unexpected_message)
+            else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
+          else out(io,unexpected_message)
       )
       else out(io,illegal_parameter)
     )

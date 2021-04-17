@@ -196,15 +196,15 @@ letfun generate_client_hello_message_ech (
 
 (* The main ECH client *)
 
-let echo_client(use_psk:bool,c_dom,i_dom:domain,
-  g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
+let echo_client(use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
+  g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
   ech_conf:echConfig,
   i_extra,o_extra:extraExt
   ) =
   (****************************************************)
   (* Only for sanity checks *)
   new id_client:idProc;
-  event SanityClient(id_client,true,use_psk,send_kex);
+  event SanityClient(id_client,true,false,use_psk,send_kex);
   (****************************************************)
 
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
