@@ -16,13 +16,31 @@ let gen_honest_long_term_keys() =
   out(io,pk(sk))
 .
 
-let gen_honest_pre_shared_keys() =
+let gen_compromised_long_term_keys() =
   !
-  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
-  new psk:bitstring;
+  in(io,a:domain);
+  new sk:privkey;
+  insert long_term_keys(a,sk,pk(sk),valid_cert(a,pk(sk)));
+  out(io,sk)
+.
+
+let gen_honest_pre_shared_keys(h_alg:hash_alg) =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  new psk:internal_preSharedKey;
   new id:identityPsk;
   event GenPsk(c_dom,s_dom,PSK(psk));
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,PSK(psk))
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk)
+.
+
+let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  new psk:internal_preSharedKey;
+  new id:identityPsk;
+  event GenPsk(c_dom,s_dom,PSK(psk));
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk);
+  out(io,psk)
 .
 
 letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
@@ -34,9 +52,9 @@ letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
   config
 .
 
-let gen_ech_config() =
+let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
   !
-  in(io,(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg));
+  in(io,o_dom:domain);
   let config = make_ech_config(o_dom,g,h_alg,a_alg) in
   out(io,config)
 .
@@ -75,8 +93,8 @@ process
   out(io,ech_conf'); *)
 
   (
-     gen_honest_long_term_keys ()
-    | gen_honest_pre_shared_keys ()
+      gen_honest_long_term_keys ()
+    | gen_honest_pre_shared_keys (tls_h)
     | (
       !
       in(io,(use_psk:bool,send_kex:bool,c_dom:domain,s_dom:domain));

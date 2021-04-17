@@ -25,7 +25,8 @@ letfun make_pre_shared_key_extension(
   ) =
   if use_psk
   then (
-    get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk) in
+    get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk) in
+    let psk = PSK(internal_psk) in
     let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
     let cur_log' = (cur_log,CH(cr,offer)) in
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in

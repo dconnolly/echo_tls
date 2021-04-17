@@ -28,14 +28,16 @@ fun hrr_kex_ext(group): keyShareExt [data].
 (* Pre Shared Keys Extension                            *)
 (********************************************************)
 
+type internal_preSharedKey.
+fun ipsk2b(internal_preSharedKey):bitstring [typeConverter].
 type preSharedKey.
 const NoPSK: preSharedKey.
-fun PSK(bitstring): preSharedKey [data].
+fun PSK(internal_preSharedKey): preSharedKey [data].
 
 type identityPsk.
 
 fun psk2b(preSharedKey): bitstring
-reduc forall b:bitstring; psk2b(PSK(b)) = b
+reduc forall b:internal_preSharedKey; psk2b(PSK(b)) = ipsk2b(b)
 otherwise psk2b(NoPSK) = zero.
 
 type preSharedKeyExt.
@@ -48,7 +50,7 @@ fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk of
 table pre_shared_keys(
   domain (* Client domain *),
   domain (* Server domain *),
-  hash_alg,identityPsk,preSharedKey).
+  hash_alg,identityPsk,internal_preSharedKey).
 
 letfun dummy_preSharedKeyExt () =
   new id:identityPsk;
