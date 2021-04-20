@@ -33,3 +33,8 @@ event SanityClientCFIN(idProc,
   pubkey,pubkey,
   aead_key,aead_key,bitstring,bitstring,
   bitstring).
+
+(* For restriction *)
+
+event Selected_lgt(domain,domain).
+event Selected_psk(domain,domain,hash_alg,domain,domain,hash_alg).

@@ -12,8 +12,8 @@ letfun generate_early_secret_psk_extension(
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext)) = client_hello in
 
   let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
-    get pre_shared_keys(=c_dom,=s_dom,=h_alg,=id,internal_psk) in
-    let psk = PSK(internal_psk) in
+    if get_receiver_psk(id) = s_dom && get_sender_psk(id) = c_dom && get_hash_psk(id) = h_alg then
+    let psk = PSK(get_ipsk(id)) in
     let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
     let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,trunc_client_psk_ext(id),extra_ext) in
     let cur_log' = (cur_log,CH(cr,offer)) in
@@ -124,7 +124,8 @@ let send_server_certificate_message =
   cur_log:bitstring
   ));
 
-  get long_term_keys(=s_dom,sk,s_pkey,crt) in
+  get long_term_keys(s_dom',sk,s_pkey,crt) [precise] in
+  event Selected_lgt(s_dom',s_dom);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in

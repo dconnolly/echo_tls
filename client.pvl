@@ -93,7 +93,8 @@ let send_certificate_message(id_client:idProc,
   cur_log:bitstring)
   =
 
-  get long_term_keys(=c_dom,sk,c_pkey,crt) in
+  get long_term_keys(c_dom',sk,c_pkey,crt) [precise] in
+  event Selected_lgt(c_dom',c_dom);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in

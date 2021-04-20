@@ -68,9 +68,12 @@
 
 (***** Secrecy assumption ****)
 
-not attacker(new sk_h).
-not attacker(new psk_h).
-not s:seed; attacker(dh_k(s)).
+not x:privkey; attacker(diff[new sk_h,x]).
+not x:privkey; attacker(diff[x,new sk_h]).
+not x:internal_preSharedKey; attacker(diff[new psk_h,x]).
+not x:internal_preSharedKey; attacker(diff[x,new psk_h]).
+not x:bitstring, s:seed; attacker(diff[x,dh_k(s)]).
+not x:bitstring, s:seed; attacker(diff[dh_k(s),x]).
 
 not attacker(ch_client_CFIN).
 not attacker(ch_client_FIN).
@@ -86,34 +89,54 @@ not attacker(ch_server_SH).
     - Secret for non compromised psk
 *)
 
-not i:nat;
+not x:bitstring,i:nat;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
-  attacker(early_secret)
+  attacker(diff[x,early_secret])
+.
+not x:bitstring,i:nat;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  attacker(diff[early_secret,x])
 .
 
 (* Binder key :
   - Secret for non compromised psk
 *)
 
-not i:nat;
+not x:bitstring,i:nat;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_resumption_psk_binder_key,hash_ideal(i,zero))) in
-  attacker(binder_key)
+  attacker(diff[x,binder_key])
+.
+not x:bitstring,i:nat;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_resumption_psk_binder_key,hash_ideal(i,zero))) in
+  attacker(diff[binder_key,x])
 .
 
 (* DH Keys *)
 
-not s:seed; attacker(dh_f(s)).
+not x:element,s:seed; attacker(diff[x,dh_f(s)]).
+not x:element,s:seed; attacker(diff[dh_f(s),x]).
 
-not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+not x:element,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
   sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
   let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
-  attacker(gxy)
+  attacker(diff[x,gxy])
+.
+not x:element,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,log:bitstring;
+  let g = id_g(StrongDH,i) in
+  let gx = dh_pub(g,dh_k(s_x)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
+  let gxy = dh_xy(s_xy,m2b(client_hello)) in
+  attacker(diff[gxy,x])
 .
 
 (* Handshake secret :
@@ -123,17 +146,28 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
     element was secret.
 *)
 
-not i:nat,e:element;
+not x:bitstring,i:nat,e:element;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
-  attacker(handshake_secret)
+  attacker(diff[x,handshake_secret])
+.
+not x:bitstring,i:nat,e:element;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+  attacker(diff[handshake_secret,x])
 .
 
-not i:nat,e:element,s:seed, extra_es:bitstring;
+not x:bitstring,i:nat,e:element,s:seed, extra_es:bitstring;
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
-  attacker(handshake_secret)
+  attacker(diff[x,handshake_secret])
+.
+not x:bitstring,i:nat,e:element,s:seed, extra_es:bitstring;
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
+  attacker(diff[handshake_secret,x])
 .
 
 (* Keys wkh and fk
@@ -144,7 +178,7 @@ not i:nat,e:element,s:seed, extra_es:bitstring;
 
 (* Case where handshake is secret thanks to psk *)
 
-not i:nat,e:element,log:bitstring;
+not x:bitstring,i:nat,e:element,log:bitstring;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
@@ -152,10 +186,20 @@ not i:nat,e:element,log:bitstring;
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
   let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
-  attacker(client_wkh)
+  attacker(diff[x,client_wkh])
+.
+not x:bitstring,i:nat,e:element,log:bitstring;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
+  attacker(diff[client_wkh,x])
 .
 
-not i:nat,e:element,log:bitstring;
+not x:bitstring,i:nat,e:element,log:bitstring;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
@@ -163,10 +207,20 @@ not i:nat,e:element,log:bitstring;
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
   let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
-  attacker(client_fk)
+  attacker(diff[x,client_fk])
+.
+not x:bitstring,i:nat,e:element,log:bitstring;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
+  attacker(diff[client_fk,x])
 .
 
-not i:nat,e:element,log:bitstring;
+not x:bitstring,i:nat,e:element,log:bitstring;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
@@ -174,10 +228,20 @@ not i:nat,e:element,log:bitstring;
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
-  attacker(server_wkh)
+  attacker(diff[x,server_wkh])
+.
+not x:bitstring,i:nat,e:element,log:bitstring;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
+  attacker(diff[server_wkh,x])
 .
 
-not i:nat,e:element,log:bitstring;
+not x:bitstring,i:nat,e:element,log:bitstring;
   let psk = new psk_h in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
@@ -185,45 +249,83 @@ not i:nat,e:element,log:bitstring;
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
-  attacker(server_fk)
+  attacker(diff[x,server_fk])
+.
+not x:bitstring,i:nat,e:element,log:bitstring;
+  let psk = new psk_h in
+  let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+  attacker(diff[server_fk,x])
 .
 
 (* Case where handshake is secret thanks to failure of decapsulation *)
 
-not i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
   let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
-  attacker(aead_enc(a,b2ae(client_wkh),x,y,z))
+  attacker(diff[t,aead_enc(a,b2ae(client_wkh),x,y,z)])
+.
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
+  attacker(diff[aead_enc(a,b2ae(client_wkh),x,y,z),t])
 .
 
-not i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
   let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
-  attacker(client_fk)
+  attacker(diff[t,client_fk])
+.
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
+  attacker(diff[client_fk,t])
 .
 
-not i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
-  attacker(aead_enc(a,b2ae(server_wkh),x,y,z))
+  attacker(diff[t,aead_enc(a,b2ae(server_wkh),x,y,z)])
+.
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
+  attacker(diff[aead_enc(a,b2ae(server_wkh),x,y,z),t])
 .
 
-not i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
-  attacker(server_fk)
+  attacker(diff[t,server_fk])
+.
+not t:bitstring,i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bitstring;
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(dh_f(s))) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+  attacker(diff[server_fk,t])
 .
 
 (* Client hello coming from an honest client *)
-not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
   sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
@@ -236,10 +338,25 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
   let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
-  attacker(client_wkh)
+  attacker(diff[t,client_wkh])
+.
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,log:bitstring;
+  let g = id_g(StrongDH,i) in
+  let gx = dh_pub(g,dh_k(s_x)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
+  let gxy = dh_xy(s_xy,m2b(client_hello)) in
+  let gy = dh_encap_fun(g,gx,gxy) in
+  let log1 = (log,client_hello) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',p',ex'))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
+  let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
+  attacker(diff[client_wkh,t])
 .
 
-not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
   sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
@@ -252,10 +369,25 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
   let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
-  attacker(client_fk)
+  attacker(diff[t,client_fk])
+.
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  let g = id_g(StrongDH,i) in
+  let gx = dh_pub(g,dh_k(s_x)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
+  let gxy = dh_xy(s_xy,m2b(client_hello)) in
+  let gy = dh_encap_fun(g,gx,gxy) in
+  let log1 = (log,client_hello) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',p',ex'))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
+  let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
+  attacker(diff[client_fk,t])
 .
 
-not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
   sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
@@ -268,10 +400,25 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in
   let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
-  attacker(server_wkh)
+  attacker(diff[t,server_wkh])
+.
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  let g = id_g(StrongDH,i) in
+  let gx = dh_pub(g,dh_k(s_x)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
+  let gxy = dh_xy(s_xy,m2b(client_hello)) in
+  let gy = dh_encap_fun(g,gx,gxy) in
+  let log1 = (log,client_hello) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',p',ex'))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in
+  let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
+  attacker(diff[server_wkh,t])
 .
 
-not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
   sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
@@ -284,5 +431,20 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
-  attacker(server_fk)
+  attacker(diff[t,server_fk])
+.
+not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  let g = id_g(StrongDH,i) in
+  let gx = dh_pub(g,dh_k(s_x)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,p,ex)) in
+  let gxy = dh_xy(s_xy,m2b(client_hello)) in
+  let gy = dh_encap_fun(g,gx,gxy) in
+  let log1 = (log,client_hello) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',p',ex'))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in
+  let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+  attacker(diff[server_fk,t])
 .

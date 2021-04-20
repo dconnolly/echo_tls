@@ -5,9 +5,14 @@
 
 set detectNotAttacker = true.
 (* set verboseNotAttacker = true. *)
+set removeEventsForLemma = true.
 
 nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
+.
+
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
+  table(pre_shared_keys_diff( *c_dom, *s_dom, *h, *id, *x)) / -4000
 .
 
 nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
@@ -27,6 +32,21 @@ nounif x:bitstring; mess(ch_server_CFIN,*x) / -3000.
 nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
 nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
 nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
+
+(* Restriction for equivalence *)
+
+restriction c_dom1,c_dom1',c_dom2,c_dom2':domain;
+  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'])) ==> c_dom1 = c_dom2 && c_dom1' = c_dom2'
+.
+
+restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,h_alg1,h_alg1',h_alg2,h_alg2':hash_alg;
+  event(Selected_psk(
+    diff[c_dom1,c_dom1'],diff[s_dom1,s_dom1'],diff[h_alg1,h_alg1'],
+    diff[c_dom2,c_dom2'],diff[s_dom2,s_dom2'],diff[h_alg2,h_alg2'])) ==>
+    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+    s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
+    h_alg1 = h_alg2 && h_alg1' = h_alg2'
+.
 
 (********************************************************)
 (* TLS and ECH Setting                                  *)
@@ -53,7 +73,7 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
   new psk_h:internal_preSharedKey;
-  new id:identityPsk;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_h) in
   event GenPsk(c_dom,s_dom,PSK(psk_h));
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_h)
 .
@@ -62,10 +82,10 @@ let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
   new psk_d:internal_preSharedKey;
-  new id:identityPsk;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   event GenPsk(c_dom,s_dom,PSK(psk_d));
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
-  out(io,psk_d)
+  out(io,(id,psk_d))
 .
 
 letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
@@ -106,6 +126,22 @@ let subprocess_server =
   | process_client_hello_noHRR
 .
 
+let swap_long_term_keys =
+  !
+  get long_term_keys(dom1,sk1,pk1,cert1) in
+  get long_term_keys(dom2,sk2,pk2,cert2) in
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1])
+.
+
+let swap_pre_shared_keys =
+  !
+  get pre_shared_keys(c_dom1,s_dom1,h_alg1,id1,psk1) in
+  get pre_shared_keys(c_dom2,s_dom2,h_alg2,id2,psk2) in
+  insert pre_shared_keys_diff(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
+  insert pre_shared_keys_diff(diff[c_dom2,c_dom1],diff[s_dom2,s_dom1],diff[h_alg2,h_alg1],diff[id2,id1],diff[psk2,psk1])
+.
+
 (********************************************************)
 (* Queries                                              *)
 (********************************************************)
@@ -131,6 +167,8 @@ process
   (
       gen_honest_long_term_keys ()
     | gen_honest_pre_shared_keys (tls_h)
+    | swap_long_term_keys
+    | swap_pre_shared_keys
     | (phase 1; (subprocess_client | subprocess_server))
     | (
       !
