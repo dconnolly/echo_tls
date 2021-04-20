@@ -1,5 +1,7 @@
 const zero:bitstring [data].
 
+type seed.
+
 (********************************************************)
 (* Generation of random                                 *)
 (********************************************************)
@@ -71,10 +73,14 @@ fun discrete_log(element): bitstring
 reduc forall i:nat, x:bitstring;
   discrete_log(dh_pub(id_g(WeakDH,i),x)) = x.
 
+fun dh_k(seed):bitstring [private].
+fun dh_xy(seed,bitstring):element [private].
+fun dh_f(seed):element [private].
+
 letfun dh_keygen(g:group) =
-  new x:bitstring;
-  let gx = dh_pub(g,x) in
-  (x,gx).
+  new s:seed;
+  let gx = dh_pub(g,dh_k(s)) in
+  (dh_k(s),gx).
 
 (* Encap/Decap Functionality *)
 fun dh_encap_fun(group,element,element):element.
@@ -83,17 +89,17 @@ reduc forall g:group, x:bitstring, gxy:element;
   dh_decap_fun(g,dh_encap_fun(g,dh_pub(g,x),gxy),x) = gxy.
 
 (* Generate then Encap *)
-letfun dh_encap(g:group,gx:element) =
-  new gxy:element;
-  (gxy, dh_encap_fun(g,gx,gxy)).
+letfun dh_encap(g:group,gx:element,m:bitstring) =
+  new s:seed;
+  (dh_xy(s,m), dh_encap_fun(g,gx,dh_xy(s,m))).
 
 (* Decap: never fails *)
 letfun dh_decap(g:group,gy:element,x:bitstring) =
   let gxy = dh_decap_fun(g,gy,x) in
     gxy
-  else (
-    new gxy:element;
-    gxy).
+  else
+    new s:seed;
+    dh_f(s).
 
 (**************************************************************)
 (* Hash Functions, including those with collisions. See SLOTH *)
@@ -197,7 +203,7 @@ letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstr
 (* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
 
 letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
-  let (shared_secret:element,enc:element) = dh_encap(g,pkR) in
+  let (shared_secret:element,enc:element) = dh_encap(g,pkR,zero) in
   (enc,hpke_key_schedule(h,S,shared_secret,info)).
 
 letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:bitstring,info:bitstring) =

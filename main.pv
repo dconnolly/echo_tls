@@ -1,7 +1,22 @@
-(* ProVerif setting *)
+(* ProVerif setting
+  !!! ONLY FOR DEV BRANCH OF PROVERIF
+  Leave commented for the master branch
+*)
 
-(* set detectNotAttacker = true. *)
-(* set verboseNotAttacker = true. *)
+(* set detectNotAttacker = true.
+set verboseNotAttacker = true. *)
+
+(* nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
+.
+
+nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
+  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt)) / -5000
+.
+
+nounif config:echConfig,skR:bitstring;
+  table(ech_configurations( *config, *skR)) / -5000
+. *)
 
 (********************************************************)
 (* TLS and ECH Setting                                  *)
@@ -10,37 +25,37 @@
 let gen_honest_long_term_keys() =
   !
   in(io,a:domain);
-  new sk:privkey;
-  event GenCert(a,pk(sk));
-  insert long_term_keys(a,sk,pk(sk),valid_cert(a,pk(sk)));
-  out(io,pk(sk))
+  new sk_h:privkey;
+  event GenCert(a,pk(sk_h));
+  insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)));
+  out(io,pk(sk_h))
 .
 
 let gen_compromised_long_term_keys() =
   !
   in(io,a:domain);
-  new sk:privkey;
-  insert long_term_keys(a,sk,pk(sk),valid_cert(a,pk(sk)));
-  out(io,sk)
+  new sk_d:privkey;
+  insert long_term_keys(a,sk_d,pk(sk_d),valid_cert(a,pk(sk_d)));
+  out(io,sk_d)
 .
 
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
-  new psk:internal_preSharedKey;
+  new psk_h:internal_preSharedKey;
   new id:identityPsk;
-  event GenPsk(c_dom,s_dom,PSK(psk));
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk)
+  event GenPsk(c_dom,s_dom,PSK(psk_h));
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_h)
 .
 
 let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
-  new psk:internal_preSharedKey;
+  new psk_d:internal_preSharedKey;
   new id:identityPsk;
-  event GenPsk(c_dom,s_dom,PSK(psk));
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk);
-  out(io,psk)
+  event GenPsk(c_dom,s_dom,PSK(psk_d));
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
+  out(io,psk_d)
 .
 
 letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =

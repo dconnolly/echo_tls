@@ -2,11 +2,6 @@
 
 type idProc.
 
-(* Secrecy assumption *)
-
-not attacker(new sk).
-not attacker(new psk).
-
 (* Events for specific data *)
 
 event GenPsk(domain,domain,preSharedKey).
