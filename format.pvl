@@ -34,6 +34,12 @@ type preSharedKey.
 const NoPSK: preSharedKey.
 fun PSK(internal_preSharedKey): preSharedKey [data].
 
+
+fun psk_h(seed):internal_preSharedKey [private].
+fun psk_d(seed):internal_preSharedKey [private].
+letfun mk_psk_h() = new s:seed; psk_h(s).
+letfun mk_psk_d() = new s:seed; psk_d(s).
+
 type identityPsk.
 
 fun psk2b(preSharedKey): bitstring
