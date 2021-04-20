@@ -125,6 +125,9 @@ let receive_finished_message =
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring));
 
+  new st:bitstring;
+  event PreciseMess(ch_client_FIN,id_client,st);
+
   in(io,enc_finished_msg:bitstring);
   let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
     let FIN(hash_msg) = finished_msg in (

@@ -124,6 +124,9 @@ let send_server_certificate_message =
   cur_log:bitstring
   ));
 
+  new st:bitstring;
+  event PreciseMess(ch_server_CRT,id_server,st);
+
   get long_term_keys(s_dom',sk,s_pkey,crt) [precise] in
   event Selected_lgt(s_dom',s_dom);
 

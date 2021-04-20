@@ -48,6 +48,21 @@ restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,h
     h_alg1 = h_alg2 && h_alg1' = h_alg2'
 .
 
+axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring;
+  event(PreciseMess(ch,diff[id,id2],diff[st1,st2])) &&
+  event(PreciseMess(ch,diff[id,id2'],diff[st1',st2']))
+  ==> st1 = st1';
+  event(PreciseMess(ch,diff[id1,id],diff[st1,st2])) &&
+  event(PreciseMess(ch,diff[id1',id],diff[st1',st2']))
+  ==> st2 = st2';
+  event(PreciseMess(ch,diff[id1,id2],diff[st,st2])) &&
+  event(PreciseMess(ch,diff[id1',id2'],diff[st,st2']))
+  ==> id1 = id1';
+  event(PreciseMess(ch,diff[id1,id2],diff[st1,st])) &&
+  event(PreciseMess(ch,diff[id1',id2'],diff[st1',st]))
+  ==> id2 = id2'
+.
+
 (********************************************************)
 (* TLS and ECH Setting                                  *)
 (********************************************************)

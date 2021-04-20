@@ -38,3 +38,5 @@ event SanityClientCFIN(idProc,
 
 event Selected_lgt(domain,domain).
 event Selected_psk(domain,domain,hash_alg,domain,domain,hash_alg).
+
+event PreciseMess(channel,idProc,bitstring).
