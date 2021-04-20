@@ -58,7 +58,7 @@ type group_strengh.
 const WeakDH, StrongDH: group_strengh [data].
 
 type group.
-fun id_group(group_strengh,nat):group [data].
+fun id_g(group_strengh,nat):group [data].
 
 type element.
 const guessable: element.
@@ -69,7 +69,7 @@ fun dh_pub(group,bitstring): element.
 
 fun discrete_log(element): bitstring
 reduc forall i:nat, x:bitstring;
-  discrete_log(dh_pub(id_group(WeakDH,i),x)) = x.
+  discrete_log(dh_pub(id_g(WeakDH,i),x)) = x.
 
 letfun dh_keygen(g:group) =
   new x:bitstring;

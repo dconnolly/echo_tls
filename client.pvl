@@ -23,9 +23,12 @@ letfun make_pre_shared_key_extension(
   use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
   extra:extraExt,cur_log:bitstring
   ) =
+
+  (* We assume that all participant have a least a psk with everyone. *)
+  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk) in
+
   if use_psk
   then (
-    get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk) in
     let psk = PSK(internal_psk) in
     let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
     let cur_log' = (cur_log,CH(cr,offer)) in
@@ -92,24 +95,14 @@ let send_certificate_message(id_client:idProc,
   let certificate_msg = CRT(zero,crt) in
   let encrypted_certificate_msg = aead_enc(a_alg,chk,zero,zero,m2b(certificate_msg)) in
   out(io,encrypted_certificate_msg);
+  let cur_log2 = (cur_log,certificate_msg) in
 
   (* The CertificateVerify message *)
-  let cur_log2 = (cur_log,certificate_msg) in
-  event SanityClientCCRT(id_client,
-    cr,sr,NoPSK,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,c_pkey,
-    cur_log2);
   let signed_log = sign(sk,hash(h_alg,cur_log2)) in
   let certificate_verify_msg = CV(signed_log) in
   let encrypted_certificate_verify_msg = aead_enc(a_alg,chk,zero,zero,m2b(certificate_verify_msg)) in
   out(io,encrypted_certificate_verify_msg);
   let cur_log3 = (cur_log2,certificate_verify_msg) in
-  event SanityClientCCV(id_client,
-    cr,sr,NoPSK,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,c_pkey,
-    cur_log3);
 
   (* The finished message *)
   send_finished_message(id_client,cr,sr,h_alg,a_alg,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3)
@@ -129,12 +122,6 @@ let receive_finished_message(id_client:idProc,
     let FIN(hash_msg) = finished_msg in (
       if hash_msg = hmac(h_alg,sfin,cur_log) then
       let cur_log2 = (cur_log,finished_msg) in
-
-      event SanityClientFIN(id_client,
-        cr,sr,psk,
-        master_secret,chk,shk,cfin,sfin,
-        s_pkey,
-        cur_log2);
 
       if cert_req
       then send_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
@@ -157,44 +144,17 @@ let process_server_certificate_message(id_client:idProc,
   let CRT(=zero,crt) = certificate_msg in
   let cur_log2 = (cur_log,certificate_msg) in
 
-  let s_pkey = get_pkey(crt) in (
-    event SanityClientCRT(id_client,
-      cr,sr,psk,
-      master_secret,chk,shk,cfin,sfin,
-      s_pkey,
-      cur_log2);
-    (* Receive the Certificate Verify message *)
-    in(io,enc_crt_verif_msg:bitstring);
-    let m2b(certificate_verify_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_verif_msg) in
-    let CV(signed_log) = certificate_verify_msg in
+  (* Receive the Certificate Verify message *)
+  in(io,enc_crt_verif_msg:bitstring);
+  let m2b(certificate_verify_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_verif_msg) in
+  let CV(signed_log) = certificate_verify_msg in
 
+  if verify(get_pkey(crt),hash(h_alg,cur_log2),signed_log) && get_domain(crt) = s_dom && verify_cert(crt) then
+  let s_pkey = get_pkey(crt) in
+  let cur_log3 = (cur_log2,certificate_verify_msg) in
 
-    if verify(s_pkey,hash(h_alg,cur_log2),signed_log) && get_domain(crt) = s_dom && verify_cert(crt)
-    then (
-      let cur_log3 = (cur_log2,certificate_verify_msg) in
-      event SanityClientCV(id_client,
-        cr,sr,psk,
-        master_secret,chk,shk,cfin,sfin,
-        s_pkey,
-        cur_log3);
-      (* Process the Finished message *)
-      receive_finished_message(id_client,cr,sr,h_alg,a_alg,c_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3)
-    )
-    else out(io,abort_error)
-  )
-  else out(io,decode_error)
-.
-
-let receive_server_certificate_message(id_client:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom,s_dom:domain, psk:preSharedKey, cert_req:bool,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
-
-  in(io,enc_crt_msg:bitstring);
-  let m2b(certificate_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_msg) in
-  process_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,cert_req,master_secret,chk,shk,cfin,sfin,cur_log,certificate_msg)
+  (* Process the Finished message *)
+  receive_finished_message(id_client,cr,sr,h_alg,a_alg,c_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3)
 .
 
 (* Receiving message after EncryptedExtensions *)
@@ -214,11 +174,10 @@ let receive_after_encrypted_extension (id_client:idProc,
 
     let CRTR(=zero) = msg' in (
       let cur_log2 = (cur_log,msg') in
-      event SanityClientCRTR(id_client,
-        cr,sr,psk,
-        master_secret,chk,shk,cfin,sfin,
-        cur_log2);
-      receive_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2)
+
+      in(io,enc_crt_msg:bitstring);
+      let m2b(certificate_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_msg) in
+      process_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2,certificate_msg)
     )
     else let CRT(=zero,crt) = msg' in (
       process_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg')
@@ -248,10 +207,6 @@ let receive_encrypted_extension_message (id_client:idProc,
   let EE(x) = ee_msg in
   (* Should we do something about [x] ? Do we test that it is empty else abort ? *)
   let cur_log2 = (cur_log,ee_msg) in
-  event SanityClientEE(id_client,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    cur_log2);
 
   receive_after_encrypted_extension(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
 .
@@ -312,7 +267,7 @@ let process_server_hello(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
-  use_grease:bool,use_psk:bool,c_dom,s_dom:domain,
+  use_psk:bool,c_dom,s_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
   )
   =
@@ -322,45 +277,27 @@ letfun generate_client_hello_message (
   (* The key share extension *)
   let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
 
-  let ech_ext =
-    if use_grease
-    then (
-      get ech_configurations(ech_config(config_id,g_ech,pkR,=s_dom,h_alg_ech,a_alg_ech),skR) in
-      let ech_conf = ech_config(config_id,g_ech,pkR,s_dom,h_alg_ech,a_alg_ech) in
-      let (enc:element,context:hpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
-      new payload:bitstring;
-      client_ECH(h_alg_ech,a_alg_ech,config_id,enc,payload)
-    )
-    else empty_ech_ext
-
-  in
-
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,ech_ext,extra,cur_log)
+    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
   in
 
   (* The client hello *)
-  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),ech_ext,psk_ext,extra) in
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,psk_ext,extra) in
   (CH(cr,offer),cr,kex_ext,kex_data,psk_data).
 
 (* The main standard client *)
 
-let standard_grease_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
   new id_client:idProc;
-  event SanityClient(id_client,use_grease,use_grease,use_psk,send_kex);
-  (****************************************************)
-
-  (****************************************************)
-  (* Forbiden combination of options                  *)
-  if not (use_grease && use_psk) then
+  event SanityClient(id_client,false,false,use_psk,send_kex);
   (****************************************************)
 
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_grease,use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
@@ -376,27 +313,24 @@ let standard_grease_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,s_do
     then (
       (* We received a HelloRetryRequest *)
       let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
-        if use_grease
-        then out(io,abort_error)
-        else
-          let cur_log3 = (cur_log2,server_hello) in
-          event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
+        let cur_log3 = (cur_log2,server_hello) in
+        event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
 
-          let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(false,use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
-          out(io,client_hello');
-          let cur_log4 = (cur_log3,client_hello') in
+        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+        out(io,client_hello');
+        let cur_log4 = (cur_log3,client_hello') in
 
-          (* For sanity checks*)
-          let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
-          event SanityClientCH(id_client,cr,cr',c_dom,s_dom,psk',cur_log4);
+        (* For sanity checks*)
+        let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
+        event SanityClientCH(id_client,cr,cr',c_dom,s_dom,psk',cur_log4);
 
-          (* Message from server *)
-          in(io,server_hello':msg);
-          let SH(sr',mode') = server_hello' in
-            if sr' = rand_HelloRetryRequest
-            then out(io,unexpected_message)
-            else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
-          else out(io,unexpected_message)
+        (* Message from server *)
+        in(io,server_hello':msg);
+        let SH(sr',mode') = server_hello' in
+          if sr' = rand_HelloRetryRequest
+          then out(io,unexpected_message)
+          else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
+        else out(io,unexpected_message)
       )
       else out(io,illegal_parameter)
     )
