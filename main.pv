@@ -3,10 +3,10 @@
   Leave commented for the master branch
 *)
 
-(* set detectNotAttacker = true.
-set verboseNotAttacker = true. *)
+set detectNotAttacker = true.
+(* set verboseNotAttacker = true. *)
 
-(* nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
 .
 
@@ -16,7 +16,17 @@ nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
 
 nounif config:echConfig,skR:bitstring;
   table(ech_configurations( *config, *skR)) / -5000
-. *)
+.
+
+nounif x:bitstring; mess(ch_client_CFIN,*x) / -3000.
+nounif x:bitstring; mess(ch_client_FIN,*x) / -3000.
+nounif x:bitstring; mess(ch_client_CRT,*x) / -3000.
+nounif x:bitstring; mess(ch_client_after_EE,*x) / -3000.
+
+nounif x:bitstring; mess(ch_server_CFIN,*x) / -3000.
+nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
+nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
+nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
 
 (********************************************************)
 (* TLS and ECH Setting                                  *)
@@ -82,11 +92,25 @@ letfun gen_outdated_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_al
   config
 .
 
+let subprocess_client =
+    send_finished_message
+  | receive_finished_message
+  | process_server_certificate_message
+  | receive_after_encrypted_extension
+.
+
+let subprocess_server =
+    receive_client_finished_message
+  | send_server_finished_message
+  | send_server_certificate_message
+  | process_client_hello_noHRR
+.
+
 (********************************************************)
 (* Queries                                              *)
 (********************************************************)
 
-(* Sanity checks *)
+
 
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
@@ -107,6 +131,8 @@ process
   (
       gen_honest_long_term_keys ()
     | gen_honest_pre_shared_keys (tls_h)
+    | subprocess_client
+    | subprocess_server
     | (
       !
       in(io,(use_psk:bool,send_kex:bool,c_dom:domain,s_dom:domain));

@@ -61,7 +61,7 @@ let receive_encrypted_extension_message_ech (id_client:idProc,
   in
 
   let cur_log2 = (cur_log,ee_msg) in
-  receive_after_encrypted_extension(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
+  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2))
 .
 
 (* Process a server hello message *)

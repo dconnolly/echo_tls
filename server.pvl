@@ -27,13 +27,15 @@ letfun generate_early_secret_psk_extension(
 
 (* Receive the client finished message *)
 
-let receive_client_finished_message(id_server:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  psk:preSharedKey, s_pkey,c_pkey:pubkey,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
+free ch_server_CFIN:channel [private].
 
+let receive_client_finished_message =
+  !
+  in(ch_server_CFIN,(id_server:idProc,
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  psk:preSharedKey, s_pkey:pubkey,c_pkey:pubkey,
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
+  cur_log:bitstring));
 
   in(io,enc_fin:bitstring);
   let m2b(fin_msg) = aead_dec(a_alg,chk,zero,zero,enc_fin) in
@@ -56,13 +58,16 @@ let receive_client_finished_message(id_server:idProc,
 
 (* Sends the server finish message *)
 
-let send_server_finished_message(
+free ch_server_FIN:channel[private].
+
+let send_server_finished_message =
+  !
+  in(ch_server_FIN,(
   id_server:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom,s_dom:domain, psk:preSharedKey, cert_req:bool, s_pkey:pubkey,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom:domain,s_dom:domain, psk:preSharedKey, cert_req:bool, s_pkey:pubkey,
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
+  cur_log:bitstring));
 
   let hash_msg = hmac(h_alg,sfin,cur_log) in
   let finished_msg = FIN(hash_msg) in
@@ -89,32 +94,35 @@ let send_server_finished_message(
       let c_pkey = get_pkey(crt) in
       let cur_log_CV = (cur_log_CRT,cert_verify_msg) in
 
-      receive_client_finished_message(id_server,
+      out(ch_server_CFIN,(id_server,
         cr,sr,h_alg,a_alg,
         psk,s_pkey,c_pkey,
         master_secret,chk,shk,cfin,sfin,
-        cur_log_CV)
+        cur_log_CV))
   )
   else
     (* A psk is used so no certificate or no psk is used but the server did not ask for a
     certificate request from the client *)
-    receive_client_finished_message(id_server,
+    out(ch_server_CFIN,(id_server,
       cr,sr,h_alg,a_alg,
       psk,s_pkey,NoPubKey,
       master_secret,chk,shk,cfin,sfin,
-      cur_log_FIN)
+      cur_log_FIN))
 .
 
 (* Send server certificate message *)
 
-let send_server_certificate_message(
+free ch_server_CRT:channel [private].
+
+let send_server_certificate_message =
+  !
+  in(ch_server_CRT,(
   id_server:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom,s_dom:domain, psk:preSharedKey, cert_req:bool,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom:domain,s_dom:domain, psk:preSharedKey, cert_req:bool,
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring
-  )
-  =
+  ));
 
   get long_term_keys(=s_dom,sk,s_pkey,crt) in
 
@@ -131,12 +139,12 @@ let send_server_certificate_message(
   out(io,encrypted_certificate_verify_msg);
   let cur_log_CV = (cur_log_CRT,certificate_verify_msg) in
 
-  send_server_finished_message(id_server,
+  out(ch_server_FIN,(id_server,
     cr,sr,h_alg,a_alg,
     c_dom,s_dom,psk,cert_req, s_pkey,
     master_secret,chk,shk,cfin,sfin,
     cur_log_CV
-  )
+  ))
 .
 
 (* Following the TLS RFC and ECHO RFC, we consider server process that can have
@@ -144,13 +152,17 @@ let send_server_certificate_message(
     - [use_psk] indicate if the client uses Pre Shared Key
 *)
 
-let process_client_hello_noHRR(
+free ch_server_SH:channel [private].
+
+let process_client_hello_noHRR =
+  !
+  in(ch_server_SH,(
   id_server:idProc,
-  use_psk:bool,is_backend:bool,cert_req:bool,c_dom,s_dom:domain,
+  use_psk:bool,is_backend:bool,cert_req:bool,c_dom:domain,s_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg,
   s_extra:extraExt, encrypted_ext:bitstring,
   client_hello:msg, cur_log:bitstring (* Should not contain the curent client hello *)
-  ) =
+  ));
 
   let CH(cr,offer) = client_hello in
   (* Verify the cipher suite and group *)
@@ -212,24 +224,24 @@ let process_client_hello_noHRR(
             let cur_log_CRTR = (cur_log_EE,crtr_msg) in
 
             (* Sends the certificate *)
-            send_server_certificate_message(id_server,
+            out(ch_server_CRT,(id_server,
               cr,sr,h_alg,a_alg,
               c_dom,s_dom,psk,cert_req,
               master_secret,chk,shk,cfin,sfin,
-              cur_log_CRTR)
+              cur_log_CRTR))
           )
           else
-            send_server_certificate_message(id_server,
+            out(ch_server_CRT,(id_server,
               cr,sr,h_alg,a_alg,
               c_dom,s_dom,psk,cert_req,
               master_secret,chk,shk,cfin,sfin,
-              cur_log_EE)
+              cur_log_EE))
         else
-          send_server_finished_message(id_server,
+          out(ch_server_FIN,(id_server,
             cr,sr,h_alg,a_alg,
             c_dom,s_dom,psk,false,NoPubKey,
             master_secret,chk,shk,cfin,sfin,
-            cur_log_EE)
+            cur_log_EE))
       )
       else out(io,illegal_parameter)
     )
@@ -304,12 +316,12 @@ let process_client_hello_ClientFacingServer(
       (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
   in
 
-  process_client_hello_noHRR(id_server,
+  out(ch_server_SH,(id_server,
     use_psk,is_backend,cert_req,c_dom,s_dom,
     g,h_alg,a_alg,
     s_extra, encrypted_ext,
     client_hello, zero
-  )
+  ))
 .
 
 (* The main server *)
@@ -353,12 +365,12 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
             (* Received the new client hello *)
             in(io,client_hello':msg);
             let CH(cr',offer') = client_hello' in
-              process_client_hello_noHRR(id_server,
+              out(ch_server_SH,(id_server,
                 use_psk,false,cert_req,c_dom,s_dom,
                 g,h_alg,a_alg,
                 s_extra,zero,
                 client_hello',cur_log_HRR
-              )
+              ))
             else out(io,unexpected_message)
           )
         )
@@ -376,12 +388,12 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
           if (ech_ext = empty_ech_ext) || (ech_ext = ech_is_inner) || not(use_ech)
           then (
             let is_backend = (ech_ext = ech_is_inner) && use_ech in
-            process_client_hello_noHRR(id_server,
+            out(ch_server_SH,(id_server,
               use_psk,is_backend,cert_req,c_dom,s_dom,
               g,h_alg,a_alg,
               s_extra,zero,
               x_client_hello,zero
-            )
+            ))
           )
           else out(io,illegal_parameter)
       )
