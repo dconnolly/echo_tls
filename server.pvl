@@ -70,12 +70,6 @@ let send_server_finished_message(
   out(io,enc_finished);
   let cur_log_FIN = (cur_log,finished_msg) in
 
-  event SanityServerFIN(id_server,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,
-    cur_log_FIN);
-
   (* Receiving messages from the client depending on psk and cert_req *)
   if psk = NoPSK && cert_req
   then (
@@ -84,27 +78,16 @@ let send_server_finished_message(
       let m2b(cert_msg) = aead_dec(a_alg,chk,zero,zero,enc_cert_msg) in
       let CRT(=zero,crt) = cert_msg in
 
-      let c_pkey = get_pkey(crt) in
-      let cur_log_CRT = (cur_log_FIN,cert_msg) in
 
-      event SanityServerCCRT(id_server,
-        cr,sr,psk,
-        master_secret,chk,shk,cfin,sfin,
-        s_pkey,c_pkey,
-        cur_log_CRT);
+      let cur_log_CRT = (cur_log_FIN,cert_msg) in
 
       in(io,enc_cert_verif_msg:bitstring);
       let m2b(cert_verify_msg) = aead_dec(a_alg,chk,zero,zero,enc_cert_verif_msg) in
       let CV(signed_log) = cert_verify_msg in
 
-      if verify(c_pkey,hash(h_alg,cur_log_CRT),signed_log) && get_domain(crt) = c_dom && verify_cert(crt) then
+      if verify(get_pkey(crt),hash(h_alg,cur_log_CRT),signed_log) && get_domain(crt) = c_dom && verify_cert(crt) then
+      let c_pkey = get_pkey(crt) in
       let cur_log_CV = (cur_log_CRT,cert_verify_msg) in
-
-      event SanityServerCCV(id_server,
-        cr,sr,psk,
-        master_secret,chk,shk,cfin,sfin,
-        s_pkey,c_pkey,
-        cur_log_CV);
 
       receive_client_finished_message(id_server,
         cr,sr,h_alg,a_alg,
@@ -141,23 +124,12 @@ let send_server_certificate_message(
   out(io,encrypted_certificate_msg);
   let cur_log_CRT = (cur_log,certificate_msg) in
 
-  event SanityServerCRT(id_server,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,
-    cur_log_CRT);
-
   (* The CertificateVerify message *)
   let signed_log = sign(sk,hash(h_alg,cur_log_CRT)) in
   let certificate_verify_msg = CV(signed_log) in
   let encrypted_certificate_verify_msg = aead_enc(a_alg,shk,zero,zero,m2b(certificate_verify_msg)) in
   out(io,encrypted_certificate_verify_msg);
   let cur_log_CV = (cur_log_CRT,certificate_verify_msg) in
-  event SanityServerCV(id_server,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,
-    cur_log_CV);
 
   send_server_finished_message(id_server,
     cr,sr,h_alg,a_alg,
@@ -228,11 +200,6 @@ let process_client_hello_noHRR(
         out(io,enc_ee);
         let cur_log_EE = (cur_log_SH,ee_msg) in
 
-        event SanityServerEE(id_server,
-          cr,sr,psk,
-          master_secret,chk,shk,cfin,sfin,
-          cur_log_EE);
-
         (* Sends either the finish message or the certificate messages *)
         if psk = NoPSK
         then
@@ -243,10 +210,6 @@ let process_client_hello_noHRR(
             let enc_crt = aead_enc(a_alg,shk,zero,zero,m2b(crtr_msg)) in
             out(io,enc_crt);
             let cur_log_CRTR = (cur_log_EE,crtr_msg) in
-            event SanityServerCRTR(id_server,
-              cr,sr,psk,
-              master_secret,chk,shk,cfin,sfin,
-              cur_log_CRTR);
 
             (* Sends the certificate *)
             send_server_certificate_message(id_server,

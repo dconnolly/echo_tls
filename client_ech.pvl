@@ -60,14 +60,7 @@ let receive_encrypted_extension_message_ech (id_client:idProc,
     else ()
   in
 
-
-
   let cur_log2 = (cur_log,ee_msg) in
-  event SanityClientEE(id_client,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    cur_log2);
-
   receive_after_encrypted_extension(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
 .
 
