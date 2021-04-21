@@ -286,3 +286,23 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
   attacker(server_fk)
 .
+
+(* Secrecy assumption related to ECH *)
+
+not s,s':seed; attacker(dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s))))).
+
+not s,s':seed, info:bitstring, m:hpkeMode;
+  let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))) in
+  let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
+  let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
+  let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
+  attacker(key)
+.
+
+not s,s':seed, info:bitstring, m:hpkeMode;
+  let shared_secret = dh_f(s') in
+  let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
+  let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
+  let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
+  attacker(key)
+.

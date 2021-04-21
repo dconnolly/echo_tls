@@ -124,11 +124,11 @@ let send_server_certificate_message =
   cur_log:bitstring
   ));
 
-  new st:bitstring;
-  event PreciseMess(ch_server_CRT,id_server,st);
+  new st[]:bitstring;
+  event PreciseMess(ch_server_CRT,id_server,st,master_secret);
 
   get long_term_keys(s_dom',sk,s_pkey,crt) [precise] in
-  event Selected_lgt(s_dom',s_dom);
+  event Selected_lgt(s_dom',s_dom,sk,s_pkey,crt);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -168,6 +168,9 @@ let process_client_hello_noHRR =
   client_hello:msg, cur_log:bitstring (* Should not contain the curent client hello *)
   ));
 
+  new st[]:bitstring;
+  event PreciseMess(ch_server_SH,id_server,st,m2b(client_hello));
+
   let CH(cr,offer) = client_hello in
   (* Verify the cipher suite and group *)
   let nego(=TLS13,=h_alg,=a_alg,client_kex_ext(DHE_kex(=g,gx)),sni_ext,ech_ext,psk_ext,extra_ext) = offer in (
@@ -191,7 +194,7 @@ let process_client_hello_noHRR =
           if is_backend
           then (
             (* Generate the accept confirmation when the it's a backend server. *)
-            new sr24:bytes24;
+            new sr24[]:bytes24;
             let SH_ECHConf = SH(B32(sr24,zero8),s_offer) in
             let cur_log_SH_ech = (cur_log_CH,SH_ECHConf) in
             let accept_confirmation = derive_secret(h_alg,handshake_secret,ech_accept_confirmation,cur_log_SH_ech) in
@@ -259,7 +262,7 @@ let process_client_hello_noHRR =
 letfun create_retry_config(c_dom:domain,config:echConfig) =
   let ech_config(config_id,g,pkR,s_dom,h_alg,a_alg) = config in
   let (skR':bitstring,pkR':element) = dh_keygen(g) in
-  new config_id':configId;
+  new config_id'[]:configId;
   ech_config(config_id',g,pkR',s_dom,h_alg,a_alg)
 .
 
@@ -333,7 +336,7 @@ let process_client_hello_ClientFacingServer(
 let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,s_extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
-  new id_server:idProc;
+  new id_server[]:idProc;
   event SanityServer(id_server,use_ech,use_psk,cert_req);
   (****************************************************)
 
@@ -389,11 +392,10 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
             s_extra,x_client_hello
           )
         else
-          if (ech_ext = empty_ech_ext) || (ech_ext = ech_is_inner) || not(use_ech)
+          if (ech_ext = empty_ech_ext) || not(use_ech)
           then (
-            let is_backend = (ech_ext = ech_is_inner) && use_ech in
             out(ch_server_SH,(id_server,
-              use_psk,is_backend,cert_req,c_dom,s_dom,
+              use_psk,false,cert_req,c_dom,s_dom,
               g,h_alg,a_alg,
               s_extra,zero,
               x_client_hello,zero

@@ -36,7 +36,9 @@ event SanityClientCFIN(idProc,
 
 (* For restriction *)
 
-event Selected_lgt(domain,domain).
-event Selected_psk(domain,domain,hash_alg,domain,domain,hash_alg).
+event Selected_lgt(domain,domain,privkey,pubkey,certificate).
+event Selected_psk(domain,domain,identityPsk,internal_preSharedKey).
 
-event PreciseMess(channel,idProc,bitstring).
+event PreciseMess(channel,idProc,bitstring,bitstring).
+
+(* For the equivalence proof *)

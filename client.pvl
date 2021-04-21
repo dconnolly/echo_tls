@@ -94,7 +94,7 @@ let send_certificate_message(id_client:idProc,
   =
 
   get long_term_keys(c_dom',sk,c_pkey,crt) [precise] in
-  event Selected_lgt(c_dom',c_dom);
+  event Selected_lgt(c_dom',c_dom,sk,c_pkey,crt);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -125,8 +125,8 @@ let receive_finished_message =
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring));
 
-  new st:bitstring;
-  event PreciseMess(ch_client_FIN,id_client,st);
+  new st[]:bitstring;
+  event PreciseMess(ch_client_FIN,id_client,st,master_secret);
 
   in(io,enc_finished_msg:bitstring);
   let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
@@ -183,6 +183,9 @@ let receive_after_encrypted_extension =
   c_dom:domain,s_dom:domain, psk:preSharedKey,
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
 
   if psk = NoPSK
   then (
@@ -309,7 +312,7 @@ letfun generate_client_hello_message (
 let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
-  new id_client:idProc;
+  new id_client[]:idProc;
   event SanityClient(id_client,false,false,use_psk,send_kex);
   (****************************************************)
 

@@ -9,8 +9,8 @@ letfun make_pre_shared_key_extension_ech(
   (* For equivalence properties, we will assume that PSK are available from the
     beginning for everyone so the access to the table is not blocking even when
     we don't use pre shared keys *)
-  get pre_shared_keys_diff(c_dom',s_dom',h_alg',id,internal_psk) [precise] in
-  event Selected_psk(c_dom,s_dom,h_alg,c_dom',s_dom',h_alg');
+  get pre_shared_keys_diff(=c_dom,s_dom',=h_alg,id,internal_psk) [precise] in
+  event Selected_psk(s_dom,s_dom',id,internal_psk);
 
   if use_psk
   then (
@@ -200,7 +200,7 @@ letfun generate_client_hello_message_ech (
 
   if use_grease
   then (
-    new payload:bitstring;
+    new payload[]:bitstring;
     let ech_ext = client_ECH(h_alg_ech,a_alg_ech,config_id,enc,payload) in
     let o_offer = nego(TLS13,h_alg,a_alg,o_kex_ext,SNI(o_dom),ech_ext,empty_psk_ext,o_extra) in
     (CH(o_cr,o_offer),CH(o_cr,o_offer),o_cr,o_cr,o_kex_ext,o_kex_ext,kex_data,psk_data)
@@ -231,7 +231,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   ) =
   (****************************************************)
   (* Only for sanity checks *)
-  new id_client:idProc;
+  new id_client[]:idProc;
   event SanityClient(id_client,true,use_grease,use_psk,send_kex);
   (****************************************************)
 

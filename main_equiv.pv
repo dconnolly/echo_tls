@@ -6,62 +6,68 @@
 set detectNotAttacker = true.
 (* set verboseNotAttacker = true. *)
 set removeEventsForLemma = true.
+(* set verboseRules = true. *)
 
-nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
-  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
+
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -5000
 .
 
-nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
-  table(pre_shared_keys_diff( *c_dom, *s_dom, *h, *id, *x)) / -4000
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
+  table(pre_shared_keys_diff( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -4000
 .
 
-nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
-  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt)) / -5000
+nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate;
+  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'])) / -5000
 .
 
-nounif config:echConfig,skR:bitstring;
-  table(ech_configurations( *config, *skR)) / -5000
+nounif config,config':echConfig,skR,skR':bitstring;
+  table(ech_configurations(diff[*config,*config'], diff[*skR,*skR'])) / -5000
 .
 
-nounif x:bitstring; mess(ch_client_CFIN,*x) / -3000.
-nounif x:bitstring; mess(ch_client_FIN,*x) / -3000.
-nounif x:bitstring; mess(ch_client_CRT,*x) / -3000.
-nounif x:bitstring; mess(ch_client_after_EE,*x) / -3000.
+nounif x,x':bitstring; mess(ch_client_CFIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_FIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_CRT,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_after_EE,diff[*x,*x']) / -3000.
 
-nounif x:bitstring; mess(ch_server_CFIN,*x) / -3000.
-nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
-nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
-nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
+nounif x,x':bitstring; mess(ch_server_CFIN,diff[*x,*x'])/ -3000.
+nounif x,x':bitstring; mess(ch_server_FIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_server_CRT,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -3000.
 
 (* Restriction for equivalence *)
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain;
-  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'])) ==> c_dom1 = c_dom2 && c_dom1' = c_dom2'
+restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate;
+  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
+  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+  (c_dom1 <> c_dom1' || (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt'))
 .
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,h_alg1,h_alg1',h_alg2,h_alg2':hash_alg;
-  event(Selected_psk(
-    diff[c_dom1,c_dom1'],diff[s_dom1,s_dom1'],diff[h_alg1,h_alg1'],
-    diff[c_dom2,c_dom2'],diff[s_dom2,s_dom2'],diff[h_alg2,h_alg2'])) ==>
-    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+restriction s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey;
+  event(Selected_psk(diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
     s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
-    h_alg1 = h_alg2 && h_alg1' = h_alg2'
+    (
+      (s_dom1 = s_dom1' && id = id' && ipsk = ipsk') ||
+      s_dom1 <> s_dom1'
+    )
 .
 
-axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring;
-  event(PreciseMess(ch,diff[id,id2],diff[st1,st2])) &&
-  event(PreciseMess(ch,diff[id,id2'],diff[st1',st2']))
-  ==> st1 = st1';
-  event(PreciseMess(ch,diff[id1,id],diff[st1,st2])) &&
-  event(PreciseMess(ch,diff[id1',id],diff[st1',st2']))
-  ==> st2 = st2';
-  event(PreciseMess(ch,diff[id1,id2],diff[st,st2])) &&
-  event(PreciseMess(ch,diff[id1',id2'],diff[st,st2']))
-  ==> id1 = id1';
-  event(PreciseMess(ch,diff[id1,id2],diff[st1,st])) &&
-  event(PreciseMess(ch,diff[id1',id2'],diff[st1',st]))
-  ==> id2 = id2'
+axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
+  event(PreciseMess(ch,diff[id,id2],diff[st1,st2],diff[x1,x2])) &&
+  event(PreciseMess(ch,diff[id,id2'],diff[st1',st2'],diff[x1',x2']))
+  ==> st1 = st1' && x1 = x1';
+  event(PreciseMess(ch,diff[id1,id],diff[st1,st2],diff[x1,x2])) &&
+  event(PreciseMess(ch,diff[id1',id],diff[st1',st2'],diff[x1',x2']))
+  ==> st2 = st2' && x2 = x2';
+  event(PreciseMess(ch,diff[id1,id2],diff[st,st2],diff[x1,x2])) &&
+  event(PreciseMess(ch,diff[id1',id2'],diff[st,st2'],diff[x1',x2']))
+  ==> id1 = id1' && x1 = x1';
+  event(PreciseMess(ch,diff[id1,id2],diff[st1,st],diff[x1,x2])) &&
+  event(PreciseMess(ch,diff[id1',id2'],diff[st1',st],diff[x1',x2']))
+  ==> id2 = id2' && x2 = x2'
 .
+
+event Same(bitstring).
 
 (********************************************************)
 (* TLS and ECH Setting                                  *)
@@ -70,6 +76,7 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring;
 let gen_honest_long_term_keys() =
   !
   in(io,a:domain);
+  event Same(d2b(a));
   new sk_h:privkey;
   event GenCert(a,pk(sk_h));
   insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)));
@@ -79,6 +86,7 @@ let gen_honest_long_term_keys() =
 let gen_compromised_long_term_keys() =
   !
   in(io,a:domain);
+  event Same(d2b(a));
   new sk_d:privkey;
   insert long_term_keys(a,sk_d,pk(sk_d),valid_cert(a,pk(sk_d)));
   out(io,sk_d)
@@ -87,6 +95,7 @@ let gen_compromised_long_term_keys() =
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
+  event Same((c_dom,s_dom));
   new psk_h:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_h) in
   event GenPsk(c_dom,s_dom,PSK(psk_h));
@@ -96,6 +105,7 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
 let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
+  event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   event GenPsk(c_dom,s_dom,PSK(psk_d));
@@ -152,16 +162,16 @@ let swap_long_term_keys =
 let swap_pre_shared_keys =
   !
   get pre_shared_keys(c_dom1,s_dom1,h_alg1,id1,psk1) in
-  get pre_shared_keys(c_dom2,s_dom2,h_alg2,id2,psk2) in
-  insert pre_shared_keys_diff(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
-  insert pre_shared_keys_diff(diff[c_dom2,c_dom1],diff[s_dom2,s_dom1],diff[h_alg2,h_alg1],diff[id2,id1],diff[psk2,psk1])
+  get pre_shared_keys(=c_dom1,s_dom2,=h_alg1,id2,psk2) in
+  insert pre_shared_keys_diff(c_dom1,diff[s_dom1,s_dom2],h_alg1,diff[id1,id2],diff[psk1,psk2]);
+  insert pre_shared_keys_diff(c_dom1,diff[s_dom2,s_dom1],h_alg1,diff[id2,id1],diff[psk2,psk1])
 .
 
 (********************************************************)
 (* Queries                                              *)
 (********************************************************)
 
-
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
@@ -182,28 +192,28 @@ process
   (
       gen_honest_long_term_keys ()
     | gen_honest_pre_shared_keys (tls_h)
+    | subprocess_client
+    | subprocess_server
     | swap_long_term_keys
     | swap_pre_shared_keys
-    | (phase 1; (subprocess_client | subprocess_server))
     | (
       !
-      in(io,(use_psk:bool,send_kex:bool,c_dom:domain,s_dom:domain));
-      phase 1;
+      in(io,(use_psk:bool,send_kex:bool,c_dom:domain,s_dom:domain)) [precise];
+      event Same((use_psk,send_kex,c_dom,s_dom));
       standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
-      in(io,(use_grease:bool,use_psk:bool,send_kex:bool,c_dom:domain));
-      phase 1;
+      in(io,(use_grease:bool,use_psk:bool,send_kex:bool,c_dom:domain)) [precise];
+      event Same((use_grease,use_psk,send_kex,c_dom));
       echo_client(use_grease,use_psk,send_kex,c_dom,BackendA,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     ) | (
       !
-      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,c_dom:domain,s_dom:domain));
-      phase 1;
+      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,c_dom:domain,s_dom:domain)) [precise];
+      event Same((use_ech,use_psk,cert_req,c_dom,s_dom));
       server(use_ech,use_psk,cert_req,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
-      !
-      in(io,(use_psk:bool,c_dom:domain));
-      phase 1;
+      in(io,(use_psk:bool,c_dom:domain)) [precise];
+      event Same((use_psk,c_dom));
       echo_client(false,use_psk,true,c_dom,diff[BackendA,BackendB],tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )
