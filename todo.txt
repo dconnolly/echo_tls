@@ -1,3 +1,8 @@
+----- Current Status -----
+
+Equivalence takes too much time / space (more than 8 hours + 260 Go and it did not terminate)
+Need to investigate how to either make the clause faster / speedup the termination.
+
 ----- Todo list -----
 
 - Currently, the outer client must have an empty psk extension.
