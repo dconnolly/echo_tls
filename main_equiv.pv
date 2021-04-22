@@ -3,7 +3,7 @@
   Leave commented for the master branch
 *)
 
-set detectNotAttacker = true.
+(* set detectNotAttacker = true. *)
 (* set verboseNotAttacker = true. *)
 set removeEventsForLemma = true.
 (* set verboseRules = true. *)

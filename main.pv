@@ -5,6 +5,7 @@
 
 set detectNotAttacker = true.
 (* set verboseNotAttacker = true. *)
+(* set verboseRules = true. *)
 
 nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
@@ -34,17 +35,12 @@ nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
 
 (* Restriction for tables *)
 
-restriction c_dom1,c_dom2:domain;
-  event(Selected_lgt(c_dom1,c_dom2)) ==> c_dom1 = c_dom2
+restriction c_dom1,c_dom2:domain,sk:privkey,spkey:pubkey,crt:certificate;
+  event(Selected_lgt(c_dom1,c_dom2,sk,spkey,crt)) ==> c_dom1 = c_dom2
 .
 
-restriction c_dom1,c_dom2,s_dom1,s_dom2:domain,h_alg1,h_alg2:hash_alg;
-  event(Selected_psk(
-    c_dom1,s_dom1,h_alg1,
-    c_dom2,s_dom2,h_alg2)) ==>
-    c_dom1 = c_dom2 &&
-    s_dom1 = s_dom2 &&
-    h_alg1 = h_alg2
+restriction s_dom1,s_dom2:domain,id:identityPsk,ipsk:internal_preSharedKey;
+  event(Selected_psk(s_dom1,s_dom2,id,ipsk)) ==> s_dom1 = s_dom2
 .
 
 (********************************************************)
