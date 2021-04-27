@@ -27,6 +27,24 @@ Need to investigate how to either make the clause faster / speedup the terminati
 
 - Add compromised keys
 
+- Try to prove client privacy in normal TLS and Echo
+
+- Privacy of client
+	echo_client(false,use_psk,true,diff[c_domA,c_domB],BackendA,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+	Change the Server so that he does not take the client domain as argument
+
+- Privacy of the inner extra field (give input by attacker)
+
+- Add an extra field to EE (in addition to ECH_retry) and prove privacy on it.
+
+- Unlinkability of the client:
+	!
+	in(io,c_domA);
+	in(io,c_domB);
+	standard_client(true,send_kex,diff[c_domA,c_domB],s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+
+	! new k ! P \equiv ! new k; P
+
 ----- Done ----
 
 - Add the initialisation of the different tables:
