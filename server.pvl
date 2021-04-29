@@ -4,7 +4,7 @@
 
 letfun generate_early_secret_psk_extension(
   use_psk:bool,
-  c_dom,s_dom:domain,
+  s_dom:domain,
   client_hello:msg,
   cur_log:bitstring
   ) =
@@ -12,21 +12,21 @@ letfun generate_early_secret_psk_extension(
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext)) = client_hello in
 
   let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
-    if get_receiver_psk(id) = s_dom && get_sender_psk(id) = c_dom && get_hash_psk(id) = h_alg then (
+    if get_receiver_psk(id) = s_dom && get_hash_psk(id) = h_alg then (
       let psk = PSK(get_ipsk(id)) in
       let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
       let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,trunc_client_psk_ext(id),extra_ext) in
       let cur_log' = (cur_log,CH(cr,offer)) in
       if binders = hmac(h_alg,kb,cur_log') then
-      (early_secret, server_psk_ext(1), psk)
+      (early_secret, server_psk_ext(1), psk,get_sender_psk(id))
     )
     else
       let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-      (es, empty_psk_ext, NoPSK)
+      (es, empty_psk_ext, NoPSK,zero)
   )
   else
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (es, empty_psk_ext, NoPSK)
+    (es, empty_psk_ext, NoPSK,zero)
 .
 
 (* Receive the client finished message *)
@@ -37,6 +37,7 @@ let receive_client_finished_message =
   !
   in(ch_server_CFIN,(id_server:idProc,
   cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom:domain,s_dom:domain,
   psk:preSharedKey, s_pkey:pubkey,c_pkey:pubkey,
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring));
@@ -87,14 +88,13 @@ let send_server_finished_message =
       let m2b(cert_msg) = aead_dec(a_alg,chk,zero,zero,enc_cert_msg) in
       let CRT(=zero,crt) = cert_msg in
 
-
       let cur_log_CRT = (cur_log_FIN,cert_msg) in
 
       in(io,enc_cert_verif_msg:bitstring);
       let m2b(cert_verify_msg) = aead_dec(a_alg,chk,zero,zero,enc_cert_verif_msg) in
       let CV(signed_log) = cert_verify_msg in
 
-      if verify(get_pkey(crt),hash(h_alg,cur_log_CRT),signed_log) && get_domain(crt) = c_dom && verify_cert(crt) then
+      if verify(get_pkey(crt),hash(h_alg,cur_log_CRT),signed_log) && verify_cert(crt) then
       let c_pkey = get_pkey(crt) in
       let cur_log_CV = (cur_log_CRT,cert_verify_msg) in
 
@@ -109,6 +109,7 @@ let send_server_finished_message =
     certificate request from the client *)
     out(ch_server_CFIN,(id_server,
       cr,sr,h_alg,a_alg,
+      c_dom,s_dom,
       psk,s_pkey,NoPubKey,
       master_secret,chk,shk,cfin,sfin,
       cur_log_FIN))
@@ -166,7 +167,7 @@ let process_client_hello_noHRR =
   !
   in(ch_server_SH,(
   id_server:idProc,
-  use_psk:bool,is_backend:bool,cert_req:bool,c_dom:domain,s_dom:domain,
+  use_psk:bool,is_backend:bool,cert_req:bool,s_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg,
   s_extra:extraExt, encrypted_ext:bitstring,
   client_hello:msg, cur_log:bitstring (* Should not contain the curent client hello *)
@@ -182,8 +183,10 @@ let process_client_hello_noHRR =
     then (
       if sni_ext = SNI(s_dom)
       then (
-        (* Retrieve the early secret from the psk *)
-        let (early_secret:bitstring,s_psk_ext:preSharedKeyExt,psk:preSharedKey) = generate_early_secret_psk_extension(use_psk,c_dom,s_dom,client_hello,cur_log) in
+        (* Retrieve the early secret from the psk. c_dom is either the domain of
+           the client obtained from the psk, or it is zero if the psk was
+           rejected or the server did not want to consider psk. *)
+        let (early_secret:bitstring,s_psk_ext:preSharedKeyExt,psk:preSharedKey,c_dom:domain) = generate_early_secret_psk_extension(use_psk,s_dom,client_hello,cur_log) in
 
         let cur_log_CH = (cur_log,client_hello) in
         event SanityServerCH(id_server,is_backend,cr,c_dom,s_dom,psk,cur_log_CH);
@@ -263,7 +266,7 @@ let process_client_hello_noHRR =
 
 (* Generate of retry config for ECH *)
 
-letfun create_retry_config(c_dom:domain,config:echConfig) =
+letfun create_retry_config(config:echConfig) =
   let ech_config(config_id,g,pkR,s_dom,h_alg,a_alg) = config in
   let (skR':bitstring,pkR':element) = dh_keygen(g) in
   new config_id'[]:configId;
@@ -274,7 +277,7 @@ letfun create_retry_config(c_dom:domain,config:echConfig) =
 
 let process_client_hello_ClientFacingServer(
   id_server:idProc,
-  use_psk,cert_req:bool,c_dom,o_dom:domain,
+  use_psk,cert_req:bool,o_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg,
   s_extra:extraExt, o_client_hello:msg)
   =
@@ -314,11 +317,11 @@ let process_client_hello_ClientFacingServer(
         let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',empty_psk_ext',extra_ext')) = i_client_hello in
           (i_dom,i_client_hello,zero,true)
         else
-          let retry_config = create_retry_config(c_dom,ech_conf) in
+          let retry_config = create_retry_config(ech_conf) in
           (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
       )
       else
-        let retry_config = create_retry_config(c_dom,ech_conf) in
+        let retry_config = create_retry_config(ech_conf) in
         (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
     )
     else
@@ -328,7 +331,7 @@ let process_client_hello_ClientFacingServer(
   in
 
   out(ch_server_SH,(id_server,
-    use_psk,is_backend,cert_req,c_dom,s_dom,
+    use_psk,is_backend,cert_req,s_dom,
     g,h_alg,a_alg,
     s_extra, encrypted_ext,
     client_hello, zero
@@ -337,7 +340,7 @@ let process_client_hello_ClientFacingServer(
 
 (* The main server *)
 
-let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,s_extra:extraExt) =
+let server(use_ech,use_psk,cert_req:bool,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,s_extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
   new id_server[]:idProc;
@@ -371,13 +374,13 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
             let hello_retry_request = SH(rand_HelloRetryRequest,hrr_mode) in
             out(io,hello_retry_request);
             let cur_log_HRR = ((zero,x_client_hello),hello_retry_request) in
-            event SanityServerHRR(id_server,cr,c_dom,s_dom,cur_log_HRR);
+            event SanityServerHRR(id_server,cr,s_dom,cur_log_HRR);
 
             (* Received the new client hello *)
             in(io,client_hello':msg);
             let CH(cr',offer') = client_hello' in
               out(ch_server_SH,(id_server,
-                use_psk,false,cert_req,c_dom,s_dom,
+                use_psk,false,cert_req,s_dom,
                 g,h_alg,a_alg,
                 s_extra,zero,
                 client_hello',cur_log_HRR
@@ -391,7 +394,7 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
         (* Received a correct group and a key share *)
         let (client_ECH(ech_h_alg,ech_aead_alg,config_id,enc,payload),=true) = (ech_ext,use_ech) in
           process_client_hello_ClientFacingServer(id_server,
-            use_psk,cert_req,c_dom,s_dom,
+            use_psk,cert_req,s_dom,
             g,h_alg,a_alg,
             s_extra,x_client_hello
           )
@@ -399,7 +402,7 @@ let server(use_ech,use_psk,cert_req:bool,c_dom,s_dom:domain,g:group,h_alg:hash_a
           if (ech_ext = empty_ech_ext) || not(use_ech)
           then (
             out(ch_server_SH,(id_server,
-              use_psk,false,cert_req,c_dom,s_dom,
+              use_psk,false,cert_req,s_dom,
               g,h_alg,a_alg,
               s_extra,zero,
               x_client_hello,zero
