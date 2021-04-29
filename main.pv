@@ -6,6 +6,7 @@
 (* set verboseNotAttacker = true.
 set detectNotAttacker = true. *)
 (* set verboseRules = true. *)
+set removeEventsForLemma = true.
 set redundancyElim = no.
 set preciseActions = true.
 
