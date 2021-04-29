@@ -41,6 +41,15 @@ letfun mk_psk_h() = new s:seed; psk_h(s).
 letfun mk_psk_d() = new s:seed; psk_d(s).
 
 type identityPsk.
+fun mk_idpsk(domain,domain,hash_alg,internal_preSharedKey):identityPsk [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
+  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = s_dom [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
+  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = c_dom [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
+  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = h_alg [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
+  get_ipsk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = ipsk [private].
 
 fun psk2b(preSharedKey): bitstring
 reduc forall b:internal_preSharedKey; psk2b(PSK(b)) = ipsk2b(b)
@@ -54,6 +63,11 @@ fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk of
   by the client currently so the server is always suppose to send 1. *)
 
 table pre_shared_keys(
+  domain (* Client domain *),
+  domain (* Server domain *),
+  hash_alg,identityPsk,internal_preSharedKey).
+
+table pre_shared_keys_diff(
   domain (* Client domain *),
   domain (* Server domain *),
   hash_alg,identityPsk,internal_preSharedKey).

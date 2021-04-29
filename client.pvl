@@ -54,12 +54,16 @@ letfun make_key_share_extension(g:group,send_key_share:bool) =
 
 (* Finished *)
 
-let send_finished_message(id_client:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  psk:preSharedKey,s_pkey,c_pkey:pubkey,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
+free ch_client_CFIN:channel [private].
+
+let send_finished_message =
+  !
+  in(ch_client_CFIN,(id_client:idProc,
+    cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+    psk:preSharedKey,s_pkey:pubkey,c_pkey:pubkey,
+    master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
+    cur_log:bitstring)
+  );
 
   let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
   let client_hash_msg = hmac(h_alg,cfin,cur_log) in
@@ -89,7 +93,8 @@ let send_certificate_message(id_client:idProc,
   cur_log:bitstring)
   =
 
-  get long_term_keys(=c_dom,sk,c_pkey,crt) in
+  get long_term_keys(c_dom',sk,c_pkey,crt) [precise] in
+  event Selected_lgt(c_dom',c_dom,sk,c_pkey,crt);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -105,27 +110,33 @@ let send_certificate_message(id_client:idProc,
   let cur_log3 = (cur_log2,certificate_verify_msg) in
 
   (* The finished message *)
-  send_finished_message(id_client,cr,sr,h_alg,a_alg,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3)
+  out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3))
 .
 
 (* Receiving Finished message from Server *)
 
-let receive_finished_message(id_client:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+free ch_client_FIN:channel [private].
+
+let receive_finished_message =
+  !
+  in(ch_client_FIN,(id_client:idProc,
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom:domain, psk:preSharedKey, cert_req:bool, s_pkey:pubkey,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
+  cur_log:bitstring));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_FIN,id_client,st,master_secret);
 
   in(io,enc_finished_msg:bitstring);
-  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
+  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in
     let FIN(hash_msg) = finished_msg in (
       if hash_msg = hmac(h_alg,sfin,cur_log) then
       let cur_log2 = (cur_log,finished_msg) in
 
       if cert_req
       then send_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
-      else send_finished_message(id_client,cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2)
+      else out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2))
     )
     else out(io,unexpected_message)
   else out(io,bad_record_mac)
@@ -133,13 +144,17 @@ let receive_finished_message(id_client:idProc,
 
 (* Process the certificate message and receive the certificate verify *)
 
-let process_server_certificate_message(id_client:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom,s_dom:domain, psk:preSharedKey, cert_req:bool,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
+free ch_client_CRT:channel [private].
+
+let process_server_certificate_message =
+  !
+  in(ch_client_CRT,(id_client:idProc,
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom:domain,s_dom:domain, psk:preSharedKey, cert_req:bool,
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring,
-  certificate_msg:msg)
-  =
+  certificate_msg:msg));
+
   (* Process the Certificate message *)
   let CRT(=zero,crt) = certificate_msg in
   let cur_log2 = (cur_log,certificate_msg) in
@@ -154,17 +169,23 @@ let process_server_certificate_message(id_client:idProc,
   let cur_log3 = (cur_log2,certificate_verify_msg) in
 
   (* Process the Finished message *)
-  receive_finished_message(id_client,cr,sr,h_alg,a_alg,c_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3)
+  out(ch_client_FIN,(id_client,cr,sr,h_alg,a_alg,c_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3))
 .
 
 (* Receiving message after EncryptedExtensions *)
 
-let receive_after_encrypted_extension (id_client:idProc,
-  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom,s_dom:domain, psk:preSharedKey,
-  master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
-  =
+free ch_client_after_EE:channel [private].
+
+let receive_after_encrypted_extension =
+  !
+  in(ch_client_after_EE,(id_client:idProc,
+  cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom:domain,s_dom:domain, psk:preSharedKey,
+  master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
+  cur_log:bitstring));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
 
   if psk = NoPSK
   then (
@@ -177,20 +198,20 @@ let receive_after_encrypted_extension (id_client:idProc,
 
       in(io,enc_crt_msg:bitstring);
       let m2b(certificate_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_msg) in
-      process_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2,certificate_msg)
+      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2,certificate_msg))
     )
     else let CRT(=zero,crt) = msg' in (
-      process_server_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg')
+      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg'))
     )
     else out(io,unexpected_message)
   )
   else
     (* If there is a PSK, no certificate shall be sent. Directly receive the finish message *)
-    receive_finished_message(id_client,
+    out(ch_client_FIN,(id_client,
       cr,sr, h_alg,a_alg,
       c_dom, psk, false, NoPubKey,
       master_secret, chk,shk, cfin,sfin,
-      cur_log)
+      cur_log))
 .
 
 (* Receiving the encrypted extension message *)
@@ -205,10 +226,9 @@ let receive_encrypted_extension_message (id_client:idProc,
   let m2b(ee_msg) = aead_dec(a_alg,shk,zero,zero,enc_ee_msg) in
 
   let EE(x) = ee_msg in
-  (* Should we do something about [x] ? Do we test that it is empty else abort ? *)
   let cur_log2 = (cur_log,ee_msg) in
 
-  receive_after_encrypted_extension(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2)
+  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2))
 .
 
 (* Generate the keys after the Server Hello *)
@@ -291,7 +311,7 @@ letfun generate_client_hello_message (
 let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
-  new id_client:idProc;
+  new id_client[]:idProc;
   event SanityClient(id_client,false,false,use_psk,send_kex);
   (****************************************************)
 

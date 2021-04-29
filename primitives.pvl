@@ -16,8 +16,8 @@ const zero32:bytes32.
 fun B32(bytes24,bytes8):bytes32 [data].
 
 letfun gen_B32_random() =
-  new rand24:bytes24;
-  new rand8:bytes8;
+  new rand24[]:bytes24;
+  new rand8[]:bytes8;
   B32(rand24,rand8).
 
 fun crop_into_bytes8(bitstring):bytes8.
@@ -78,7 +78,7 @@ fun dh_xy(seed,bitstring):element [private].
 fun dh_f(seed):element [private].
 
 letfun dh_keygen(g:group) =
-  new s:seed;
+  new s[]:seed;
   let gx = dh_pub(g,dh_k(s)) in
   (dh_k(s),gx).
 
@@ -90,7 +90,7 @@ reduc forall g:group, x:bitstring, gxy:element;
 
 (* Generate then Encap *)
 letfun dh_encap(g:group,gx:element,m:bitstring) =
-  new s:seed;
+  new s[]:seed;
   (dh_xy(s,m), dh_encap_fun(g,gx,dh_xy(s,m))).
 
 (* Decap: never fails *)
@@ -98,7 +98,7 @@ letfun dh_decap(g:group,gy:element,x:bitstring) =
   let gxy = dh_decap_fun(g,gy,x) in
     gxy
   else
-    new s:seed;
+    new s[]:seed;
     dh_f(s).
 
 (**************************************************************)
@@ -173,7 +173,7 @@ type hpkeMode.
 const R,S:hpkeMode.
 
 type hpkeContext.
-fun hpke_context(hpkeMode,aead_key,bitstring,bitstring):hpkeContext [data].
+fun hpke_context(hpkeMode,aead_key(*,bitstring,bitstring*)):hpkeContext [data].
 
 const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
 
@@ -182,11 +182,11 @@ const nonce_for_seal_open:bitstring.
   the internal sequence *)
 
 letfun kpke_seal(a:aead_alg,context:hpkeContext,aad:bitstring,pt:bitstring) =
-  let hpke_context(=S,key,nonce,exporter) = context in
+  let hpke_context(=S,key (*,nonce,exporter *)) = context in
   aead_enc(a,key,nonce_for_seal_open,aad,pt).
 
 letfun hpke_open(a:aead_alg,context:hpkeContext,aad:bitstring,ct:bitstring) =
-  let hpke_context(=R,key,nonce,exporter) = context in
+  let hpke_context(=R,key (*,nonce,exporter *)) = context in
   aead_dec(a,key,nonce_for_seal_open,aad,ct).
 
 
@@ -198,12 +198,12 @@ letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstr
   let base_nonce = hkdf_expand_label(h,xsecret,hpke_base_nonce,info_hash) in
   let exporter_secret = hkdf_expand_label(h,xsecret,hpke_exp,info_hash) in
 
-  hpke_context(m,key,base_nonce,exporter_secret).
+  hpke_context(m,key(*,base_nonce,exporter_secret*)).
 
 (* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
 
 letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
-  let (shared_secret:element,enc:element) = dh_encap(g,pkR,zero) in
+  let (shared_secret:element,enc:element) = dh_encap(g,pkR,e2b(pkR)) in
   (enc,hpke_key_schedule(h,S,shared_secret,info)).
 
 letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:bitstring,info:bitstring) =
