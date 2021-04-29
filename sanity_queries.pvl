@@ -26,84 +26,84 @@ query
   (* event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ; *)
@@ -117,84 +117,84 @@ query
   (* event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,false,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,false,false,true,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ; *)
@@ -208,84 +208,84 @@ query
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ; *)
@@ -299,84 +299,84 @@ query
   (* event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,false,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,false,true,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ; *)
@@ -391,84 +391,84 @@ query
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
 ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,false,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,false,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
@@ -483,84 +483,84 @@ query
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,false,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,false)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,true,false,true)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ;
   event(SanityClient(id_c,true,true,true,true)) &&
   event(SanityServer(id_s,true,false,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,cr,c_dom,s_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
 .
@@ -585,7 +585,7 @@ query
   event(SanityClient(id_c,false,false,use_psk_c,send_kex)) &&
   event(SanityServer(id_s,use_ech_s,use_psk_s,cert_req)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ==>
@@ -619,7 +619,7 @@ query
         (use_psk_c <> true && psk'' = NoPSK)
       ) &&
       event(SanityClientHRR(id_c,cr_hrr,c_dom,s_dom,cur_log3)) &&
-      event(SanityServerHRR(id_s,cr_hrr,c_dom,s_dom,cur_log3))
+      event(SanityServerHRR(id_s,cr_hrr,s_dom,cur_log3))
     )
   )
 .
@@ -640,7 +640,7 @@ query
   event(SanityClient(id_c,true,true,use_psk_c,send_kex)) &&
   event(SanityServer(id_s,use_ech_s,use_psk_s,cert_req)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
-  event(SanityServerCH(id_s,is_backend,cr,c_dom,s_dom,psk',cur_log)) &&
+  event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
   ==>

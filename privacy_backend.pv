@@ -33,21 +33,21 @@ nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -3000.
 
 (* Restriction for equivalence *)
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate;
+restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
   event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
   c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
   (
     (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') ||
-    (c_dom1 <> c_dom1' && sk = new sk_h && sk' = new sk_h)
+    (c_dom1 <> c_dom1' && sk = uc_privkey(s) && sk' = uc_privkey(s'))
   )
 .
 
-restriction s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey;
+restriction s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
   event(Selected_psk(diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
     s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
     (
       (s_dom1 = s_dom1' && id = id' && ipsk = ipsk') ||
-      (s_dom1 <> s_dom1' && ipsk = new psk_h && ipsk' = new psk_h)
+      (s_dom1 <> s_dom1' && ipsk = uc_psk(s) && ipsk' = uc_psk(s'))
     )
 .
 
@@ -77,7 +77,8 @@ let gen_honest_long_term_keys() =
   !
   in(io,a:domain);
   event Same(d2b(a));
-  new sk_h:privkey;
+  new s:seed;
+  let sk_h = uc_privkey(s) in
   event GenCert(a,pk(sk_h));
   insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)));
   out(io,pk(sk_h))
@@ -96,7 +97,8 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
-  new psk_h:internal_preSharedKey;
+  new s:seed;
+  let psk_h = uc_psk(s) in
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_h) in
   event GenPsk(c_dom,s_dom,PSK(psk_h));
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_h)
@@ -197,9 +199,9 @@ process
       echo_client(use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     ) | (
       !
-      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,c_dom:domain,s_dom:domain)) [precise];
-      event Same((use_ech,use_psk,cert_req,c_dom,s_dom));
-      server(use_ech,use_psk,cert_req,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,s_dom:domain)) [precise];
+      event Same((use_ech,use_psk,cert_req,s_dom));
+      server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       in(io,(use_psk:bool,c_dom:domain,cfs_dom:domain)) [precise];
       event Same((use_psk,c_dom,cfs_dom));

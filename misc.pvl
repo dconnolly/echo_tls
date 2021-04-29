@@ -12,9 +12,9 @@ event GenOutdatedEchConfig(echConfig).
 (* Events for control flow *)
 
 event SanityServer(idProc,bool,bool,bool).
-event SanityServerHRR(idProc,bytes32,domain,domain,bitstring).
-event SanityServerCH(idProc,bool,bytes32,domain,domain,preSharedKey,bitstring).
-event SanityServerSH(idProc,bytes32,bytes32,domain,domain,bitstring,preSharedKey,bitstring).
+event SanityServerHRR(idProc,bytes32,domain,bitstring).
+event SanityServerCH(idProc,bool,bytes32,domain,preSharedKey,bitstring).
+event SanityServerSH(idProc,bytes32,bytes32,domain,bitstring,preSharedKey,bitstring).
 event SanityServerCFIN(idProc,
   bytes32,bytes32,preSharedKey,
   bitstring,aead_key,aead_key,mac_key,mac_key,

@@ -141,6 +141,13 @@ otherwise forall i:nat, x:bitstring, k:mac_key;
 
 type privkey.
 type pubkey.
+
+(* Uncompromised private key: To identify key that are honestly generated
+   and that were not directly given to the attacker, we create these keys
+   with [uc_privkey] instead of [new sk:privkey]. These way, we can mention
+   these keys in lemmas, axioms and restrictions. *)
+fun uc_privkey(seed):privkey [private].
+
 const NoPubKey: pubkey.
 fun pk(privkey): pubkey.
 

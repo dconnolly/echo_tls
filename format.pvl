@@ -29,6 +29,8 @@ fun hrr_kex_ext(group): keyShareExt [data].
 (********************************************************)
 
 type internal_preSharedKey.
+fun uc_psk(seed):internal_preSharedKey [private].
+
 fun ipsk2b(internal_preSharedKey):bitstring [typeConverter].
 type preSharedKey.
 const NoPSK: preSharedKey.
@@ -99,6 +101,8 @@ reduc
 fun verify_cert(certificate):bool
 reduc forall d:domain, p:pubkey;
   verify_cert(valid_cert(d,p)) = true .
+
+
 
 table long_term_keys(domain,privkey,pubkey,certificate).
 

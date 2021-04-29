@@ -155,7 +155,7 @@ process
       echo_client(use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     ) | (
       !
-      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,c_dom:domain,s_dom:domain)) [precise];
-      server(use_ech,use_psk,cert_req,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      in(io,(use_ech:bool,use_psk:bool,cert_req:bool,s_dom:domain)) [precise];
+      server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
