@@ -3,11 +3,11 @@
   Leave commented for the master branch
 *)
 
-set verboseNotAttacker = true.
-set detectNotAttacker = true.
+(* set verboseNotAttacker = true.
+set detectNotAttacker = true. *)
 (* set verboseRules = true. *)
 set redundancyElim = no.
-(* set preciseActions = true. *)
+set preciseActions = true.
 
 nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
