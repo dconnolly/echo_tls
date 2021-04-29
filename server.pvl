@@ -12,13 +12,16 @@ letfun generate_early_secret_psk_extension(
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext)) = client_hello in
 
   let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
-    if get_receiver_psk(id) = s_dom && get_sender_psk(id) = c_dom && get_hash_psk(id) = h_alg then
-    let psk = PSK(get_ipsk(id)) in
-    let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
-    let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,trunc_client_psk_ext(id),extra_ext) in
-    let cur_log' = (cur_log,CH(cr,offer)) in
-    if binders = hmac(h_alg,kb,cur_log') then
-    (early_secret, server_psk_ext(1), psk)
+    if get_receiver_psk(id) = s_dom && get_sender_psk(id) = c_dom && get_hash_psk(id) = h_alg then (
+      let psk = PSK(get_ipsk(id)) in
+      let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+      let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,trunc_client_psk_ext(id),extra_ext) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      if binders = hmac(h_alg,kb,cur_log') then
+      (early_secret, server_psk_ext(1), psk)
+    )
+    else
+      (es, empty_psk_ext, NoPSK)
   )
   else
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in

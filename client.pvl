@@ -129,7 +129,7 @@ let receive_finished_message =
   event PreciseMess(ch_client_FIN,id_client,st,master_secret);
 
   in(io,enc_finished_msg:bitstring);
-  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in (* QUESTION: What do we do if the decryption fails ? Which error ? *)
+  let m2b(finished_msg) = aead_dec(a_alg,shk,zero,zero,enc_finished_msg) in
     let FIN(hash_msg) = finished_msg in (
       if hash_msg = hmac(h_alg,sfin,cur_log) then
       let cur_log2 = (cur_log,finished_msg) in
@@ -226,7 +226,6 @@ let receive_encrypted_extension_message (id_client:idProc,
   let m2b(ee_msg) = aead_dec(a_alg,shk,zero,zero,enc_ee_msg) in
 
   let EE(x) = ee_msg in
-  (* Should we do something about [x] ? Do we test that it is empty else abort ? *)
   let cur_log2 = (cur_log,ee_msg) in
 
   out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2))
