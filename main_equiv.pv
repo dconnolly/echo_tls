@@ -3,11 +3,7 @@
   Leave commented for the master branch
 *)
 
-(* set detectNotAttacker = true. *)
-(* set verboseNotAttacker = true. *)
 set removeEventsForLemma = true.
-(* set verboseRules = true. *)
-
 
 nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
   table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -5000
@@ -52,6 +48,9 @@ restriction s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':i
     )
 .
 
+event Same(bitstring).
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+
 axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
   event(PreciseMess(ch,diff[id,id2],diff[st1,st2],diff[x1,x2])) &&
   event(PreciseMess(ch,diff[id,id2'],diff[st1',st2'],diff[x1',x2']))
@@ -66,8 +65,6 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,
   event(PreciseMess(ch,diff[id1',id2'],diff[st1',st],diff[x1',x2']))
   ==> id2 = id2' && x2 = x2'
 .
-
-event Same(bitstring).
 
 (********************************************************)
 (* TLS and ECH Setting                                  *)
@@ -86,7 +83,6 @@ let gen_honest_long_term_keys() =
 let gen_compromised_long_term_keys() =
   !
   in(io,a:domain);
-  event Same(d2b(a));
   new sk_d:privkey;
   insert long_term_keys(a,sk_d,pk(sk_d),valid_cert(a,pk(sk_d)));
   out(io,sk_d)
@@ -105,7 +101,6 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
 let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
-  event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   event GenPsk(c_dom,s_dom,PSK(psk_d));
@@ -127,14 +122,6 @@ let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
   in(io,o_dom:domain);
   let config = make_ech_config(o_dom,g,h_alg,a_alg) in
   out(io,config)
-.
-
-letfun gen_outdated_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
-  new id: configId;
-  let (skR:bitstring,pkR:element) = dh_keygen(g) in
-  let config = ech_config(id,g,pkR,o_dom,h_alg,a_alg) in
-  event GenOutdatedEchConfig(config);
-  config
 .
 
 let subprocess_client =
@@ -171,7 +158,7 @@ let swap_pre_shared_keys =
 (* Queries                                              *)
 (********************************************************)
 
-restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+free CFS,BackendA,BackendB:domain.
 
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
@@ -181,17 +168,12 @@ process
   let ech_h = id_hash(StrongHash,2) in
   let ech_a = id_aead(StrongAE,2) in
   let ech_g = id_g(StrongDH,2) in
-
-  new CFS:domain;
-  new BackendA:domain;
-  new BackendB:domain;
-  out(io,(CFS,BackendA,BackendB));
-
-  let ech_conf = make_ech_config(CFS,ech_g,ech_h,ech_a) in
-  out(io,ech_conf);
   (
       gen_honest_long_term_keys ()
+    | gen_compromised_long_term_keys ()
     | gen_honest_pre_shared_keys (tls_h)
+    | gen_compromised_pre_shared_keys (tls_h)
+    | gen_ech_config(ech_g,ech_h,ech_a)
     | subprocess_client
     | subprocess_server
     | swap_long_term_keys
@@ -203,17 +185,21 @@ process
       standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
-      in(io,(use_grease:bool,use_psk:bool,send_kex:bool,c_dom:domain)) [precise];
-      event Same((use_grease,use_psk,send_kex,c_dom));
-      echo_client(use_grease,use_psk,send_kex,c_dom,BackendA,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+      in(io,(use_grease:bool,use_psk:bool,send_kex:bool,c_dom:domain,cfs_dom:domain,backend_dom:domain)) [precise];
+      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom,backend_dom));
+      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
+      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
+      echo_client(use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     ) | (
       !
       in(io,(use_ech:bool,use_psk:bool,cert_req:bool,c_dom:domain,s_dom:domain)) [precise];
       event Same((use_ech,use_psk,cert_req,c_dom,s_dom));
       server(use_ech,use_psk,cert_req,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
-      in(io,(use_psk:bool,c_dom:domain)) [precise];
-      event Same((use_psk,c_dom));
+      in(io,(use_psk:bool,c_dom:domain,cfs_dom:domain)) [precise];
+      event Same((use_psk,c_dom,cfs_dom));
+      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
+      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
       echo_client(false,use_psk,true,c_dom,diff[BackendA,BackendB],tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )

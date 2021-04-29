@@ -21,6 +21,7 @@ letfun generate_early_secret_psk_extension(
       (early_secret, server_psk_ext(1), psk)
     )
     else
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
       (es, empty_psk_ext, NoPSK)
   )
   else
