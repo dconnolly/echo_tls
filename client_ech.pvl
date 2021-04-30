@@ -2,31 +2,6 @@
 (* Client ECH                                          *)
 (********************************************************)
 
-letfun make_pre_shared_key_extension_ech(
-  use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
-  extra:extraExt,cur_log:bitstring
-  ) =
-  (* For equivalence properties, we will assume that PSK are available from the
-    beginning for everyone so the access to the table is not blocking even when
-    we don't use pre shared keys *)
-  get pre_shared_keys_diff(=c_dom,s_dom',=h_alg,id,internal_psk) [precise] in
-  event Selected_psk(s_dom,s_dom',id,internal_psk);
-
-  if use_psk
-  then (
-    let psk = PSK(internal_psk) in
-    let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
-    let cur_log' = (cur_log,CH(cr,offer)) in
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
-    let binders = hmac(h_alg,kb,cur_log') in
-    (client_psk_ext(id,binders), (h_alg,psk,es))
-  )
-  else
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (empty_psk_ext,(h_alg,NoPSK,es))
-.
-
-
 (* Generate the key share extension for ECH. *)
 letfun make_key_share_extension_ech(g:group,send_key_share:bool) =
   let (i_x:bitstring,i_gx:element) = dh_keygen(g) in
@@ -182,7 +157,7 @@ letfun generate_client_hello_message_ech (
 
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension_ech(use_psk,c_dom,i_dom,i_cr,h_alg,a_alg,i_kex_ext,ech_is_inner,i_extra,i_cur_log)
+    make_pre_shared_key_extension(use_psk,c_dom,i_dom,i_cr,h_alg,a_alg,i_kex_ext,ech_is_inner,i_extra,i_cur_log)
   in
 
   (* The inner client hello *)

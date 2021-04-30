@@ -52,7 +52,7 @@ let receive_client_finished_message =
     cak,sak,ems,rms,
     cur_log_CFIN);
 
-  insert serverSession(cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)
+  insert serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms)
 .
 
 (* Sends the server finish message *)

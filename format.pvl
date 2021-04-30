@@ -69,17 +69,6 @@ table pre_shared_keys(
   domain (* Server domain *),
   hash_alg,identityPsk,internal_preSharedKey).
 
-table pre_shared_keys_diff(
-  domain (* Client domain *),
-  domain (* Server domain *),
-  hash_alg,identityPsk,internal_preSharedKey).
-
-letfun dummy_preSharedKeyExt () =
-  new id:identityPsk;
-  new n:bitstring;
-  client_psk_ext(id,n)
-.
-
 (********************************************************)
 (* Long term keys and certificates                      *)
 (********************************************************)
@@ -238,10 +227,12 @@ const
   Session states
 ****************************************)
 
-table clientSession(bytes32,bytes32,
-  preSharedKey,pubkey,pubkey,
+table clientSession(
+  aead_alg,bytes32,bytes32,
+  preSharedKey,pubkey,
   aead_key,aead_key,bitstring,bitstring).
 
-table serverSession(bytes32,bytes32,
-  preSharedKey,pubkey,pubkey,
+table serverSession(
+  aead_alg,bytes32,bytes32,
+  preSharedKey,pubkey,
   aead_key,aead_key,bitstring,bitstring).
