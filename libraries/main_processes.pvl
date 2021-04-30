@@ -114,5 +114,5 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   | gen_dishonest_pre_shared_keys (tls_h)
   | gen_ech_config(ech_g,ech_h,ech_a)
   (* The application data *)
-  | application_data
+  (* | application_data *)
 .

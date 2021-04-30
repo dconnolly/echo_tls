@@ -73,7 +73,7 @@ let send_finished_message =
   let cur_log' = (cur_log,client_finished_msg) in
   let rms = kdf_psk(h_alg,master_secret,cur_log') in
 
-  insert clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms);
+  (* insert clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms); *)
 
   let enc_client_finished_msg = aead_enc(a_alg,chk,zero,zero,m2b(client_finished_msg)) in
   out(io,enc_client_finished_msg);
