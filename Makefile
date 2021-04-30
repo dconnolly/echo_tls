@@ -19,5 +19,5 @@ privacy_client_ech:
 privacy_client:
 	proverif $(FilesEquiv) privacy_client.pv
 
-noninterf_inner:
-	proverif $(FilesReach) noninterf_inner.pv
+strong_secrecy_inner:
+	proverif $(FilesEquiv) strong_secrecy_inner.pv
