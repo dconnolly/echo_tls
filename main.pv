@@ -6,6 +6,7 @@
 (* set verboseNotAttacker = true.
 set detectNotAttacker = true. *)
 (* set verboseRules = true. *)
+set preciseActions = true.
 set removeEventsForLemma = true.
 set redundancyElim = no.
 
@@ -58,14 +59,6 @@ let gen_honest_long_term_keys() =
   out(io,pk(sk_h))
 .
 
-let gen_compromised_long_term_keys() =
-  !
-  in(io,a:domain);
-  new sk_d:privkey;
-  insert long_term_keys(a,sk_d,pk(sk_d),valid_cert(a,pk(sk_d)));
-  out(io,sk_d)
-.
-
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
@@ -73,16 +66,6 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_h) in
   event GenPsk(c_dom,s_dom,PSK(psk_h));
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_h)
-.
-
-let gen_compromised_pre_shared_keys(h_alg:hash_alg) =
-  !
-  in(io,(c_dom:domain,s_dom:domain));
-  new psk_d:internal_preSharedKey;
-  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  event GenPsk(c_dom,s_dom,PSK(psk_d));
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
-  out(io,(id,psk_d))
 .
 
 letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
@@ -136,9 +119,7 @@ process
 
   (
       gen_honest_long_term_keys ()
-    (* | gen_compromised_long_term_keys () *)
     | gen_honest_pre_shared_keys (tls_h)
-    (* | gen_compromised_pre_shared_keys (tls_h) *)
     | gen_ech_config(ech_g,ech_h,ech_a)
     | subprocess_client
     | subprocess_server
