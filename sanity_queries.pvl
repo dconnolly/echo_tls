@@ -23,7 +23,7 @@ query
   handshake,es,rms,master_secret:bitstring,
   ech_pk:element,
   o_cur_log,i_cur_log,cur_log,cur_log1,cur_log2,cur_log3:bitstring;
-  (* event(SanityClient(id_c,false,false,false,true)) &&
+  event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
@@ -106,7 +106,7 @@ query
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
-  ; *)
+  ;
 
   (* Client standard, Server echo
      - Queries where send_kex = true for the client should be false
@@ -114,7 +114,7 @@ query
      Server ECH has not been implemented yet.
   *)
 
-  (* event(SanityClient(id_c,false,false,false,true)) &&
+  event(SanityClient(id_c,false,false,false,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH(id_c,cr_hrr,cr,c_dom,s_dom,psk,cur_log)) &&
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
@@ -197,14 +197,14 @@ query
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
-  ; *)
+  ;
 
   (* Client echo, Server echo
      - Queries where send_kex = true for the client should be false
      - Queries where send_kex <> true for the client should be true since HRR with
      Server ECH and Client ECH has not been implemented yet.
   *)
-(*
+
   event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,true,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
@@ -288,7 +288,7 @@ query
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
-  ; *)
+  ;
 
   (* Client echo, Server normal
      - Queries where send_kex = true for the client should be false
@@ -296,7 +296,7 @@ query
      Client ECH has not been implemented yet.
   *)
 
-  (* event(SanityClient(id_c,true,false,false,true)) &&
+  event(SanityClient(id_c,true,false,false,true)) &&
   event(SanityServer(id_s,false,true,false)) &&
   event(SanityClientCH_ECH(id_c,cr_hrr,i_cr,o_cr,c_dom,o_dom,i_dom,ech_pk,psk,o_cur_log,i_cur_log)) &&
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
@@ -379,7 +379,7 @@ query
   event(SanityServerCH(id_s,is_backend,cr,s_dom,psk',cur_log)) &&
   event(SanityClientCFIN(id_c,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1)) &&
   event(SanityServerCFIN(id_s,cr,sr,psk',master_secret,chk,shk,cfin,sfin,s_pkey,c_pkey,cak,sak,es,rms,cur_log1))
-  ; *)
+  ;
 
   (* Client echo + grease, Server normal
     - Queries where send_kex = true && psk <> true for the client should be false
