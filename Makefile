@@ -7,17 +7,24 @@ LibEquiv= primitives.pvl format.pvl key_schedule.pvl secrecy_assumption_equiv.pv
 FilesReach=$(addprefix -lib $(LIBDIR)/,$(LibReach))
 FilesEquiv=$(addprefix -lib $(LIBDIR)/,$(LibEquiv))
 
-sanity:
+all:
 	proverif $(FilesReach) -lib $(LIBDIR)/sanity_queries.pvl sanity_checks.pv
 
+scenario:
+	./prepare
+	@time proverif $(FilesEquiv) privacy_backend_SCENARIO$(S).pv > log_privacy_backend_S$(S).txt
+	@time proverif $(FilesEquiv) privacy_client_SCENARIO$(S).pv > log_privacy_client_S$(S).txt
+	@time proverif $(FilesEquiv) privacy_client_ech_SCENARIO$(S).pv > log_privacy_client_ech_S$(S).txt
+	@time proverif $(FilesEquiv) strong_secrecy_inner_SCENARIO$(S).pv > log_strong_secrecy_inner_S$(S).txt
+
 privacy_backend:
-	proverif $(FilesEquiv) privacy_backend.pv
+	proverif $(FilesEquiv) privacy_backend_SCENARIO3.pv
 
 privacy_client_ech:
-	proverif $(FilesEquiv) privacy_client_ech.pv
+	proverif $(FilesEquiv) privacy_client_ech_SCENARIO3.pv
 
 privacy_client:
-	proverif $(FilesEquiv) privacy_client.pv
+	proverif $(FilesEquiv) privacy_client_SCENARIO3.pv
 
 strong_secrecy_inner:
-	proverif $(FilesEquiv) strong_secrecy_inner.pv
+	proverif $(FilesEquiv) strong_secrecy_inner_SCENARIO3.pv

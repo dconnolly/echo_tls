@@ -1,0 +1,10 @@
+#!/bin/sh
+
+
+for i in SCENARIO1 SCENARIO2 SCENARIO3 SCENARIO4 SCENARIO5
+do
+    m4 -D$i privacy_backend.m4.pv > privacy_backend_$i.pv
+    m4 -D$i privacy_client_ech.m4.pv > privacy_client_ech_$i.pv
+    m4 -D$i privacy_client.m4.pv > privacy_client_$i.pv
+    m4 -D$i strong_secrecy_inner.m4.pv > strong_secrecy_inner_$i.pv
+done

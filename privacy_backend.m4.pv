@@ -1,0 +1,107 @@
+
+set removeEventsForLemma = true.
+
+(* Restriction for equivalence *)
+
+restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
+  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
+  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+  (
+    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') || (c_dom1 <> c_dom1')
+  )
+.
+
+(* For the privacy of the backend server, the client is always the same on the left and on the right. *)
+restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
+  event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
+    s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
+    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+    c_dom1 = c_dom1' &&
+    (
+      (s_dom1 = s_dom1' && id = id' && ipsk = ipsk') || (s_dom1 <> s_dom1')
+    )
+.
+
+(********************************************************)
+(* Equivalence scenario                                 *)
+(********************************************************)
+ifdef(`SCENARIO1',`
+  define(`PSK')dnl
+  define(`KEX')dnl
+  define(`NOGREASE')dnl
+  define(`NOCERT')dnl
+')dnl
+ifdef(`SCENARIO2',`
+  define(`KEX')dnl
+  define(`NOPSK')dnl
+  define(`NOGREASE')dnl
+  define(`NOCERT')dnl
+')dnl
+ifdef(`SCENARIO3',`
+  define(`KEX')dnl
+  define(`NOPSK')dnl
+  define(`NOGREASE')dnl
+  define(`CERT')dnl
+')dnl
+ifdef(`SCENARIO4',`
+  define(`KEX')dnl
+  define(`UPSK')dnl
+  define(`NOGREASE')dnl
+  define(`UCERT')dnl
+')dnl
+ifdef(`SCENARIO5',`
+  define(`UKEX')dnl
+  define(`UPSK')dnl
+  define(`UGREASE')dnl
+  define(`UCERT')dnl
+')dnl
+
+free BackendA,BackendB:domain.
+
+process
+  (* The group and cipher suite between TLS and Ech should be incompatible *)
+  let tls_h = id_hash(StrongHash,1) in
+  let tls_a = id_aead(StrongAE,1) in
+  let tls_g = id_g(StrongDH,1) in
+  let ech_h = id_hash(StrongHash,2) in
+  let ech_a = id_aead(StrongAE,2) in
+  let ech_g = id_g(StrongDH,2) in
+  (
+      main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
+    | swap_pre_shared_keys
+    | swap_long_term_keys
+    | (
+      !
+      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
+      ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
+      in(io,(c_dom:domain,s_dom:domain));
+      event Same((use_psk,send_kex,c_dom,s_dom));
+      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+    ) | (
+      !
+      ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool);')
+      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
+      ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
+      in(io,(c_dom:domain,cfs_dom:domain,backend_dom:domain));
+      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom,backend_dom));
+      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) in
+      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
+      echo_client(use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+    ) | (
+      !
+      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
+      ifdef(`CERT',`let cert_req = true in') ifdef(`NOCERT',`let cert_req = false in') ifdef(`UCERT',`in(io,cert_req:bool) [precise];')
+      in(io,(use_ech:bool,s_dom:domain)) [precise];
+      event Same((use_ech,use_psk,cert_req,s_dom));
+      server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+    ) | (
+      ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool) [precise];')
+      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
+      ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')
+      in(io,(c_dom:domain,cfs_dom:domain)) [precise];
+      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom));
+      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
+      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
+      echo_client(use_grease,use_psk,send_kex,c_dom,diff[BackendA,BackendB],tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+    )
+  )

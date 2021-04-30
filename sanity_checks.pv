@@ -4,30 +4,6 @@ set preciseActions = true.
 set removeEventsForLemma = true.
 set redundancyElim = no.
 
-(* Nounif declaration. Useful for helping proverif terminates *)
-
-nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
-  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
-.
-
-nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
-  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt)) / -5000
-.
-
-nounif config:echConfig,skR:bitstring;
-  table(ech_configurations( *config, *skR)) / -5000
-.
-
-nounif x:bitstring; mess(ch_client_CFIN,*x) / -3000.
-nounif x:bitstring; mess(ch_client_FIN,*x) / -3000.
-nounif x:bitstring; mess(ch_client_CRT,*x) / -3000.
-nounif x:bitstring; mess(ch_client_after_EE,*x) / -3000.
-
-nounif x:bitstring; mess(ch_server_CFIN,*x) / -3000.
-nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
-nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
-nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
-
 (* Restriction for tables *)
 
 restriction c_dom1,c_dom2:domain,sk:privkey,spkey:pubkey,crt:certificate;
