@@ -35,7 +35,7 @@ nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -3000.
 
 restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
   event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
-  c_dom1 = c_dom2 && c_dom1' = c_dom2'
+  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
   (
     (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') ||
     (c_dom1 <> c_dom1')
@@ -47,7 +47,7 @@ restriction s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':i
     s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
     (
       (s_dom1 = s_dom1' && id = id' && ipsk = ipsk') ||
-      (s_dom1 <> s_dom1' && ipsk = uc_psk(s) && ipsk' = uc_psk(s'))
+      (s_dom1 <> s_dom1')
     )
 .
 
