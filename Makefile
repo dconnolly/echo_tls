@@ -12,3 +12,12 @@ sanity:
 
 privacy_backend:
 	proverif $(FilesEquiv) privacy_backend.pv
+
+privacy_client_ech:
+	proverif $(FilesEquiv) privacy_client_ech.pv
+
+privacy_client:
+	proverif $(FilesEquiv) privacy_client.pv
+
+noninterf_inner:
+	proverif $(FilesReach) noninterf_inner.pv
