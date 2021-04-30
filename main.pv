@@ -136,9 +136,9 @@ process
 
   (
       gen_honest_long_term_keys ()
-    | gen_compromised_long_term_keys ()
+    (* | gen_compromised_long_term_keys () *)
     | gen_honest_pre_shared_keys (tls_h)
-    | gen_compromised_pre_shared_keys (tls_h)
+    (* | gen_compromised_pre_shared_keys (tls_h) *)
     | gen_ech_config(ech_g,ech_h,ech_a)
     | subprocess_client
     | subprocess_server
