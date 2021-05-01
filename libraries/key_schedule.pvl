@@ -29,8 +29,6 @@ letfun kdf_es(h:hash_alg,psk:preSharedKey) =
 letfun kdf_k0(h:hash_alg,early_secret:bitstring,client_hello:bitstring) =
   (* client_early_traffic_secret *)
   let atsc0 = derive_secret(h,early_secret,tls13_client_early_traffic_secret,client_hello) in
-
-  (* QUESTION: What is kc0 ? Is it the Traffic Key Calculation (Section 7.3 in TLS RFC) *)
   let kc0   = hkdf_expand_label(h,atsc0,tls13_key,zero) in
 
   (* early_exporter_master_secret*)

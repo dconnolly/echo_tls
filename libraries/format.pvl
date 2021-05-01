@@ -36,6 +36,7 @@ type preSharedKey.
 const NoPSK: preSharedKey.
 fun PSK(internal_preSharedKey): preSharedKey [data].
 
+reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
 
 (* fun psk_h(seed):internal_preSharedKey [private].
 fun psk_d(seed):internal_preSharedKey [private].
@@ -90,8 +91,6 @@ reduc
 fun verify_cert(certificate):bool
 reduc forall d:domain, p:pubkey;
   verify_cert(valid_cert(d,p)) = true .
-
-
 
 table long_term_keys(domain,privkey,pubkey,certificate).
 
