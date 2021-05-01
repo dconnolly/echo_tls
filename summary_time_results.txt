@@ -11,5 +11,9 @@ File: generated_models/privacy_backend_SCENARIO2.pv - Time 5:17.22 - Memory 2414
 File: generated_models/privacy_client_SCENARIO2.pv - Time 2:44.19 - Memory 1383664k 
 File: generated_models/strong_secrecy_inner_SCENARIO2.pv - Time 2:50.12 - Memory 1383736k 
 
+----------
+ 
+File: generated_models/privacy_client_SCENARIO2.pv - Time 3:05.97 - Memory 1588484k 
+File: generated_models/privacy_client_ech_SCENARIO2.pv - Time 4:25.63 - Memory 2094652k 
 
----------- 
+----------

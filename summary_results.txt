@@ -24,3 +24,10 @@ PROTOCOL generated_models/strong_secrecy_inner_SCENARIO2.pv
 RESULT Diff-equivalence is true.
 
 ---------
+
+PROTOCOL generated_models/privacy_client_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO2.pv
+RESULT Diff-equivalence cannot be proved.
+
+--------
