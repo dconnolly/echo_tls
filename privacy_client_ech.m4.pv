@@ -56,13 +56,14 @@ ifdef(`SCENARIO5',`
   define(`UCERT')dnl
 ')dnl
 
-free ClientA,ClientB:domain.
+free ClientA,ClientB,HonestServer:domain.
 
 (* Dishonest key generation *)
 
 let gen_dishonest_long_term_keys =
   !
   in(io,a:domain);
+  if a <> HonestServer then
   event Same(d2b(a));
   new sk_d:privkey;
   out(io,(sk_d,valid_cert(a,pk(sk_d))))
@@ -124,6 +125,6 @@ process
       event Same((use_grease,use_psk,s_dom));
       get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
       let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
-      echo_client(use_grease,use_psk,send_kex,diff[ClientA,ClientB],s_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+      echo_client(use_grease,use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )

@@ -1,7 +1,5 @@
 (* Generation of keys *)
 
-free honestServer:domain.
-
 let gen_honest_long_term_keys =
   !
   in(io,a:domain);

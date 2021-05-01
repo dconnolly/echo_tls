@@ -1,3 +1,6 @@
+Privacy of client (Ech/TLS):
+  - Attack when the server certificate can be compromised (found by ProVerif)
+
 PROTOCOL generated_models/privacy_client_ech_SCENARIO1.pv
 RESULT Diff-equivalence cannot be proved.
 PROTOCOL generated_models/privacy_client_SCENARIO1.pv
