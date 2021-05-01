@@ -79,12 +79,14 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   out(io,id)
 .
 
-(* For privacy of client, we require that certificate of the server with whom
-   ClientA/ClientB will talk to should not be compromised. Otherwise ProVerif
+(* For privacy of client, we require that certificate of the client-facing-server
+   with whom ClientA/ClientB will talk to should not be compromised. Otherwise ProVerif
    found an attack where the attacker plays the role of the server. Note that this
    works also in the PSK scenario as the attacker sends back a server hello
    indicating that the outer client hello was not accepted and so a normal
    TLS connexion follows.
+
+   No requirement on the backend server thought. Their long term keys can be compromised.
 *)
 
 process
@@ -129,10 +131,10 @@ process
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool) [precise];')
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')
-      in(io,(s_dom:domain,cfs_dom:domain)) [precise];
+      in(io,s_dom:domain) [precise];
       event Same((use_grease,use_psk,s_dom));
-      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
-      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
-      echo_client(use_grease,use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+      get ech_configurations(ech_config(id,g,pkR,=HonestServer,h_alg,a_alg),skR) [precise] in
+      let ech_conf = ech_config(id,g,pkR,HonestServer,h_alg,a_alg) in
+      echo_client(use_grease,use_psk,send_kex,diff[ClientA,ClientB],s_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )
