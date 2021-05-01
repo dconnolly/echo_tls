@@ -79,6 +79,14 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   out(io,id)
 .
 
+(* For privacy of client, we require that certificate of the server with whom
+   ClientA/ClientB will talk to should not be compromised. Otherwise ProVerif
+   found an attack where the attacker plays the role of the server. Note that this
+   works also in the PSK scenario as the attacker sends back a server hello
+   indicating that the outer client hello was not accepted and so a normal
+   TLS connexion follows.
+*)
+
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
   let tls_h = id_hash(StrongHash,1) in
