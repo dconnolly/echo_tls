@@ -13,15 +13,6 @@ let gen_honest_long_term_keys =
   out(io,pk(sk_h))
 .
 
-let gen_dishonest_long_term_keys =
-  !
-  in(io,a:domain);
-  if a <> honestServer then
-  event Same(d2b(a));
-  new sk_d:privkey;
-  out(io,(sk_d,valid_cert(a,pk(sk_d))))
-.
-
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
@@ -31,17 +22,6 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk) in
   event GenPsk(c_dom,s_dom,PSK(psk));
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk)
-.
-
-let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
-  !
-  in(io,(c_dom:domain,s_dom:domain));
-  if s_dom <> honestServer then
-  event Same((c_dom,s_dom));
-  new psk_d:internal_preSharedKey;
-  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
-  out(io,id)
 .
 
 letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
@@ -114,9 +94,7 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   | process_client_hello_noHRR
   (* The key generation *)
   | gen_honest_long_term_keys ()
-  | gen_dishonest_long_term_keys ()
   | gen_honest_pre_shared_keys (tls_h)
-  | gen_dishonest_pre_shared_keys (tls_h)
   | gen_ech_config(ech_g,ech_h,ech_a)
   (* The application data *)
   (* | application_data *)

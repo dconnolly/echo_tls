@@ -58,6 +58,26 @@ ifdef(`SCENARIO5',`
 
 free ClientA,ClientB:domain.
 
+(* Dishonest key generation *)
+
+let gen_dishonest_long_term_keys =
+  !
+  in(io,a:domain);
+  event Same(d2b(a));
+  new sk_d:privkey;
+  out(io,(sk_d,valid_cert(a,pk(sk_d))))
+.
+
+let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  event Same((c_dom,s_dom));
+  new psk_d:internal_preSharedKey;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
+  out(io,id)
+.
+
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
   let tls_h = id_hash(StrongHash,1) in
@@ -70,6 +90,8 @@ process
       main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
     | swap_pre_shared_keys
     | swap_long_term_keys
+    | gen_dishonest_long_term_keys
+    | gen_dishonest_pre_shared_keys(tls_h)
     | (
       !
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')

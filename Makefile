@@ -21,10 +21,10 @@ privacy_backend:
 	proverif $(FilesEquiv) generated_models/privacy_backend_SCENARIO1.pv
 
 privacy_client_ech:
-	proverif $(FilesEquiv) privacy_client_ech_SCENARIO3.pv
+	proverif $(FilesEquiv) generated_models/privacy_client_ech_SCENARIO3.pv
 
 privacy_client:
-	proverif $(FilesEquiv) privacy_client_SCENARIO3.pv
+	proverif $(FilesEquiv) generated_models/privacy_client_SCENARIO3.pv
 
 strong_secrecy_inner:
-	proverif $(FilesEquiv) strong_secrecy_inner_SCENARIO3.pv
+	proverif $(FilesEquiv) generated_models/strong_secrecy_inner_SCENARIO3.pv
