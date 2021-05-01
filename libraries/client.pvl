@@ -42,6 +42,29 @@ letfun make_pre_shared_key_extension(
     (empty_psk_ext,(h_alg,NoPSK,es))
 .
 
+letfun make_pre_shared_key_extension_one_time(
+  use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
+  extra:extraExt,cur_log:bitstring
+  ) =
+
+  if use_psk
+  then (
+    (* The PSK is freshly generated as it is considered as a one-time used PSK *)
+    new s:seed;
+    let ipsk = uc_psk(s) in
+    let id = mk_idpsk(c_dom,s_dom,h_alg,ipsk) in
+    let psk = PSK(ipsk) in
+    let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
+    let cur_log' = (cur_log,CH(cr,offer)) in
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+    let binders = hmac(h_alg,kb,cur_log') in
+    (client_psk_ext(id,binders), (h_alg,psk,es))
+  )
+  else
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
+    (empty_psk_ext,(h_alg,NoPSK,es))
+.
+
 (* Generate the key share extension. *)
 letfun make_key_share_extension(g:group,send_key_share:bool) =
   let (x:bitstring,gx:element) = dh_keygen(g) in
@@ -338,6 +361,84 @@ let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:
         event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
 
         let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+        out(io,client_hello');
+        let cur_log4 = (cur_log3,client_hello') in
+
+        (* For sanity checks*)
+        let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
+        event SanityClientCH(id_client,cr,cr',c_dom,s_dom,psk',cur_log4);
+
+        (* Message from server *)
+        in(io,server_hello':msg);
+        let SH(sr',mode') = server_hello' in
+          if sr' = rand_HelloRetryRequest
+          then out(io,unexpected_message)
+          else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
+        else out(io,unexpected_message)
+      )
+      else out(io,illegal_parameter)
+    )
+    else
+      if send_kex
+      then
+        (* This is a normal server hello message *)
+        process_server_hello(id_client,use_psk,cr,c_dom,s_dom,kex_data,h_alg,a_alg,psk_data,cur_log2,server_hello)
+      else out(io,illegal_parameter)
+  )
+  else out(io,unexpected_message)
+.
+
+(* Generate the client hello message *)
+
+letfun generate_client_hello_message_one_time_psk(
+  use_psk:bool,c_dom,s_dom:domain,
+  g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
+  )
+  =
+
+  let cr = gen_B32_random() in
+
+  (* The key share extension *)
+  let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
+
+  (* The pre shared key extension *)
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    make_pre_shared_key_extension_one_time(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
+  in
+
+  (* The client hello *)
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,psk_ext,extra) in
+  (CH(cr,offer),cr,kex_ext,kex_data,psk_data).
+
+let standard_client_one_time_psk(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+  (****************************************************)
+  (* Only for sanity checks *)
+  new id_client[]:idProc;
+  event SanityClient(id_client,false,false,use_psk,send_kex);
+  (****************************************************)
+
+  let cur_log = zero in
+
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message_one_time_psk(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
+  out(io,client_hello);
+  let cur_log2 = (cur_log,client_hello) in
+
+  (* For sanity checks*)
+  let (=h_alg,psk:preSharedKey,es:bitstring) = psk_data in
+  event SanityClientCH(id_client,zero32,cr,c_dom,s_dom,psk,cur_log2);
+
+  (* Message from server *)
+  in(io,server_hello:msg);
+  let SH(sr,mode) = server_hello in (
+
+    if sr = rand_HelloRetryRequest
+    then (
+      (* We received a HelloRetryRequest *)
+      let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
+        let cur_log3 = (cur_log2,server_hello) in
+        event SanityClientHRR(id_client,cr,c_dom,s_dom,cur_log3);
+
+        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message_one_time_psk(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
         out(io,client_hello');
         let cur_log4 = (cur_log3,client_hello') in
 
