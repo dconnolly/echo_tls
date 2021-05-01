@@ -18,3 +18,12 @@ File: generated_models/privacy_client_ech_SCENARIO2.pv - Time 4:25.63 - Memory 2
 
 ----------
 File: generated_models/strong_secrecy_inner_SCENARIO4.pv - Time 3:18:27 - Memory 19563888k 
+File: generated_models/strong_secrecy_inner_SCENARIO3.pv - Time 17:13.37 - Memory 4923636k 
+File: generated_models/privacy_backend_SCENARIO3.pv - Time 33:34.63 - Memory 9101324k 
+File: generated_models/privacy_client_ech_SCENARIO1.pv - Time 4:33.03 - Memory 2817344k 
+File: generated_models/privacy_client_SCENARIO2.pv - Time 2:29.40 - Memory 1405684k 
+File: generated_models/privacy_client_SCENARIO1.pv - Time 3:28.17 - Memory 2136816k 
+File: generated_models/privacy_client_ech_SCENARIO2.pv - Time 4:03.95 - Memory 2136636k 
+File: generated_models/privacy_client_ech_SCENARIO1.pv - Time 5:07.99 - Memory 2453356k 
+File: generated_models/privacy_client_SCENARIO3.pv - Time 17:20.37 - Memory 4923944k 
+File: generated_models/privacy_client_ech_SCENARIO3.pv - Time 29:13.61 - Memory 7466048k 
