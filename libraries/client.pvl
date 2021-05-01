@@ -108,40 +108,6 @@ let send_finished_message =
     cur_log')
 .
 
-let send_finished_message_ROR =
-  !
-  in(ch_client_CFIN,(id_client:idProc,
-    cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-    psk:preSharedKey,s_pkey:pubkey,c_pkey:pubkey,
-    master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
-    cur_log:bitstring)
-  );
-  new st[]:bitstring;
-  event PreciseMess(ch_client_CFIN,id_client,st,cur_log);
-
-  let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
-  let client_hash_msg = hmac(h_alg,cfin,cur_log) in
-  let client_finished_msg = FIN(client_hash_msg) in
-
-  let cur_log' = (cur_log,client_finished_msg) in
-  let rms = kdf_psk(h_alg,master_secret,cur_log') in
-
-  (* insert clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms); *)
-  let enc_client_finished_msg = aead_enc(a_alg,chk,zero,zero,m2b(client_finished_msg)) in
-  out(io,enc_client_finished_msg);
-  event SanityClientCFIN(id_client,
-    cr,sr,psk,
-    master_secret,chk,shk,cfin,sfin,
-    s_pkey,c_pkey,
-    cak,sak,ems,rms,
-    cur_log');
-
-  if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
-  if psk = NoPSK || uncompromised_psk(psk) then
-  new fake_ipsk:internal_preSharedKey;
-  out(io,diff[ipsk2b(fake_ipsk),rms])
-.
-
 (* Certificate and Certificate Verify *)
 
 let send_certificate_message(id_client:idProc,

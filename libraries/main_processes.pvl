@@ -97,22 +97,3 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   (* The application data *)
   (* | application_data *)
 .
-
-let main_process_ROR(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
-  (* The clients subprocesses *)
-    send_finished_message_ROR
-  | receive_finished_message
-  | process_server_certificate_message
-  | receive_after_encrypted_extension
-  (* The server subprocesses *)
-  | receive_client_finished_message
-  | send_server_finished_message
-  | send_server_certificate_message
-  | process_client_hello_noHRR
-  (* The key generation *)
-  | gen_honest_long_term_keys ()
-  | gen_honest_pre_shared_keys (tls_h)
-  | gen_ech_config(ech_g,ech_h,ech_a)
-  (* The application data *)
-  (* | application_data *)
-.

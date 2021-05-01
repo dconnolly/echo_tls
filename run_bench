@@ -3,7 +3,7 @@
 max_time=172800
 
 lib_reach="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
-lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
+lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl -lib libraries/main_processes_ror.pvl"
 
 mkdir -p results
 
