@@ -66,6 +66,12 @@ else
 	elif [ \( .$1 = .backend \) ]
 	then
 		analyze "generated_models/privacy_backend_SCENARIO$2.pv" "log"
+	elif [ \( .$1 = .client \) ]
+	then
+		analyze "generated_models/privacy_client_SCENARIO$2.pv" "log"
+	elif [ \( .$1 = .client_ech \) ]
+	then
+		analyze "generated_models/privacy_client_ech_SCENARIO$2.pv" "log"
 	else
 		for file in generated_models/*$1.pv
 		do
