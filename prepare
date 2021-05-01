@@ -1,5 +1,6 @@
 #!/bin/sh
 
+mkdir -p generated_models
 
 for i in SCENARIO1 SCENARIO2 SCENARIO3 SCENARIO4 SCENARIO5
 do
