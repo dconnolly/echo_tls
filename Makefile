@@ -18,7 +18,7 @@ scenario:
 	@time proverif $(FilesEquiv) strong_secrecy_inner_SCENARIO$(S).pv > log_strong_secrecy_inner_S$(S).txt
 
 privacy_backend:
-	proverif $(FilesEquiv) privacy_backend_SCENARIO3.pv
+	proverif $(FilesEquiv) generated_models/privacy_backend_SCENARIO1.pv
 
 privacy_client_ech:
 	proverif $(FilesEquiv) privacy_client_ech_SCENARIO3.pv

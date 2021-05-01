@@ -35,11 +35,12 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
 
 let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   !
-  in(io,(c_dom:domain,s_dom:domain,psk:internal_preSharedKey));
+  in(io,(c_dom:domain,s_dom:domain));
   if s_dom <> honestServer then
   event Same((c_dom,s_dom));
-  let id = mk_idpsk(c_dom,s_dom,h_alg,psk) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk);
+  new psk_d:internal_preSharedKey;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
   out(io,id)
 .
 
