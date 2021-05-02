@@ -51,3 +51,7 @@ PROTOCOL generated_models/privacy_client_SCENARIO3.pv
 RESULT Diff-equivalence is true.
 PROTOCOL generated_models/privacy_client_ech_SCENARIO3.pv
 RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_backend_SCENARIO4.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO4.pv
+RESULT Diff-equivalence is true.
