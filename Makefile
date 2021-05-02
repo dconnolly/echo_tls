@@ -2,7 +2,7 @@
 LIBDIR= libraries
 
 LibReach= primitives.pvl format.pvl key_schedule.pvl secrecy_assumption.pvl misc.pvl client.pvl client_ech.pvl server.pvl main_processes.pvl
-LibEquiv= primitives.pvl format.pvl key_schedule.pvl secrecy_assumption_equiv.pvl misc.pvl client.pvl client_ech.pvl server.pvl main_processes.pvl
+LibEquiv= primitives.pvl format.pvl key_schedule.pvl secrecy_assumption_equiv.pvl misc.pvl client.pvl client_ech.pvl server.pvl main_processes.pvl main_processes_ror.pvl
 
 FilesReach=$(addprefix -lib $(LIBDIR)/,$(LibReach))
 FilesEquiv=$(addprefix -lib $(LIBDIR)/,$(LibEquiv))
@@ -28,3 +28,6 @@ privacy_client:
 
 strong_secrecy_inner:
 	proverif $(FilesEquiv) generated_models/strong_secrecy_inner_SCENARIO3.pv
+
+ror_psk:
+	proverif $(FilesEquiv) generated_models/real_or_random_psk_SCENARIO2.pv
