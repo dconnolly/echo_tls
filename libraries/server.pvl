@@ -173,85 +173,81 @@ let process_client_hello_noHRR =
   let CH(cr,offer) = client_hello in
   (* Verify the cipher suite and group *)
   let nego(=TLS13,=h_alg,=a_alg,client_kex_ext(DHE_kex(=g,gx)),sni_ext,ech_ext,psk_ext,extra_ext) = offer in (
-    if not(is_backend) || (ech_ext = ech_is_inner)
+    if (not(is_backend) || (ech_ext = ech_is_inner)) && sni_ext = SNI(s_dom)
     then (
-      if sni_ext = SNI(s_dom)
-      then (
-        (* Retrieve the early secret from the psk. c_dom is either the domain of
-           the client obtained from the psk, or it is zero if the psk was
-           rejected or the server did not want to consider psk. *)
-        let (early_secret:bitstring,s_psk_ext:preSharedKeyExt,psk:preSharedKey) = generate_early_secret_psk_extension(use_psk,s_dom,client_hello,cur_log) in
+      (* Retrieve the early secret from the psk. c_dom is either the domain of
+         the client obtained from the psk, or it is zero if the psk was
+         rejected or the server did not want to consider psk. *)
+      let (early_secret:bitstring,s_psk_ext:preSharedKeyExt,psk:preSharedKey) = generate_early_secret_psk_extension(use_psk,s_dom,client_hello,cur_log) in
 
-        let cur_log_CH = (cur_log,client_hello) in
-        event SanityServerCH(id_server,is_backend,cr,s_dom,psk,cur_log_CH);
+      let cur_log_CH = (cur_log,client_hello) in
+      event SanityServerCH(id_server,is_backend,cr,s_dom,psk,cur_log_CH);
 
-        (* Generate key share and handshake secret *)
-        let (gxy:element,gy:element) = dh_encap(g,gx,m2b(client_hello)) in
-        let handshake_secret = kdf_hs(h_alg,early_secret,gxy) in
+      (* Generate key share and handshake secret *)
+      let (gxy:element,gy:element) = dh_encap(g,gx,m2b(client_hello)) in
+      let handshake_secret = kdf_hs(h_alg,early_secret,gxy) in
 
-        let s_offer = nego(TLS13,h_alg,a_alg,server_kex_ext(DHE_kex(g,gy)),empty_sni_ext,empty_ech_ext,s_psk_ext,s_extra) in
+      let s_offer = nego(TLS13,h_alg,a_alg,server_kex_ext(DHE_kex(g,gy)),empty_sni_ext,empty_ech_ext,s_psk_ext,s_extra) in
 
-        let sr =
-          if is_backend
-          then (
-            (* Generate the accept confirmation when the it's a backend server. *)
-            new sr24[]:bytes24;
-            let SH_ECHConf = SH(B32(sr24,zero8),s_offer) in
-            let cur_log_SH_ech = (cur_log_CH,SH_ECHConf) in
-            let accept_confirmation = derive_secret(h_alg,handshake_secret,ech_accept_confirmation,cur_log_SH_ech) in
-            let sr8 = crop_into_bytes8(accept_confirmation) in
-            B32(sr24,sr8)
-          )
-          else gen_B32_random ()
-        in
+      let sr =
+        if is_backend
+        then (
+          (* Generate the accept confirmation when the it's a backend server. *)
+          new sr24[]:bytes24;
+          let SH_ECHConf = SH(B32(sr24,zero8),s_offer) in
+          let cur_log_SH_ech = (cur_log_CH,SH_ECHConf) in
+          let accept_confirmation = derive_secret(h_alg,handshake_secret,ech_accept_confirmation,cur_log_SH_ech) in
+          let sr8 = crop_into_bytes8(accept_confirmation) in
+          B32(sr24,sr8)
+        )
+        else gen_B32_random ()
+      in
 
-        let server_hello = SH(sr,s_offer) in
-        out(io,server_hello);
-        let cur_log_SH = (cur_log_CH,server_hello) in
-        event SanityServerSH(id_server,cr,sr,s_dom,handshake_secret,psk,cur_log_SH);
+      let server_hello = SH(sr,s_offer) in
+      out(io,server_hello);
+      let cur_log_SH = (cur_log_CH,server_hello) in
+      event SanityServerSH(id_server,cr,sr,s_dom,handshake_secret,psk,cur_log_SH);
 
-        (* Generate the master keys *)
-        let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
-            kdf_ms(h_alg,handshake_secret,cur_log_SH) in
+      (* Generate the master keys *)
+      let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
+          kdf_ms(h_alg,handshake_secret,cur_log_SH) in
 
-        (* Sending the encrypted extension *)
-        let ee_msg = EE(encrypted_ext) in
-        let enc_ee = aead_enc(a_alg,shk,zero,zero,m2b(ee_msg)) in
-        out(io,enc_ee);
-        let cur_log_EE = (cur_log_SH,ee_msg) in
+      (* Sending the encrypted extension *)
+      let ee_msg = EE(encrypted_ext) in
+      let enc_ee = aead_enc(a_alg,shk,zero,zero,m2b(ee_msg)) in
+      out(io,enc_ee);
+      let cur_log_EE = (cur_log_SH,ee_msg) in
 
-        (* Sends either the finish message or the certificate messages *)
-        if psk = NoPSK
-        then
-          if cert_req
-          then (
-            (* The server requests a client certificate *)
-            let crtr_msg = CRTR(zero) in
-            let enc_crt = aead_enc(a_alg,shk,zero,zero,m2b(crtr_msg)) in
-            out(io,enc_crt);
-            let cur_log_CRTR = (cur_log_EE,crtr_msg) in
+      (* Sends either the finish message or the certificate messages *)
+      if psk = NoPSK
+      then
+        if cert_req
+        then (
+          (* The server requests a client certificate *)
+          let crtr_msg = CRTR(zero) in
+          let enc_crt = aead_enc(a_alg,shk,zero,zero,m2b(crtr_msg)) in
+          out(io,enc_crt);
+          let cur_log_CRTR = (cur_log_EE,crtr_msg) in
 
-            (* Sends the certificate *)
-            out(ch_server_CRT,(id_server,
-              cr,sr,h_alg,a_alg,
-              s_dom,psk,cert_req,
-              master_secret,chk,shk,cfin,sfin,
-              cur_log_CRTR))
-          )
-          else
-            out(ch_server_CRT,(id_server,
-              cr,sr,h_alg,a_alg,
-              s_dom,psk,cert_req,
-              master_secret,chk,shk,cfin,sfin,
-              cur_log_EE))
-        else
-          out(ch_server_FIN,(id_server,
+          (* Sends the certificate *)
+          out(ch_server_CRT,(id_server,
             cr,sr,h_alg,a_alg,
-            psk,false,NoPubKey,
+            s_dom,psk,cert_req,
+            master_secret,chk,shk,cfin,sfin,
+            cur_log_CRTR))
+        )
+        else
+          out(ch_server_CRT,(id_server,
+            cr,sr,h_alg,a_alg,
+            s_dom,psk,cert_req,
             master_secret,chk,shk,cfin,sfin,
             cur_log_EE))
-      )
-      else out(io,illegal_parameter)
+      else
+        out(ch_server_FIN,(id_server,
+          cr,sr,h_alg,a_alg,
+          psk,false,NoPubKey,
+          master_secret,chk,shk,cfin,sfin,
+          cur_log_EE))
     )
     else out(io,illegal_parameter)
   )
@@ -368,7 +364,7 @@ let server(use_ech,use_psk,cert_req:bool,s_dom:domain,g:group,h_alg:hash_alg,a_a
             let hello_retry_request = SH(rand_HelloRetryRequest,hrr_mode) in
             out(io,hello_retry_request);
             let cur_log_HRR = ((zero,x_client_hello),hello_retry_request) in
-            event SanityServerHRR(id_server,cr,s_dom,cur_log_HRR);
+            event SanityServerHRR(id_server,s_dom);
 
             (* Received the new client hello *)
             in(io,client_hello':msg);
