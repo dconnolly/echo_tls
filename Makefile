@@ -31,3 +31,7 @@ strong_secrecy_inner:
 
 ror_psk:
 	proverif $(FilesEquiv) generated_models/real_or_random_psk_SCENARIO2.pv
+
+ana_privacy_client:
+	@echo $(OptEquiv)
+	analyze -progopt $(FilesEquiv) -set verboseClauses none -endprogopt PV test_add tmp log file generated_models privacy_client_SCENARIO2.pv

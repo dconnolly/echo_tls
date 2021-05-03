@@ -128,3 +128,28 @@ process
       standard_client_one_time_psk(use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
+
+ifdef(`SCENARIO1',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 1
+RESULT Diff-equivalence is true.
+196.689s (user 194.825s + system 1.865s), max rss 1858180K
+END *)
+')dnl
+ifdef(`SCENARIO2',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 2
+RESULT Diff-equivalence is true.
+133.717s (user 132.847s + system 0.870s), max rss 1410728K
+END *)
+')dnl
+ifdef(`SCENARIO3',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 3
+END *)
+')dnl
+ifdef(`SCENARIO4',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 4
+END *)
+')dnl
+ifdef(`SCENARIO5',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 5
+END *)
+')dnl
