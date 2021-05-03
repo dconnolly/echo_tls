@@ -1,0 +1,8 @@
+Scenarios considered for each proof:
+	1- send_kex = true, psk = true, use_grease = false, cert_req = false
+	2- send_kex = true, psk = false, use_grease = false, cert_req = false
+	3- send_kex = true, psk = false, use_grease = false, cert_req = true
+	4- send_kex = true, use_grease = false
+	- none
+
+All parameters not appearing in the list means they are given by the attacker.

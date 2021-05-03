@@ -36,6 +36,7 @@ type preSharedKey.
 const NoPSK: preSharedKey.
 fun PSK(internal_preSharedKey): preSharedKey [data].
 
+reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
 
 (* fun psk_h(seed):internal_preSharedKey [private].
 fun psk_d(seed):internal_preSharedKey [private].
@@ -69,17 +70,6 @@ table pre_shared_keys(
   domain (* Server domain *),
   hash_alg,identityPsk,internal_preSharedKey).
 
-table pre_shared_keys_diff(
-  domain (* Client domain *),
-  domain (* Server domain *),
-  hash_alg,identityPsk,internal_preSharedKey).
-
-letfun dummy_preSharedKeyExt () =
-  new id:identityPsk;
-  new n:bitstring;
-  client_psk_ext(id,n)
-.
-
 (********************************************************)
 (* Long term keys and certificates                      *)
 (********************************************************)
@@ -101,8 +91,6 @@ reduc
 fun verify_cert(certificate):bool
 reduc forall d:domain, p:pubkey;
   verify_cert(valid_cert(d,p)) = true .
-
-
 
 table long_term_keys(domain,privkey,pubkey,certificate).
 
@@ -238,10 +226,12 @@ const
   Session states
 ****************************************)
 
-table clientSession(bytes32,bytes32,
-  preSharedKey,pubkey,pubkey,
+table clientSession(
+  aead_alg,bytes32,bytes32,
+  preSharedKey,pubkey,
   aead_key,aead_key,bitstring,bitstring).
 
-table serverSession(bytes32,bytes32,
-  preSharedKey,pubkey,pubkey,
+table serverSession(
+  aead_alg,bytes32,bytes32,
+  preSharedKey,pubkey,
   aead_key,aead_key,bitstring,bitstring).

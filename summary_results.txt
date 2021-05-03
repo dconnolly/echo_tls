@@ -1,0 +1,57 @@
+Privacy of client (Ech/TLS):
+  - Attack when the server certificate can be compromised (found by ProVerif)
+
+PROTOCOL generated_models/privacy_client_ech_SCENARIO1.pv
+RESULT Diff-equivalence cannot be proved.
+PROTOCOL generated_models/privacy_client_SCENARIO1.pv
+RESULT Diff-equivalence cannot be proved.
+PROTOCOL generated_models/privacy_backend_SCENARIO1.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/strong_secrecy_inner_SCENARIO1.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO3.pv
+RESULT Diff-equivalence cannot be proved.
+PROTOCOL generated_models/privacy_client_SCENARIO3.pv
+PROTOCOL generated_models/privacy_backend_SCENARIO3.pv
+PROTOCOL generated_models/strong_secrecy_inner_SCENARIO3.pv
+PROTOCOL generated_models/privacy_client_ech_SCENARIO2.pv
+RESULT Diff-equivalence cannot be proved.
+PROTOCOL generated_models/privacy_backend_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_SCENARIO2.pv
+RESULT Diff-equivalence cannot be proved.
+PROTOCOL generated_models/strong_secrecy_inner_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+
+---------
+
+PROTOCOL generated_models/privacy_client_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO2.pv
+RESULT Diff-equivalence cannot be proved.
+
+--------
+PROTOCOL generated_models/strong_secrecy_inner_SCENARIO4.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/strong_secrecy_inner_SCENARIO3.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_backend_SCENARIO3.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO1.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_SCENARIO1.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO2.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO1.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_SCENARIO3.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO3.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_backend_SCENARIO4.pv
+RESULT Diff-equivalence is true.
+PROTOCOL generated_models/privacy_client_ech_SCENARIO4.pv
+RESULT Diff-equivalence is true.

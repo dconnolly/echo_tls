@@ -66,10 +66,43 @@
       - dh_f is always private as only generate by honest client.
 *)
 
+(* Nounif declaration. Useful for helping proverif terminates *)
+
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
+.
+
+nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
+  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt)) / -5000
+.
+
+nounif config:echConfig,skR:bitstring;
+  table(ech_configurations( *config, *skR)) / -5000
+.
+
+nounif x:bitstring; mess(ch_client_CFIN,*x) / -3000.
+nounif x:bitstring; mess(ch_client_FIN,*x) / -3000.
+nounif x:bitstring; mess(ch_client_CRT,*x) / -3000.
+nounif x:bitstring; mess(ch_client_after_EE,*x) / -3000.
+
+nounif x:bitstring; mess(ch_server_CFIN,*x) / -3000.
+nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
+nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
+nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
+
+axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
+  event(PreciseMess(ch,id,st1,x1)) &&
+  event(PreciseMess(ch,id,st1',x1'))
+  ==> st1 = st1' && x1 = x1';
+  event(PreciseMess(ch,id1,st,x1)) &&
+  event(PreciseMess(ch,id1',st,x1'))
+  ==> id1 = id1' && x1 = x1'
+.
+
 (***** Secrecy assumption ****)
 
-not attacker(new sk_h).
-not attacker(new psk_h).
+not s:seed; attacker(uc_privkey(s)).
+not s:seed; attacker(uc_psk(s)).
 not s:seed; attacker(dh_k(s)).
 
 not attacker(ch_client_CFIN).
@@ -86,8 +119,8 @@ not attacker(ch_server_SH).
     - Secret for non compromised psk
 *)
 
-not i:nat;
-  let psk = new psk_h in
+not i:nat,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   attacker(early_secret)
 .
@@ -96,8 +129,8 @@ not i:nat;
   - Secret for non compromised psk
 *)
 
-not i:nat;
-  let psk = new psk_h in
+not i:nat,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_resumption_psk_binder_key,hash_ideal(i,zero))) in
   attacker(binder_key)
@@ -123,8 +156,8 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
     element was secret.
 *)
 
-not i:nat,e:element;
-  let psk = new psk_h in
+not i:nat,e:element,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
@@ -144,8 +177,8 @@ not i:nat,e:element,s:seed, extra_es:bitstring;
 
 (* Case where handshake is secret thanks to psk *)
 
-not i:nat,e:element,log:bitstring;
-  let psk = new psk_h in
+not i:nat,e:element,log:bitstring,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
@@ -155,8 +188,8 @@ not i:nat,e:element,log:bitstring;
   attacker(client_wkh)
 .
 
-not i:nat,e:element,log:bitstring;
-  let psk = new psk_h in
+not i:nat,e:element,log:bitstring,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
@@ -166,8 +199,8 @@ not i:nat,e:element,log:bitstring;
   attacker(client_fk)
 .
 
-not i:nat,e:element,log:bitstring;
-  let psk = new psk_h in
+not i:nat,e:element,log:bitstring,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
@@ -177,8 +210,8 @@ not i:nat,e:element,log:bitstring;
   attacker(server_wkh)
 .
 
-not i:nat,e:element,log:bitstring;
-  let psk = new psk_h in
+not i:nat,e:element,log:bitstring,s:seed;
+  let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),ipsk2b(psk)) in
   let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in

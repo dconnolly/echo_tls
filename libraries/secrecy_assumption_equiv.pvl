@@ -66,6 +66,53 @@
       - dh_f is always private as only generate by honest client.
 *)
 
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -5000
+.
+
+nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate;
+  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'])) / -5000
+.
+
+nounif config,config':echConfig,skR,skR':bitstring;
+  table(ech_configurations(diff[*config,*config'], diff[*skR,*skR'])) / -5000
+.
+
+nounif x,x':bitstring; mess(ch_client_CFIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_FIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_CRT,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_after_EE,diff[*x,*x']) / -3000.
+
+nounif x,x':bitstring; mess(ch_server_CFIN,diff[*x,*x'])/ -3000.
+nounif x,x':bitstring; mess(ch_server_FIN,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_server_CRT,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -3000.
+
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+
+axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
+  event(PreciseMess(ch,diff[id,id2],diff[st1,st2],diff[x1,x2])) && event(PreciseMess(ch,diff[id,id2'],diff[st1',st2'],diff[x1',x2'])) ==> st1 = st1' && x1 = x1';
+  event(PreciseMess(ch,diff[id1,id],diff[st1,st2],diff[x1,x2])) && event(PreciseMess(ch,diff[id1',id],diff[st1',st2'],diff[x1',x2'])) ==> st2 = st2' && x2 = x2';
+  event(PreciseMess(ch,diff[id1,id2],diff[st,st2],diff[x1,x2])) && event(PreciseMess(ch,diff[id1',id2'],diff[st,st2'],diff[x1',x2'])) ==> id1 = id1' && x1 = x1';
+  event(PreciseMess(ch,diff[id1,id2],diff[st1,st],diff[x1,x2])) && event(PreciseMess(ch,diff[id1',id2'],diff[st1',st],diff[x1',x2'])) ==> id2 = id2' && x2 = x2'
+.
+
+let swap_long_term_keys =
+  !
+  get long_term_keys(dom1,sk1,pk1,cert1) in
+  get long_term_keys(dom2,sk2,pk2,cert2) in
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1])
+.
+
+let swap_pre_shared_keys =
+  !
+  get pre_shared_keys(c_dom1,s_dom1,h_alg1,id1,psk1) in
+  get pre_shared_keys(c_dom2,s_dom2,h_alg2,id2,psk2) in
+  insert pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],diff[s_dom2,s_dom1],diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1])
+.
+
 (***** Secrecy assumption ****)
 
 not x:privkey,s:seed; attacker(diff[uc_privkey(s),x]).

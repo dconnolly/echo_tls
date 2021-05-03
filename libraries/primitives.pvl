@@ -151,6 +151,8 @@ fun uc_privkey(seed):privkey [private].
 const NoPubKey: pubkey.
 fun pk(privkey): pubkey.
 
+reduc forall s:seed; uncompromised_privkey(pk(uc_privkey(s))) = true [private].
+
 (* RSA Signatures, typically the argument is a hash over some data *)
 
 fun sign(privkey,bitstring):bitstring.

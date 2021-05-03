@@ -50,9 +50,10 @@ let receive_client_finished_message =
     master_secret,chk,shk,cfin,sfin,
     s_pkey,c_pkey,
     cak,sak,ems,rms,
-    cur_log_CFIN);
+    cur_log_CFIN)
 
-  insert serverSession(cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)
+  (* ;
+  insert serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) *)
 .
 
 (* Sends the server finish message *)

@@ -1,0 +1,99 @@
+(* Generation of keys *)
+
+let gen_honest_long_term_keys =
+  !
+  in(io,a:domain);
+  event Same(d2b(a));
+  new s:seed;
+  let sk_h = uc_privkey(s) in
+  event GenCert(a,pk(sk_h));
+  insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)));
+  out(io,pk(sk_h))
+.
+
+let gen_honest_pre_shared_keys(h_alg:hash_alg) =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  event Same((c_dom,s_dom));
+  new s:seed;
+  let psk = uc_psk(s) in
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk) in
+  event GenPsk(c_dom,s_dom,PSK(psk));
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk)
+.
+
+letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
+  new id: configId;
+  let (skR:bitstring,pkR:element) = dh_keygen(g) in
+  let config = ech_config(id,g,pkR,o_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR);
+  config
+.
+
+let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
+  !
+  in(io,o_dom:domain);
+  let config = make_ech_config(o_dom,g,h_alg,a_alg) in
+  out(io,config)
+.
+
+(* Application data *)
+
+event ClientSends(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ServerSends(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ClientReceives(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ServerReceives(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+
+fun m_s(TLS_version,bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
+fun m_c(TLS_version,bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
+
+let application_data =
+  (
+    !
+    get clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
+    in (io,(n:bitstring, ad:bitstring));
+    let mesg = m_c(TLS13,cr,sr,s_pkey,psk) in
+    event ClientSends(TLS13,cr,sr,psk,s_pkey,n,ad,mesg);
+    out (io,aead_enc(a_alg,cak,n,ad,mesg))
+  ) | (
+    !
+    get serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
+    in (io,(n:bitstring, ad:bitstring, c:bitstring));
+    let f = aead_dec(a_alg,cak,n,ad,c) in
+    event ServerReceives(TLS13,cr,sr,psk,s_pkey,n,ad,f)
+  ) | (
+    !
+    get serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
+    in (io,(n:bitstring, ad:bitstring));
+    let mesg = m_s(TLS13,cr,sr,s_pkey,psk) in
+    event ServerSends(TLS13,cr,sr,psk,s_pkey,n,ad,mesg);
+    out (io,aead_enc(a_alg,sak,n,ad,mesg))
+  ) | (
+    !
+    get clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
+    in (io,(n:bitstring, ad:bitstring, c:bitstring));
+    let f = aead_dec(a_alg,sak,n,ad,c) in
+    event ClientReceives(TLS13,cr,sr,psk,s_pkey,n,ad,f)
+  )
+.
+
+(* Calling the main processes *)
+
+let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
+  (* The clients subprocesses *)
+    send_finished_message
+  | receive_finished_message
+  | process_server_certificate_message
+  | receive_after_encrypted_extension
+  (* The server subprocesses *)
+  | receive_client_finished_message
+  | send_server_finished_message
+  | send_server_certificate_message
+  | process_client_hello_noHRR
+  (* The key generation *)
+  | gen_honest_long_term_keys ()
+  | gen_honest_pre_shared_keys (tls_h)
+  | gen_ech_config(ech_g,ech_h,ech_a)
+  (* The application data *)
+  (* | application_data *)
+.
