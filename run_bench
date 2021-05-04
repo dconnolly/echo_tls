@@ -45,8 +45,9 @@ else
 	elif [ \( .$1 = .ror \) ]
 	then
 		analyze_one_file "generated_models/real_or_random_psk_SCENARIO$2.pv"
-	elif [ \( .$1 = .sanity \)]
+	elif [ \( .$1 = .sanity \) ]
 	then
 		sanity
+	else
 	fi
 fi
