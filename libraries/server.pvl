@@ -265,45 +265,6 @@ letfun create_retry_config(config:echConfig) =
 
 (* When the server acts as a client facing server *)
 
-(* let process_client_hello_ClientFacingServer(
-  id_server:idProc,
-  use_psk,cert_req:bool,o_dom:domain,
-  g:group,h_alg:hash_alg,a_alg:aead_alg,
-  s_extra:extraExt, o_client_hello:msg)
-  =
-
-  let CH(r,offer) = o_client_hello in
-  let nego(=TLS13,=h_alg,=a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext) = offer in
-  let client_ECH(ech_h_alg,ech_a_alg,config_id,enc,payload) = ech_ext in
-
-  let (s_dom:domain,client_hello:msg,encrypted_ext:bitstring,is_backend:bool) =
-    get ech_configurations(ech_config(=config_id,ech_g,pkR,=o_dom,=ech_h_alg,=ech_a_alg),skR) in
-    let ech_conf = ech_config(config_id,ech_g,pkR,o_dom,ech_h_alg,ech_a_alg) in
-
-    let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello) in
-    let context = hpke_setup_base_R(ech_h_alg,ech_g,enc,skR,(tls_ech_str,ech_conf)) in
-
-
-    let m2b(i_client_hello) = hpke_open(ech_a_alg,context,aad2b(client_hello_AAD),payload) in (
-      let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',psk_ext',extra_ext')) = i_client_hello in
-        (i_dom,i_client_hello,zero,true)
-      else
-        let retry_config = create_retry_config(ech_conf) in
-        (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
-    )
-    else
-      let retry_config = create_retry_config(ech_conf) in
-      (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
-  in
-
-  out(ch_server_SH,(id_server,
-    use_psk,is_backend,cert_req,s_dom,
-    g,h_alg,a_alg,
-    s_extra, encrypted_ext,
-    client_hello, zero
-  ))
-. *)
-
 letfun open_inner(
   ech_conf:echConfig,o_client_hello:msg,
   context:hpkeContext,payload:bitstring,n:nat

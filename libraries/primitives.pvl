@@ -182,7 +182,7 @@ type hpkeMode.
 const R,S:hpkeMode.
 
 type hpkeContext.
-fun hpke_context(hpkeMode,aead_key,bitstring(*,bitstring*)):hpkeContext [data].
+fun hpke_context(hpkeMode,aead_key,bitstring):hpkeContext [data].
 
 const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
 
