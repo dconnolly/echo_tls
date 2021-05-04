@@ -48,6 +48,5 @@ else
 	elif [ \( .$1 = .sanity \) ]
 	then
 		sanity
-	else
 	fi
 fi
