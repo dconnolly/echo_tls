@@ -38,11 +38,6 @@ fun PSK(internal_preSharedKey): preSharedKey [data].
 
 reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
 
-(* fun psk_h(seed):internal_preSharedKey [private].
-fun psk_d(seed):internal_preSharedKey [private].
-letfun mk_psk_h() = new s:seed; psk_h(s).
-letfun mk_psk_d() = new s:seed; psk_d(s). *)
-
 type identityPsk.
 fun mk_idpsk(domain,domain,hash_alg,internal_preSharedKey):identityPsk [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;

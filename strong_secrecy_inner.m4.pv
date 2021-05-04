@@ -7,18 +7,17 @@ restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pub
   event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
   c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
   (
-    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') (* || (c_dom1 <> c_dom1') *)
+    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt')
   )
 .
 
-(* For privacy of client, the server is always the same on the left and on the right *)
 restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
   event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
     s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
     c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
     s_dom1 = s_dom1' &&
     (
-      (c_dom1 = c_dom1' && id = id' && ipsk = ipsk') (* || (c_dom1 <> c_dom1') *)
+      (c_dom1 = c_dom1' && id = id' && ipsk = ipsk')
     )
 .
 
