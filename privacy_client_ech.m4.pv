@@ -138,3 +138,24 @@ process
       echo_client(use_grease,use_psk,send_kex,diff[ClientA,ClientB],s_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )
+
+ifdef(`SCENARIO1',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 1
+END *)
+')dnl
+ifdef(`SCENARIO2',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 2
+END *)
+')dnl
+ifdef(`SCENARIO3',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 3
+END *)
+')dnl
+ifdef(`SCENARIO4',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 4
+END *)
+')dnl
+ifdef(`SCENARIO5',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 5
+END *)
+')dnl

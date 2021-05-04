@@ -118,3 +118,24 @@ process
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
+
+ifdef(`SCENARIO1',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 1
+END *)
+')dnl
+ifdef(`SCENARIO2',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 2
+END *)
+')dnl
+ifdef(`SCENARIO3',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 3
+END *)
+')dnl
+ifdef(`SCENARIO4',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 4
+END *)
+')dnl
+ifdef(`SCENARIO5',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 5
+END *)
+')dnl
