@@ -11,9 +11,9 @@ then
 	rm -f tests/*
 else
 	function sanity() {
-		for file in generated_models/*.pv
+		for file in generated_models/sanity*.pv
 		do
-			filename_ext=${path##*/}
+			filename_ext=${file##*/}
 			filename=${filename_ext%.*}
 			analyze -progopt $lib_reach -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
 		done
