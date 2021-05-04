@@ -374,7 +374,7 @@ let server(use_ech,use_psk,cert_req:bool,s_dom:domain,g:group,h_alg:hash_alg,a_a
     (* Verify the cipher suite *)
     if c_h_alg = h_alg && c_a_alg = a_alg && sni_ext = SNI(s_dom)
     then (
-      let (client_ECH(ech_h_alg,ech_a_alg,config_id,enc,payload),=true) = (ech_ext,use_psk) in (
+      let (client_ECH(ech_h_alg,ech_a_alg,config_id,enc,payload),=true) = (ech_ext,use_ech) in (
         (* Decode first Inner *)
         get ech_configurations(ech_config(=config_id,ech_g,pkR,=s_dom,=ech_h_alg,=ech_a_alg),skR) in
         let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h_alg,ech_a_alg) in

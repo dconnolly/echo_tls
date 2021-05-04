@@ -1,84 +1,52 @@
 #!/bin/bash
 
-max_time=172800
-
 lib_reach="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
-lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl -lib libraries/main_processes_ror.pvl"
+lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
 
-mkdir -p results
+mkdir -p tests
+mkdir -p tmp
 
 if [ \( .$1 = .clean \) ]
 then
-	rm results/*.txt
+	rm -f tests/*
 else
-	# Result folder
-	folder_results=results
+	function sanity() {
+		for file in generated_models/*.pv
+		do
+			filename_ext=${path##*/}
+			filename=${filename_ext%.*}
+			analyze -progopt $lib_reach -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
+		done
+	}
 
-	# Summary results
-	summary_results=summary_results.txt
-	summary_time_results=summary_time_results.txt
-
-	# Proverif executable
-	proverif="proverif"
-
-	# Main analysis function
-
-	# Contains x arguments:
-	#	1 - Path of the file
-	# 2 - prefix file
-
-	function analyze() {
-		path=$1
-		name_file=${path##*/}
-		output_file="$folder_results/$2-$name_file.txt"
-		time_file="$folder_results/.$2-$name_file.tmp"
-
-		if [ -f $output_file ]; then
-			echo "A bench with file $1 has already been run. Delete the corresponding output file in results/ to rerun the bench"
-		else
-			(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
-			echo PROTOCOL $1 > $output_file;
-			echo $proverif $lib_equiv $1;
-			{ /usr/bin/time -f "Time %E - Memory %Mk" $proverif $lib_equiv $1 >> $output_file ;} 2> $time_file;
-			time_tmp=$(cat $time_file | grep Time);
-			limit_tmp=$(cat $time_file | grep 'Command terminated by signal 9');
-			echo "File: $1 - $time_tmp $limit_tmp"  >> $summary_time_results;
-			egrep '(PROTOCOL|RESULT)' $output_file >> $summary_results;
-			rm $time_file;
-			rm .tmp
-			)
-		fi
+	function analyze_one_file() {
+		file=$1
+		filename_ext=${file##*/}
+		filename=${filename_ext%.*}
+		analyze -progopt $lib_equiv -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
 	}
 
 	### Prepare the scenation
 
 	./prepare
 
-	if [ \( .$1 = .all \) ]
+	if [ \( .$1 = .inner \) ]
 	then
-		for file in generated_models/*.pv
-		do
-			analyze $file "log"
-		done
-	elif [ \( .$1 = .inner \) ]
-	then
-		analyze "generated_models/strong_secrecy_inner_SCENARIO$2.pv" "log"
+		analyze_one_file "generated_models/strong_secrecy_inner_SCENARIO$2.pv"
 	elif [ \( .$1 = .backend \) ]
 	then
-		analyze "generated_models/privacy_backend_SCENARIO$2.pv" "log"
+		analyze_one_file "generated_models/privacy_backend_SCENARIO$2.pv"
 	elif [ \( .$1 = .client \) ]
 	then
-		analyze "generated_models/privacy_client_SCENARIO$2.pv" "log"
+		analyze_one_file "generated_models/privacy_client_SCENARIO$2.pv"
 	elif [ \( .$1 = .client_ech \) ]
 	then
-		analyze "generated_models/privacy_client_ech_SCENARIO$2.pv" "log"
+		analyze_one_file "generated_models/privacy_client_ech_SCENARIO$2.pv"
 	elif [ \( .$1 = .ror \) ]
 	then
-		analyze "generated_models/real_or_random_psk_SCENARIO$2.pv" "log"
-	else
-		for file in generated_models/*$1.pv
-		do
-			analyze $file "log"
-		done
+		analyze_one_file "generated_models/real_or_random_psk_SCENARIO$2.pv"
+	elif [ \( .$1 = .sanity \)]
+	then
+		sanity
 	fi
 fi
