@@ -7,7 +7,7 @@ letfun generate_early_secret_psk_extension(use_psk:bool,s_dom:domain,client_hell
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext)) = client_hello in
 
   let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
-    if get_receiver_psk(id) = s_dom && get_hash_psk(id) = h_alg then (
+    let (=s_dom,=h_alg) = (get_receiver_psk(id),get_hash_psk(id)) in (
       let psk = PSK(get_ipsk(id)) in
       let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
       let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,trunc_client_psk_ext(id),extra_ext) in
@@ -164,7 +164,7 @@ let process_client_hello_noHRR =
   use_psk:bool,is_backend:bool,cert_req:bool,s_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg,
   s_extra:extraExt, encrypted_ext:bitstring,
-  client_hello:msg, cur_log:bitstring (* Should not contain the curent client hello *)
+  client_hello:msg, cur_log:bitstring (* Should not contain the current client hello *)
   ));
 
   new st[]:bitstring;
@@ -265,58 +265,34 @@ letfun create_retry_config(config:echConfig) =
 
 (* When the server acts as a client facing server *)
 
-let process_client_hello_ClientFacingServer(
+(* let process_client_hello_ClientFacingServer(
   id_server:idProc,
   use_psk,cert_req:bool,o_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg,
   s_extra:extraExt, o_client_hello:msg)
   =
 
-  (* Verify that the ECH_config corresponds to the client hello message and that
-    the decryption works.
-    If the verification does not match then the server should continue the
-    connection with the ClientHelloOuter. In RFC it is added that:
-      This connection proceeds as usual, except the server MUST include the
-      "encrypted_client_hello" extension in its EncryptedExtensions with
-      the "retry_configs" field set to one or more ECHConfig structures
-      with up-to-date keys.
-  *)
-
   let CH(r,offer) = o_client_hello in
-  let nego(=TLS13,=h_alg,=a_alg,kex_ext,sni_ext,ech_ext,=empty_psk_ext,extra_ext) = offer in
+  let nego(=TLS13,=h_alg,=a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext) = offer in
   let client_ECH(ech_h_alg,ech_a_alg,config_id,enc,payload) = ech_ext in
 
   let (s_dom:domain,client_hello:msg,encrypted_ext:bitstring,is_backend:bool) =
-    get ech_configurations(ech_config(=config_id,ech_g,pkR,=o_dom,=ech_h_alg,=ech_a_alg),skR) in (
-      let ech_conf = ech_config(config_id,ech_g,pkR,o_dom,ech_h_alg,ech_a_alg) in
+    get ech_configurations(ech_config(=config_id,ech_g,pkR,=o_dom,=ech_h_alg,=ech_a_alg),skR) in
+    let ech_conf = ech_config(config_id,ech_g,pkR,o_dom,ech_h_alg,ech_a_alg) in
 
-      let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello) in
-      let context = hpke_setup_base_R(ech_h_alg,ech_g,enc,skR,(tls_ech_str,ech_conf)) in
+    let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello) in
+    let context = hpke_setup_base_R(ech_h_alg,ech_g,enc,skR,(tls_ech_str,ech_conf)) in
 
-      (* When the verification succeed, the server must forward the message to
-         the backend server.
-         However, to be able to prove equivalence properties, we directly inline the
-         actions of the back-end server without going through a private channel.
 
-         The use of private channel would work for reachability properties but
-         for equivalence, we would directly observe the difference between a sucessful
-         and a rejected connexion.
-      *)
-
-      let m2b(i_client_hello) = hpke_open(ech_a_alg,context,aad2b(client_hello_AAD),payload) in (
-        let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',empty_psk_ext',extra_ext')) = i_client_hello in
-          (i_dom,i_client_hello,zero,true)
-        else
-          let retry_config = create_retry_config(ech_conf) in
-          (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
-      )
+    let m2b(i_client_hello) = hpke_open(ech_a_alg,context,aad2b(client_hello_AAD),payload) in (
+      let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',psk_ext',extra_ext')) = i_client_hello in
+        (i_dom,i_client_hello,zero,true)
       else
         let retry_config = create_retry_config(ech_conf) in
         (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
     )
     else
-      get ech_configurations(ech_config(config_id',ech_g',pkR',=o_dom,ech_h_alg',ech_a_alg'),skR') in
-      let retry_config = create_retry_config(ech_config(config_id',ech_g',pkR',o_dom,ech_h_alg',ech_a_alg')) in
+      let retry_config = create_retry_config(ech_conf) in
       (o_dom,o_client_hello,echExt2b(server_ECH(retry_config)),false)
   in
 
@@ -326,6 +302,60 @@ let process_client_hello_ClientFacingServer(
     s_extra, encrypted_ext,
     client_hello, zero
   ))
+. *)
+
+letfun open_inner(
+  ech_conf:echConfig,o_client_hello:msg,
+  context:hpkeContext,payload:bitstring,n:nat
+  ) =
+  let ech_config(config_id,ech_g,pkR,o_dom,ech_h_alg,ech_a_alg) = ech_conf in
+  let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello) in
+
+  let m2b(i_client_hello) = hpke_open(ech_a_alg,context,n,aad2b(client_hello_AAD),payload) in
+    let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',psk_ext',extra_ext')) = i_client_hello in
+      (i_client_hello,i_dom,true)
+    else (o_client_hello,o_dom,false)
+  else (o_client_hello,o_dom,false)
+.
+
+let standard_HRR_check(id_server:idProc,
+  use_ech,use_psk,cert_req:bool,
+  s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,
+  kex_ext:keyShareExt,encrypted_ext:bitstring,s_extra:extraExt,
+  client_hello:msg
+  )
+  =
+  (* A normal server (or an ECH server receiving no ECH extension) *)
+  let client_kex_ext(DHE_group(=g)) = kex_ext in (
+    (* Received a correct group but no key share : Send a HelloRetryRequest *)
+    let hrr_mode = nego(TLS13,h_alg,a_alg,hrr_kex_ext(g),empty_sni_ext,empty_ech_ext,empty_psk_ext,empty_extra_ext) in
+    let hello_retry_request = SH(rand_HelloRetryRequest,hrr_mode) in
+    out(io,hello_retry_request);
+    let cur_log_HRR = ((zero,client_hello),hello_retry_request) in
+    event SanityServerHRR(id_server,s_dom);
+
+    (* Received the new client hello *)
+    in(io,client_hello':msg);
+    let CH(cr',offer') = client_hello' in
+      out(ch_server_SH,(id_server,
+        use_psk,false,cert_req,s_dom,
+        g,h_alg,a_alg,
+        s_extra,encrypted_ext,
+        client_hello',cur_log_HRR
+      ))
+    else out(io,unexpected_message)
+  )
+  else let client_kex_ext(DHE_kex(=g,gx)) = kex_ext in (
+    out(ch_server_SH,(id_server,
+      use_psk,false,cert_req,s_dom,
+      g,h_alg,a_alg,
+      s_extra,encrypted_ext,
+      client_hello,zero
+    ))
+  )
+  else
+    (* Received an incorrect group or invalid kex extension *)
+    out(io,handshake_failure)
 .
 
 (* The main server *)
@@ -337,72 +367,90 @@ let server(use_ech,use_psk,cert_req:bool,s_dom:domain,g:group,h_alg:hash_alg,a_a
   event SanityServer(id_server,use_ech,use_psk,cert_req);
   (****************************************************)
 
-  (****************************************************)
-  (* Forbiden combination of options                  *)
-  if not (use_psk && cert_req) then
-  (****************************************************)
-
   in(io,x_client_hello:msg);
   let CH(cr,offer) = x_client_hello in (
     let nego(=TLS13,c_h_alg,c_a_alg,kex_ext,sni_ext,ech_ext,psk_ext,extra_ext) = offer in
 
     (* Verify the cipher suite *)
-    if c_h_alg = h_alg && c_a_alg = a_alg
+    if c_h_alg = h_alg && c_a_alg = a_alg && sni_ext = SNI(s_dom)
     then (
-      (* Verify the group *)
-      let client_kex_ext(DHE_group(=g)) = kex_ext in (
-        if sni_ext = SNI(s_dom)
+      let (client_ECH(ech_h_alg,ech_a_alg,config_id,enc,payload),=true) = (ech_ext,use_psk) in (
+        (* Decode first Inner *)
+        get ech_configurations(ech_config(=config_id,ech_g,pkR,=s_dom,=ech_h_alg,=ech_a_alg),skR) in
+        let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h_alg,ech_a_alg) in
+        let context = hpke_setup_base_R(ech_h_alg,ech_g,enc,skR,(tls_ech_str,ech_conf)) in
+
+        let (io_client_hello:msg,io_dom:domain,is_backend:bool) = open_inner(ech_conf,x_client_hello,context,payload,1) in
+
+        (* When the verification succeed, the server must forward the message to
+           the backend server.
+           However, to be able to prove equivalence properties, we directly inline the
+           actions of the back-end server without going through a private channel.
+
+           The use of private channel would work for reachability properties but
+           for equivalence, we would directly observe the difference between a sucessful
+           and a rejected connexion.
+        *)
+
+        if is_backend
         then (
-          if use_ech
-          then
-            (* Received a correct group but no key share : Send a HelloRetryRequest
-              Not implemented yet*)
-            out(io,abort_error)
-          else (
+          let client_kex_ext(DHE_group(=g)) = kex_ext in (
             (* Received a correct group but no key share : Send a HelloRetryRequest *)
             let hrr_mode = nego(TLS13,h_alg,a_alg,hrr_kex_ext(g),empty_sni_ext,empty_ech_ext,empty_psk_ext,empty_extra_ext) in
             let hello_retry_request = SH(rand_HelloRetryRequest,hrr_mode) in
             out(io,hello_retry_request);
-            let cur_log_HRR = ((zero,x_client_hello),hello_retry_request) in
-            event SanityServerHRR(id_server,s_dom);
+            let cur_log_HRR = ((zero,io_client_hello),hello_retry_request) in
+            event SanityServerHRR(id_server,io_dom);
 
             (* Received the new client hello *)
             in(io,client_hello':msg);
             let CH(cr',offer') = client_hello' in
-              out(ch_server_SH,(id_server,
-                use_psk,false,cert_req,s_dom,
-                g,h_alg,a_alg,
-                s_extra,zero,
-                client_hello',cur_log_HRR
-              ))
-            else out(io,unexpected_message)
+            let nego(=TLS13,=c_h_alg,=c_a_alg,kex_ext',=sni_ext,ech_ext',psk_ext',extra_ext') = offer' in
+
+            let client_ECH(=ech_h_alg,=ech_a_alg,=config_id,=enc,payload') = ech_ext' in (
+
+              let (io_client_hello':msg,=io_dom,=true) = open_inner(ech_conf,client_hello',context,payload',2) in
+                (* Both were accepted *)
+                out(ch_server_SH,(id_server,
+                  use_psk,true,cert_req,io_dom,
+                  g,h_alg,a_alg,
+                  s_extra,zero,
+                  io_client_hello',cur_log_HRR
+                ))
+              else
+                (* The first inner was accepted but not the second. Abort *)
+                out(io,handshake_failure)
+            )
+            else
+              (* The first inner was accepted but not the second. Abort *)
+              out(io,handshake_failure)
           )
-        )
-        else out(io,illegal_parameter)
-      )
-      else let client_kex_ext(DHE_kex(=g,gx)) = kex_ext in (
-        (* Received a correct group and a key share *)
-        let (client_ECH(ech_h_alg,ech_aead_alg,config_id,enc,payload),=true) = (ech_ext,use_ech) in
-          process_client_hello_ClientFacingServer(id_server,
-            use_psk,cert_req,s_dom,
-            g,h_alg,a_alg,
-            s_extra,x_client_hello
-          )
-        else
-          if (ech_ext = empty_ech_ext) || not(use_ech)
-          then (
+          else let client_kex_ext(DHE_kex(=g,gx)) = kex_ext in (
             out(ch_server_SH,(id_server,
-              use_psk,false,cert_req,s_dom,
+              use_psk,is_backend,cert_req,io_dom,
               g,h_alg,a_alg,
               s_extra,zero,
-              x_client_hello,zero
+              io_client_hello,zero
             ))
           )
-          else out(io,illegal_parameter)
+          else
+            (* Received an incorrect group or invalid kex extension *)
+            out(io,handshake_failure)
+        )
+        else (
+          (* In that case, io_client_hello is in fact x_client_hello *)
+          let retry_config = create_retry_config(ech_conf) in
+          standard_HRR_check(id_server,
+            use_ech,use_psk,cert_req,
+            s_dom,g,h_alg,a_alg,kex_ext,echExt2b(server_ECH(retry_config)),s_extra,
+            x_client_hello)
+        )
       )
       else
-        (* Received an incorrect group or invalid kex extension *)
-        out(io,handshake_failure)
+        standard_HRR_check(id_server,
+          use_ech,use_psk,cert_req,
+          s_dom,g,h_alg,a_alg,kex_ext,zero,s_extra,
+          x_client_hello)
     )
     else out(io,handshake_failure)
   )

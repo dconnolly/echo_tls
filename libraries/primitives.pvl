@@ -182,21 +182,17 @@ type hpkeMode.
 const R,S:hpkeMode.
 
 type hpkeContext.
-fun hpke_context(hpkeMode,aead_key(*,bitstring,bitstring*)):hpkeContext [data].
+fun hpke_context(hpkeMode,aead_key,bitstring(*,bitstring*)):hpkeContext [data].
 
 const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
 
-const nonce_for_seal_open:bitstring.
-(* Temporary until I understant how to model the nonce that are generated from
-  the internal sequence *)
+letfun kpke_seal(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,pt:bitstring) =
+  let hpke_context(=S,key,base_nonce) = context in
+  aead_enc(a,key,(base_nonce,n),aad,pt).
 
-letfun kpke_seal(a:aead_alg,context:hpkeContext,aad:bitstring,pt:bitstring) =
-  let hpke_context(=S,key (*,nonce,exporter *)) = context in
-  aead_enc(a,key,nonce_for_seal_open,aad,pt).
-
-letfun hpke_open(a:aead_alg,context:hpkeContext,aad:bitstring,ct:bitstring) =
-  let hpke_context(=R,key (*,nonce,exporter *)) = context in
-  aead_dec(a,key,nonce_for_seal_open,aad,ct).
+letfun hpke_open(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,ct:bitstring) =
+  let hpke_context(=R,key,base_nonce) = context in
+  aead_dec(a,key,(base_nonce,n),aad,ct).
 
 
 letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstring) =
@@ -205,9 +201,8 @@ letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstr
 
   let key = b2ae(hkdf_expand_label(h,xsecret,hpke_key,info_hash)) in
   let base_nonce = hkdf_expand_label(h,xsecret,hpke_base_nonce,info_hash) in
-  let exporter_secret = hkdf_expand_label(h,xsecret,hpke_exp,info_hash) in
 
-  hpke_context(m,key(*,base_nonce,exporter_secret*)).
+  hpke_context(m,key,base_nonce).
 
 (* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
 
