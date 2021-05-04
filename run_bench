@@ -33,19 +33,24 @@ else
 	if [ \( .$1 = .inner \) ]
 	then
 		analyze_one_file "generated_models/strong_secrecy_inner_SCENARIO$2.pv"
-	elif [ \( .$1 = .backend \) ]
+	fi
+	if [ \( .$1 = .backend \) ]
 	then
 		analyze_one_file "generated_models/privacy_backend_SCENARIO$2.pv"
-	elif [ \( .$1 = .client \) ]
+	fi
+	if [ \( .$1 = .client \) ]
 	then
 		analyze_one_file "generated_models/privacy_client_SCENARIO$2.pv"
-	elif [ \( .$1 = .client_ech \) ]
+	fi
+	if [ \( .$1 = .client_ech \) ]
 	then
 		analyze_one_file "generated_models/privacy_client_ech_SCENARIO$2.pv"
-	elif [ \( .$1 = .ror \) ]
+	fi
+	if [ \( .$1 = .ror \) ]
 	then
 		analyze_one_file "generated_models/real_or_random_psk_SCENARIO$2.pv"
-	elif [ \( .$1 = .sanity \) ]
+	fi
+	if [ \( .$1 = .sanity \) ]
 	then
 		sanity
 	fi
