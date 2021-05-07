@@ -40,7 +40,8 @@ let receive_encrypted_extension_message_ech (id_client:idProc,
   cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom,s_dom:domain, psk:preSharedKey,
   master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
+  cur_log:bitstring,
+  comp_psk:bool,safe_psk:bool)
   =
 
   in(io,enc_ee_msg:bitstring);
@@ -62,7 +63,7 @@ let receive_encrypted_extension_message_ech (id_client:idProc,
   in
 
   let cur_log2 = (cur_log,ee_msg) in
-  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2))
+  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2,comp_psk,safe_psk))
 .
 
 (* Process a server hello message *)
@@ -72,22 +73,23 @@ let process_server_hello_ech(id_client:idProc,
   i_cr,o_cr:bytes32,c_dom,i_dom,o_dom:domain,
   kex_data:bitstring,h_alg:hash_alg,a_alg:aead_alg,psk_data:bitstring,
   i_cur_log,o_cur_log:bitstring,
-  server_hello:msg)
+  server_hello:msg,
+  comp_psk:bool)
   =
   let SH(B32(sr24,sr8),mode) = server_hello in
   let (i_x:bitstring,o_x:bitstring,g:group,=true) = kex_data in
   let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy_srv)),=empty_sni_ext,=empty_ech_ext,psk_ext,extra) = mode in (
 
     (* We retrieve the pre shared key if there is one. *)
-    let (psk:preSharedKey,early_secret:bitstring,valid:bool) =
+    let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
       if psk_ext = empty_psk_ext
       then (
         let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        (NoPSK,es,true)
+        (NoPSK,es,true,false)
       )
       else
-        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring) = psk_data in
-        (psk,es,(h'_alg = h_alg && server_psk_ext(1) = psk_ext && use_psk))
+        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring,is_safe:bool) = psk_data in
+        (psk,es,(h'_alg = h_alg && server_psk_ext(1) = psk_ext && use_psk),is_safe)
     in
 
     if valid
@@ -136,7 +138,8 @@ let process_server_hello_ech(id_client:idProc,
         cr,B32(sr24,sr8),h_alg,a_alg,
         c_dom,s_dom,psk,
         master_secret,chk,shk,cfin,sfin,
-        cur_log
+        cur_log,
+        comp_psk,safe_psk
       )
     )
     else out(io,illegal_parameter)
@@ -220,12 +223,21 @@ letfun generate_client_hello_message_ech (
 .
 
 (* The main ECH client *)
-
+ifdef(<!ROR!>,<!dnl
+let echo_client(comp_psk:bool,use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
+  g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
+  ech_conf:echConfig,
+  i_extra,o_extra:extraExt
+  ) =
+!>,<!dnl
 let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
   ech_conf:echConfig,
   i_extra,o_extra:extraExt
   ) =
+  let comp_psk = false in
+!>)dnl
+
   (****************************************************)
   (* Only for sanity checks *)
   new id_client[]:idProc;
@@ -248,7 +260,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   out(io,o_client_hello);
 
   (* For sanity checks*)
-  let (=h_alg,psk:preSharedKey,es:bitstring) = psk_data in
+  let (=h_alg,psk:preSharedKey,es:bitstring,safe:bool) = psk_data in
   event SanityClientCH_ECH(id_client,true,i_cr,o_cr,c_dom,o_dom,i_dom,psk,(zero,o_client_hello),(zero,i_client_hello));
 
   (* Message from server *)
@@ -286,7 +298,7 @@ ifdef(<!NOHRR!>,<!dnl
         let i_cur_log2 = (i_cur_log,i_client_hello') in
 
         (* For sanity checks*)
-        let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
+        let (=h_alg,psk':preSharedKey,es':bitstring,safe':bool) = psk_data' in
         event SanityClientCH_ECH(id_client,false,i_cr',o_cr',c_dom,o_dom,i_dom,psk',o_cur_log2,i_cur_log2);
 
         (* Message from server *)
@@ -301,7 +313,8 @@ ifdef(<!NOHRR!>,<!dnl
               i_cr',o_cr',c_dom,i_dom,o_dom,
               kex_data',h_alg,a_alg,psk_data',
               i_cur_log2,o_cur_log2,
-              server_hello'
+              server_hello',
+              comp_psk
             )
         else out(io,unexpected_message)
       )
@@ -316,7 +329,8 @@ ifdef(<!NOHRR!>,<!dnl
           i_cr,o_cr,c_dom,i_dom,o_dom,
           kex_data,h_alg,a_alg,psk_data,
           (zero,i_client_hello),(zero,o_client_hello),
-          server_hello
+          server_hello,
+          comp_psk
         )
       else out(io,illegal_parameter)
   )

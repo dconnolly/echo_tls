@@ -31,9 +31,15 @@ ifdef(<!CLIENT!>,<!dnl
     We will request that for the tested client, the psk was not already used. *)
   get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
   event Selected_psk(idP,c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+  let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
+ifdef(<!ROR!>,<!dnl
+  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,is_safe) [precise] in
 !>,<!dnl
   get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
   event Selected_psk(c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+  let is_safe=false in (* This value is never used in this scenario *)
+!>)dnl
 !>)dnl
 
   if use_psk
@@ -43,11 +49,11 @@ ifdef(<!CLIENT!>,<!dnl
     let cur_log' = (cur_log,CH(cr,offer)) in
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
     let binders = hmac(h_alg,kb,cur_log') in
-    (client_psk_ext(id,binders), (h_alg,psk,es))
+    (client_psk_ext(id,binders), (h_alg,psk,es,is_safe))
   )
   else
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (empty_psk_ext,(h_alg,NoPSK,es))
+    (empty_psk_ext,(h_alg,NoPSK,es,false))
 .
 
 (* Generate the key share extension. *)
@@ -69,10 +75,16 @@ let send_finished_message =
   !
   in(ch_client_CFIN,(id_client:idProc,
     cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+    c_dom:domain,s_dom:domain,
     psk:preSharedKey,s_pkey:pubkey,c_pkey:pubkey,
     master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
-    cur_log:bitstring)
-  );
+    cur_log:bitstring,
+    comp_psk:bool,safe_psk:bool
+  ));
+ifdef(<!ROR!>,<!dnl
+  new st[]:bitstring;
+  event PreciseMess(ch_client_CFIN,id_client,st,(cur_log,comp_psk,safe_psk));
+!>)dnl
 
   let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
   let client_hash_msg = hmac(h_alg,cfin,cur_log) in
@@ -89,19 +101,41 @@ let send_finished_message =
     s_pkey,c_pkey,
     cak,sak,ems,rms,
     cur_log')
+
+ifdef(<!ROR!>,<!dnl
+  ;
+  let (new_psk:internal_preSharedKey,new_safe:bool) =
+    if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
+    if psk = NoPSK || safe_psk then
+      new rand_ipsk:internal_preSharedKey;
+      (diff[rand_ipsk,b2ipsk(rms)],not(comp_psk))
+    else (b2ipsk(rms),false)
+    else (b2ipsk(rms),false)
+  in
+  let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,new_safe);
+  if comp_psk then
+  out(io,new_psk);
+  out(io,id)
+!>)dnl
 .
 
 (* Certificate and Certificate Verify *)
 
 let send_certificate_message(id_client:idProc,
   cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom:domain,s_pkey:pubkey,
+  c_dom:domain,s_dom:domain,s_pkey:pubkey,
   master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
+  cur_log:bitstring,
+  comp_psk:bool)
   =
 
+ifdef(<!ROR!>,<!dnl
+  get long_term_keys(=c_dom,sk,c_pkey,crt) [precise] in
+!>,<!dnl
   get long_term_keys(c_dom',sk,c_pkey,crt) [precise] in
   event Selected_lgt(c_dom',c_dom,sk,c_pkey,crt);
+!>)dnl
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -117,7 +151,7 @@ let send_certificate_message(id_client:idProc,
   let cur_log3 = (cur_log2,certificate_verify_msg) in
 
   (* The finished message *)
-  out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3))
+  out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3,comp_psk,false))
 .
 
 (* Receiving Finished message from Server *)
@@ -128,9 +162,10 @@ let receive_finished_message =
   !
   in(ch_client_FIN,(id_client:idProc,
   cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
-  c_dom:domain, psk:preSharedKey, cert_req:bool, s_pkey:pubkey,
+  c_dom:domain,s_dom:domain, psk:preSharedKey, cert_req:bool, s_pkey:pubkey,
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
-  cur_log:bitstring));
+  cur_log:bitstring,
+  comp_psk:bool,safe_psk:bool));
 
   new st[]:bitstring;
   event PreciseMess(ch_client_FIN,id_client,st,master_secret);
@@ -142,8 +177,8 @@ let receive_finished_message =
       let cur_log2 = (cur_log,finished_msg) in
 
       if cert_req
-      then send_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2)
-      else out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2))
+      then send_certificate_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log2,comp_psk)
+      else out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,s_pkey,NoPubKey,master_secret,chk,shk,cfin,sfin,cur_log2,comp_psk,safe_psk))
     )
     else out(io,unexpected_message)
   else out(io,bad_record_mac)
@@ -160,7 +195,8 @@ let process_server_certificate_message =
   c_dom:domain,s_dom:domain, psk:preSharedKey, cert_req:bool,
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
   cur_log:bitstring,
-  certificate_msg:msg));
+  certificate_msg:msg,
+  comp_psk:bool,safe_psk:bool));
 
   (* Process the Certificate message *)
   let CRT(=zero,crt) = certificate_msg in
@@ -176,7 +212,7 @@ let process_server_certificate_message =
   let cur_log3 = (cur_log2,certificate_verify_msg) in
 
   (* Process the Finished message *)
-  out(ch_client_FIN,(id_client,cr,sr,h_alg,a_alg,c_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3))
+  out(ch_client_FIN,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,cert_req,s_pkey,master_secret,chk,shk,cfin,sfin,cur_log3,comp_psk,safe_psk))
 .
 
 (* Receiving message after EncryptedExtensions *)
@@ -189,7 +225,8 @@ let receive_after_encrypted_extension =
   cr:bytes32,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom:domain,s_dom:domain, psk:preSharedKey,
   master_secret:bitstring, chk:aead_key,shk:aead_key, cfin:mac_key,sfin:mac_key,
-  cur_log:bitstring));
+  cur_log:bitstring,
+  comp_psk:bool,safe_psk:bool));
 
   new st[]:bitstring;
   event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
@@ -205,10 +242,10 @@ let receive_after_encrypted_extension =
 
       in(io,enc_crt_msg:bitstring);
       let m2b(certificate_msg) = aead_dec(a_alg,shk,zero,zero,enc_crt_msg) in
-      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2,certificate_msg))
+      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,true,master_secret,chk,shk,cfin,sfin,cur_log2,certificate_msg,comp_psk,false))
     )
     else let CRT(=zero,crt) = msg' in (
-      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg'))
+      out(ch_client_CRT,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,false,master_secret,chk,shk,cfin,sfin,cur_log,msg',comp_psk,false))
     )
     else out(io,unexpected_message)
   )
@@ -216,9 +253,10 @@ let receive_after_encrypted_extension =
     (* If there is a PSK, no certificate shall be sent. Directly receive the finish message *)
     out(ch_client_FIN,(id_client,
       cr,sr, h_alg,a_alg,
-      c_dom, psk, false, NoPubKey,
+      c_dom, s_dom,psk, false, NoPubKey,
       master_secret, chk,shk, cfin,sfin,
-      cur_log))
+      cur_log,
+      comp_psk,safe_psk))
 .
 
 (* Receiving the encrypted extension message *)
@@ -227,7 +265,8 @@ let receive_encrypted_extension_message (id_client:idProc,
   cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom,s_dom:domain, psk:preSharedKey,
   master_secret:bitstring, chk,shk:aead_key, cfin,sfin:mac_key,
-  cur_log:bitstring)
+  cur_log:bitstring,
+  comp_psk:bool,safe_psk:bool)
   =
   in(io,enc_ee_msg:bitstring);
   let m2b(ee_msg) = aead_dec(a_alg,shk,zero,zero,enc_ee_msg) in
@@ -235,7 +274,7 @@ let receive_encrypted_extension_message (id_client:idProc,
   let EE(x) = ee_msg in
   let cur_log2 = (cur_log,ee_msg) in
 
-  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2))
+  out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2,comp_psk,safe_psk))
 .
 
 (* Generate the keys after the Server Hello *)
@@ -244,7 +283,8 @@ let generate_keys_after_server_hello (id_client:idProc,
   cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
   c_dom,s_dom:domain, psk:preSharedKey,
   g:group,x:bitstring,gy:element,early_secret:bitstring,
-  cur_log:bitstring)
+  cur_log:bitstring,
+  comp_psk:bool,safe_psk:bool)
   =
 
   (* Compute the handshake secret *)
@@ -255,7 +295,7 @@ let generate_keys_after_server_hello (id_client:idProc,
     kdf_ms(h_alg,handshake_secret,cur_log)
   in
 
-  receive_encrypted_extension_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log)
+  receive_encrypted_extension_message(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log,comp_psk,safe_psk)
 .
 
 (* Process a server hello message *)
@@ -265,7 +305,8 @@ let process_server_hello(id_client:idProc,
   cr:bytes32,c_dom,s_dom:domain,
   kex_data:bitstring,h_alg:hash_alg,a_alg:aead_alg,psk_data:bitstring,
   cur_log:bitstring,
-  server_hello:msg)
+  server_hello:msg,
+  comp_psk:bool)
   =
   let SH(sr,mode) = server_hello in
   let (x:bitstring,g:group,=true) = kex_data in
@@ -273,19 +314,19 @@ let process_server_hello(id_client:idProc,
     let cur_log2 = (cur_log,server_hello) in
 
     (* We retrieve the pre shared key if there is one. *)
-    let (psk:preSharedKey,early_secret:bitstring,valid:bool) =
+    let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
       if psk_ext = empty_psk_ext
       then (
         let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        (NoPSK,es,true)
+        (NoPSK,es,true,false)
       )
       else
-        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring) = psk_data in
-        (psk,es,((h'_alg = h_alg) && (server_psk_ext(1) = psk_ext) && use_psk))
+        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring,is_safe:bool) = psk_data in
+        (psk,es,((h'_alg = h_alg) && (server_psk_ext(1) = psk_ext) && use_psk),is_safe)
     in
 
     if valid
-    then generate_keys_after_server_hello(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,g,x,gy,early_secret,cur_log2)
+    then generate_keys_after_server_hello(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,g,x,gy,early_secret,cur_log2,comp_psk,safe_psk)
     else out(io,illegal_parameter)
   )
   else out(io,illegal_parameter)
@@ -315,7 +356,12 @@ letfun generate_client_hello_message (
 
 (* The main standard client *)
 
+ifdef(<!ROR!>,<!dnl
+let standard_client(id_client:idProc,comp_psk,use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+!>,<!dnl
 let standard_client(id_client:idProc,use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+  let comp_psk = false in
+!>)dnl
   (****************************************************)
   (* Only for sanity checks *)
   event SanityClient(id_client,false,false,use_psk,send_kex);
@@ -328,7 +374,7 @@ let standard_client(id_client:idProc,use_psk:bool,send_kex:bool,c_dom,s_dom:doma
   let cur_log2 = (cur_log,client_hello) in
 
   (* For sanity checks*)
-  let (=h_alg,psk:preSharedKey,es:bitstring) = psk_data in
+  let (=h_alg,psk:preSharedKey,es:bitstring,safe:bool) = psk_data in
   event SanityClientCH(id_client,true,cr,c_dom,s_dom,psk,cur_log2);
 
   (* Message from server *)
@@ -350,7 +396,7 @@ ifdef(<!NOHRR!>,<!dnl
         let cur_log4 = (cur_log3,client_hello') in
 
         (* For sanity checks*)
-        let (=h_alg,psk':preSharedKey,es':bitstring) = psk_data' in
+        let (=h_alg,psk':preSharedKey,es':bitstring,safe':bool) = psk_data' in
         event SanityClientCH(id_client,false,cr',c_dom,s_dom,psk',cur_log4);
 
         (* Message from server *)
@@ -358,7 +404,7 @@ ifdef(<!NOHRR!>,<!dnl
         let SH(sr',mode') = server_hello' in
           if sr' = rand_HelloRetryRequest
           then out(io,unexpected_message)
-          else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello')
+          else process_server_hello(id_client,use_psk,cr',c_dom,s_dom,kex_data',h_alg,a_alg,psk_data',cur_log4,server_hello',comp_psk)
         else out(io,unexpected_message)
       )
       else out(io,illegal_parameter)
@@ -368,7 +414,7 @@ ifdef(<!NOHRR!>,<!dnl
       if send_kex
       then
         (* This is a normal server hello message *)
-        process_server_hello(id_client,use_psk,cr,c_dom,s_dom,kex_data,h_alg,a_alg,psk_data,cur_log2,server_hello)
+        process_server_hello(id_client,use_psk,cr,c_dom,s_dom,kex_data,h_alg,a_alg,psk_data,cur_log2,server_hello,comp_psk)
       else out(io,illegal_parameter)
   )
   else out(io,unexpected_message)

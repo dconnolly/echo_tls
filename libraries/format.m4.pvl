@@ -1,3 +1,5 @@
+changequote(<!,!>)dnl
+
 channel io.
 
 type domain.
@@ -31,6 +33,7 @@ fun hrr_kex_ext(group): keyShareExt [data].
 type internal_preSharedKey.
 fun uc_psk(seed):internal_preSharedKey [private].
 
+fun b2ipsk(bitstring):internal_preSharedKey [typeConverter].
 fun ipsk2b(internal_preSharedKey):bitstring [typeConverter].
 type preSharedKey.
 const NoPSK: preSharedKey.
@@ -63,7 +66,11 @@ fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk of
 table pre_shared_keys(
   domain (* Client domain *),
   domain (* Server domain *),
+ifdef(<!ROR!>,<!dnl
+  hash_alg,identityPsk,internal_preSharedKey,bool).
+!>,<!dnl
   hash_alg,identityPsk,internal_preSharedKey).
+!>)dnl
 
 (********************************************************)
 (* Long term keys and certificates                      *)

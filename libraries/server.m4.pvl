@@ -128,8 +128,12 @@ let send_server_certificate_message =
   new st[]:bitstring;
   event PreciseMess(ch_server_CRT,id_server,st,master_secret);
 
+ifdef(<!ROR!>,<!dnl
+  get long_term_keys(=s_dom,sk,s_pkey,crt) [precise] in
+!>,<!dnl
   get long_term_keys(s_dom',sk,s_pkey,crt) [precise] in
   event Selected_lgt(s_dom',s_dom,sk,s_pkey,crt);
+!>)dnl
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in

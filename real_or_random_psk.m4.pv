@@ -1,60 +1,63 @@
+changequote(<!,!>)dnl
 
 set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
-  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
-  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-  (
-    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt')
-  )
+lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,
+  c_dom1,c_dom2,s_dom1,s_dom2:domain,h_alg1,h_alg2:hash_alg,id1,id2:identityPsk,ipsk1,ipsk2:internal_preSharedKey,
+  safe,safe',safe1,safe2:bool;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[safe,safe'])) ==>
+    h_alg = id_hash(StrongHash,1) &&
+    h_alg' = id_hash(StrongHash,1) &&
+    id = mk_idpsk(c_dom,s_dom,h_alg,ipsk) &&
+    id' = mk_idpsk(c_dom',s_dom',h_alg',ipsk') &&
+    safe = safe';
+  table(pre_shared_keys(diff[c_dom,c_dom1],diff[s_dom,s_dom1],diff[h_alg,h_alg1],diff[id,id1],diff[ipsk,ipsk1],diff[safe,safe1])) &&
+  table(pre_shared_keys(diff[c_dom,c_dom2],diff[s_dom,s_dom2],diff[h_alg,h_alg2],diff[id,id2],diff[ipsk,ipsk2],diff[safe',safe2])) ==>
+  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe1 = safe2 && safe = safe';
+  table(pre_shared_keys(diff[c_dom1,c_dom],diff[s_dom1,s_dom],diff[h_alg1,h_alg],diff[id1,id],diff[ipsk1,ipsk],diff[safe1,safe])) &&
+  table(pre_shared_keys(diff[c_dom2,c_dom],diff[s_dom2,s_dom],diff[h_alg2,h_alg],diff[id2,id],diff[ipsk2,ipsk],diff[safe2,safe'])) ==>
+  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe1 = safe2 && safe = safe';
+  attacker(diff[ipsk,ipsk1]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk2],safe)) ==> ipsk1 = ipsk2 && safe <> true;
+  attacker(diff[ipsk1,ipsk]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk2,ipsk],safe)) ==> ipsk1 = ipsk2 && safe <> true
+  [induction]
 .
 
-(* For privacy of client, the server is always the same on the left and on the right *)
-restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
-  event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
-    s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
-    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-    s_dom1 = s_dom1' &&
-    (
-      (c_dom1 = c_dom1' && id = id' && ipsk = ipsk')
-    )
-.
 
 (********************************************************)
 (* Equivalence scenario                                 *)
 (********************************************************)
-ifdef(`SCENARIO1',`
-  define(`PSK')dnl
-  define(`KEX')dnl
-  define(`NOGREASE')dnl
-  define(`NOCERT')dnl
-')dnl
-ifdef(`SCENARIO2',`
-  define(`KEX')dnl
-  define(`NOPSK')dnl
-  define(`NOGREASE')dnl
-  define(`NOCERT')dnl
-')dnl
-ifdef(`SCENARIO3',`
-  define(`KEX')dnl
-  define(`NOPSK')dnl
-  define(`NOGREASE')dnl
-  define(`CERT')dnl
-')dnl
-ifdef(`SCENARIO4',`
-  define(`KEX')dnl
-  define(`UPSK')dnl
-  define(`NOGREASE')dnl
-  define(`UCERT')dnl
-')dnl
-ifdef(`SCENARIO5',`
-  define(`UKEX')dnl
-  define(`UPSK')dnl
-  define(`UGREASE')dnl
-  define(`UCERT')dnl
-')dnl
+ifdef(<!SCENARIO1!>,<!
+  define(<!PSK!>)dnl
+  define(<!KEX!>)dnl
+  define(<!NOGREASE!>)dnl
+  define(<!NOCERT!>)dnl
+!>)dnl
+ifdef(<!SCENARIO2!>,<!
+  define(<!KEX!>)dnl
+  define(<!NOPSK!>)dnl
+  define(<!NOGREASE!>)dnl
+  define(<!NOCERT!>)dnl
+!>)dnl
+ifdef(<!SCENARIO3!>,<!
+  define(<!KEX!>)dnl
+  define(<!NOPSK!>)dnl
+  define(<!NOGREASE!>)dnl
+  define(<!CERT!>)dnl
+!>)dnl
+ifdef(<!SCENARIO4!>,<!
+  define(<!KEX!>)dnl
+  define(<!UPSK!>)dnl
+  define(<!NOGREASE!>)dnl
+  define(<!UCERT!>)dnl
+!>)dnl
+ifdef(<!SCENARIO5!>,<!
+  define(<!UKEX!>)dnl
+  define(<!UPSK!>)dnl
+  define(<!UGREASE!>)dnl
+  define(<!UCERT!>)dnl
+!>)dnl
 
 (* Dishonest key generation *)
 
@@ -72,7 +75,7 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,false);
   out(io,id)
 .
 
@@ -86,95 +89,93 @@ process
   let ech_g = id_g(StrongDH,2) in
   (
       main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
-    | swap_pre_shared_keys
-    | swap_long_term_keys
     | gen_dishonest_long_term_keys
     | gen_dishonest_pre_shared_keys(tls_h)
     | (
       !
       new id_client:idProc;
-      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
-      ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
-      in(io,(c_dom:domain,s_dom:domain)) [precise];
-      event Same((use_psk,send_kex,c_dom,s_dom));
-      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      ifdef(<!PSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool)[precise];!>)
+      ifdef(<!KEX!>,<!let send_kex = true in!>) ifdef(<!NOKEX!>,<!let send_kex = false in!>) ifdef(<!UKEX!>,<!in(io,send_kex:bool)[precise];!>)
+      in(io,(c_dom:domain,s_dom:domain,comp_psk:bool)) [precise];
+      event Same((use_psk,send_kex,c_dom,s_dom,comp_psk));
+      standard_client(id_client,comp_psk,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
-      ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool);')
-      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
-      ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
-      in(io,(c_dom:domain,cfs_dom:domain,backend_dom:domain)) [precise];
-      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom,backend_dom));
+      ifdef(<!GREASE!>,<!let use_grease = true in!>) ifdef(<!NOGREASE!>,<!let use_grease = false in!>) ifdef(<!UGREASE!>,<!in(io,use_grease:bool)[precise];!>)
+      ifdef(<!PSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool)[precise];!>)
+      ifdef(<!KEX!>,<!let send_kex = true in!>) ifdef(<!NOKEX!>,<!let send_kex = false in!>) ifdef(<!UKEX!>,<!in(io,send_kex:bool)[precise];!>)
+      in(io,(c_dom:domain,cfs_dom:domain,backend_dom:domain,comp_psk:bool)) [precise];
+      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom,backend_dom,comp_psk));
       get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) in
       let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
-      echo_client(use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
+      echo_client(comp_psk,use_grease,use_psk,send_kex,c_dom,backend_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     ) | (
       !
-      ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
-      ifdef(`CERT',`let cert_req = true in') ifdef(`NOCERT',`let cert_req = false in') ifdef(`UCERT',`in(io,cert_req:bool) [precise];')
+      ifdef(<!PSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool) [precise];!>)
+      ifdef(<!CERT!>,<!let cert_req = true in!>) ifdef(<!NOCERT!>,<!let cert_req = false in!>) ifdef(<!UCERT!>,<!in(io,cert_req:bool) [precise];!>)
       in(io,(use_ech:bool,s_dom:domain)) [precise];
       event Same((use_ech,use_psk,cert_req,s_dom));
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
 
-ifdef(`SCENARIO1',`
-ifdef(`NOHRR',`',`
+ifdef(<!SCENARIO1!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 1
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO2',`
-ifdef(`NOHRR',`',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO2!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 2
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO3',`
-ifdef(`NOHRR',`',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO3!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 3
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO4',`
-ifdef(`NOHRR',`',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO4!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 4
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO5',`
-ifdef(`NOHRR',`',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO5!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 5
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO1',`
-ifdef(`NOHRR',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO1!>,<!
+ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 6
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO2',`
-ifdef(`NOHRR',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO2!>,<!
+ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 7
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO3',`
-ifdef(`NOHRR',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO3!>,<!
+ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 8
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO4',`
-ifdef(`NOHRR',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO4!>,<!
+ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 9
 END *)
-')dnl
-')dnl
-ifdef(`SCENARIO5',`
-ifdef(`NOHRR',`
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO5!>,<!
+ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 10
 END *)
-')dnl
-')dnl
+!>)dnl
+!>)dnl
