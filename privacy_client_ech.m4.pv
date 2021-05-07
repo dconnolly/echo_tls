@@ -105,6 +105,7 @@ process
     | gen_dishonest_pre_shared_keys(tls_h)
     | (
       !
+      new id_client:idProc;
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
       in(io,(c_dom:domain,s_dom:domain));
@@ -140,22 +141,62 @@ process
   )
 
 ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 1
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 2
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 3
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 4
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 5
 END *)
+')dnl
+')dnl
+ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 6
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 7
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 8
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 9
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 10
+END *)
+')dnl
 ')dnl

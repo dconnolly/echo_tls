@@ -1,0 +1,158 @@
+#!/bin/bash
+
+lib=""
+tmp_name=""
+
+# Arguments:
+# 	$1: name of the file
+# 	$2: list of valid options in the correct order
+# 	$3: list of requested options
+function generate_file_name() {
+	m4name=libraries/$1.m4.pvl
+	m4def=" "
+
+	tmp_name="generated_libraries/$1"
+	for v_op in $2
+	do
+		for op in $3
+		do
+			if [ \( $v_op = $op \) ]
+			then
+				tmp_name="$tmp_name"_$op
+				m4def="$m4def-D $op "
+			fi
+		done
+	done
+	tmp_name="$tmp_name.pvl"
+	m4 $m4def $m4name > $tmp_name
+}
+
+function generate_misc() {
+	generate_file_name "misc" "CLIENT" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_client_ech() {
+	generate_file_name "client_ech" "NOHRR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_client() {
+	generate_file_name "client" "NOHRR CLIENT" "$1"
+	echo --------
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_server() {
+	generate_file_name "server" "NOHRR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_libraries() {
+	# Standard libraries
+	for file in primitives format key_schedule
+	do
+		lib="$lib -lib libraries/$file.pvl"
+	done
+
+	case $1 in
+		sanity)
+			lib="$lib -lib libraries/secrecy_assumption.pvl"
+			generate_misc ""
+			generate_client ""
+			generate_client_ech ""
+			generate_server ""
+			;;
+		backend_nohrr|inner_nohrr|client_ech_nohrr)
+			lib="$lib -lib libraries/secrecy_assumption_equiv.pvl"
+			generate_misc ""
+			generate_client "NOHRR"
+			generate_client_ech "NOHRR"
+			generate_server "NOHRR"
+			;;
+		backend|inner|client_ech)
+			lib="$lib -lib libraries/secrecy_assumption_equiv.pvl"
+			generate_misc ""
+			generate_client ""
+			generate_client_ech ""
+			generate_server ""
+			;;
+		client_nohrr)
+			lib="$lib -lib libraries/secrecy_assumption_equiv.pvl"
+			generate_misc "CLIENT"
+			generate_client "NOHRR CLIENT"
+			generate_client_ech "NOHRR"
+			generate_server "NOHRR"
+			;;
+		client)
+			lib="$lib -lib libraries/secrecy_assumption_equiv.pvl"
+			generate_misc "CLIENT"
+			generate_client "CLIENT"
+			generate_client_ech ""
+			generate_server ""
+			;;
+	esac
+
+	lib="$lib -lib libraries/main_processes.pvl"
+
+}
+
+generate_libraries $1
+
+function sanity() {
+	for file in generated_models/sanity*.pv
+	do
+		filename_ext=${file##*/}
+		filename=${filename_ext%.*}
+		analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
+	done
+}
+
+function analyze_one_file() {
+	file=$1
+	filename_ext=${file##*/}
+	filename=${filename_ext%.*}
+	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp optim_loose$2 file generated_models $filename_ext
+}
+
+mkdir -p tests
+mkdir -p tmp
+mkdir -p generated_models
+mkdir -p generated_libraries
+
+function run_file() {
+	if [ \( .$3 = .PV \) ]
+	then
+		echo proverif $lib $1
+		proverif $lib $1
+	else
+		echo analyze_one_file $1 "$2-"
+		analyze_one_file $1 "$2-"
+	fi
+}
+
+case $1 in
+	sanity)
+		sanity
+		;;
+	inner)
+		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 strong_secrecy_inner.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	inner_nohrr)
+		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR strong_secrecy_inner.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	client)
+		full_file="generated_models/privacy_client_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_client.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	client_nohrr)
+		full_file="generated_models/privacy_client_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_client.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+esac

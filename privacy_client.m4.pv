@@ -3,18 +3,18 @@ set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
-  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
-  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
+restriction dom1,dom1',dom2,dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate;
+  event(Selected_lgt(diff[dom1,dom1'],diff[dom2,dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
+  dom1 = dom2 && dom1' = dom2' &&
   (
-    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') ||
-    (c_dom1 <> c_dom1')
+    (dom1 = dom1' && sk = sk' && spkey = spkey' && crt = crt') ||
+    (dom1 <> dom1')
   )
 .
 
 (* For privacy of client, the server is always the same on the left and on the right *)
-restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
-  event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
+restriction idP:idProc,c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey;
+  event(Selected_psk(idP,diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
     s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
     c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
     s_dom1 = s_dom1' &&
@@ -22,6 +22,23 @@ restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,i
       (c_dom1 = c_dom1' && id = id' && ipsk = ipsk') || (c_dom1 <> c_dom1')
     )
 .
+
+free idClientDiff:idProc [private].
+
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
+  are one time used and uncompromised *)
+restriction
+  idP1,idP2:idProc,s,s':seed,
+  c_dom1,c_dom1',c_dom2,c_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom1,s_dom1',s_dom2,s_dom2',s_dom3,s_dom3',s_dom4,s_dom4':domain,
+  id1,id1',id2,id2':identityPsk,ipsk1,ipsk1',ipsk2,ipsk2',ipsk:internal_preSharedKey;
+  event(Selected_psk(idClientDiff,diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id1,id1'],diff[ipsk,ipsk1'])) &&
+  event(Selected_psk(idP2,diff[c_dom3,c_dom3'],diff[c_dom4,c_dom4'],diff[s_dom3,s_dom3'],diff[s_dom4,s_dom4'],diff[id2,id2'],diff[ipsk,ipsk2'])) ==>
+    idP2 = idClientDiff;
+  event(Selected_psk(idClientDiff,diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id1,id1'],diff[ipsk1,ipsk])) &&
+  event(Selected_psk(idP2,diff[c_dom3,c_dom3'],diff[c_dom4,c_dom4'],diff[s_dom3,s_dom3'],diff[s_dom4,s_dom4'],diff[id2,id2'],diff[ipsk2,ipsk])) ==>
+    idP2 = idClientDiff;
+  event(Selected_psk(idClientDiff,diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id1,id1'],diff[ipsk1,ipsk1'])) ==>
+    ipsk1 = uc_psk(s) && ipsk1' = uc_psk(s').
 
 (********************************************************)
 (* Equivalence scenario                                 *)
@@ -99,11 +116,12 @@ process
     | gen_dishonest_pre_shared_keys(tls_h)
     | (
       !
+      new id_client:idProc;
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
       in(io,(c_dom:domain,s_dom:domain));
       event Same((use_psk,send_kex,c_dom,s_dom));
-      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(id_client,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool);')
@@ -125,27 +143,67 @@ process
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')
       event Same((use_psk,send_kex));
-      standard_client_one_time_psk(use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(idClientDiff,use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
 
 ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 1
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 2
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 3
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 4
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 5
 END *)
+')dnl
+')dnl
+ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 6
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 7
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 8
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 9
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 10
+END *)
+')dnl
 ')dnl

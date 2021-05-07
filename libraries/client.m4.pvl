@@ -1,3 +1,5 @@
+changequote(<!,!>)dnl
+
 (********************
   Client processes
 *********************)
@@ -20,13 +22,19 @@
 
 (* Generate the pre shared key extension *)
 letfun make_pre_shared_key_extension(
-  use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
+  idP:idProc,use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
   extra:extraExt,cur_log:bitstring
   ) =
 
-  (* We assume that all participant have a least a psk with everyone. *)
+ifdef(<!CLIENT!>,<!dnl
+  (* When checking the privacy of the client, we add in the event the idProc.
+    We will request that for the tested client, the psk was not already used. *)
+  get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
+  event Selected_psk(idP,c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+!>,<!dnl
   get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
   event Selected_psk(c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+!>)dnl
 
   if use_psk
   then (
@@ -72,8 +80,6 @@ let send_finished_message =
 
   let cur_log' = (cur_log,client_finished_msg) in
   let rms = kdf_psk(h_alg,master_secret,cur_log') in
-
-  (* insert clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms); *)
 
   let enc_client_finished_msg = aead_enc(a_alg,chk,zero,zero,m2b(client_finished_msg)) in
   out(io,enc_client_finished_msg);
@@ -288,7 +294,7 @@ let process_server_hello(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
-  use_psk:bool,c_dom,s_dom:domain,
+  idP:idProc,use_psk:bool,c_dom,s_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
   )
   =
@@ -300,7 +306,7 @@ letfun generate_client_hello_message (
 
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension(use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
+    make_pre_shared_key_extension(idP,use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
   in
 
   (* The client hello *)
@@ -309,16 +315,15 @@ letfun generate_client_hello_message (
 
 (* The main standard client *)
 
-let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
+let standard_client(id_client:idProc,use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt) =
   (****************************************************)
   (* Only for sanity checks *)
-  new id_client[]:idProc;
   event SanityClient(id_client,false,false,use_psk,send_kex);
   (****************************************************)
 
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(id_client,use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
@@ -332,12 +337,15 @@ let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:
 
     if sr = rand_HelloRetryRequest
     then (
+ifdef(<!NOHRR!>,<!dnl
+      0
+!>,<!dnl
       (* We received a HelloRetryRequest *)
       let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
         let cur_log3 = (cur_log2,server_hello) in
         event SanityClientHRR(id_client);
 
-        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(id_client,use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
         out(io,client_hello');
         let cur_log4 = (cur_log3,client_hello') in
 
@@ -354,6 +362,7 @@ let standard_client(use_psk:bool,send_kex:bool,c_dom,s_dom:domain,g:group,h_alg:
         else out(io,unexpected_message)
       )
       else out(io,illegal_parameter)
+!>)dnl
     )
     else
       if send_kex

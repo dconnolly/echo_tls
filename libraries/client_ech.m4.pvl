@@ -1,3 +1,5 @@
+changequote(<!,!>)dnl
+
 (********************************************************)
 (* Client ECH                                          *)
 (********************************************************)
@@ -145,6 +147,7 @@ let process_server_hello_ech(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message_ech (
+  idP:idProc,
   use_grease,use_psk:bool,c_dom,i_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
   ech_conf:echConfig,enc:element,context:hpkeContext,n:nat, (* For ech *)
@@ -178,7 +181,7 @@ letfun generate_client_hello_message_ech (
       then (o_dom,o_cr,o_kex_ext,o_extra)
       else (i_dom,i_cr,i_kex_ext,i_extra)
     in
-    make_pre_shared_key_extension(use_psk,c_dom,dom_psk,cr_psk,h_alg,a_alg,kex_ext_psk,ech_inner_or_grease,extra_psk,cur_log)
+    make_pre_shared_key_extension(idP,use_psk,c_dom,dom_psk,cr_psk,h_alg,a_alg,kex_ext_psk,ech_inner_or_grease,extra_psk,cur_log)
   in
 
   (* The inner client hello *)
@@ -235,6 +238,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
 
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
     generate_client_hello_message_ech (
+      id_client,
       use_grease,use_psk,c_dom,i_dom,
       g,send_kex,h_alg,a_alg, (* For main configuration *)
       ech_conf,enc,context,1,(* For ech *)
@@ -245,7 +249,6 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
 
   (* For sanity checks*)
   let (=h_alg,psk:preSharedKey,es:bitstring) = psk_data in
-  let o_dom = get_public_name(ech_conf) in
   event SanityClientCH_ECH(id_client,true,i_cr,o_cr,c_dom,o_dom,i_dom,psk,(zero,o_client_hello),(zero,i_client_hello));
 
   (* Message from server *)
@@ -254,6 +257,9 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
 
     if sr = rand_HelloRetryRequest
     then
+ifdef(<!NOHRR!>,<!dnl
+      0
+!>,<!dnl
       (* We received a HelloRetryRequest *)
       let (nego(=TLS13,=h_alg,=a_alg,hrr_kex_ext(=g),=empty_sni_ext,=empty_ech_ext,=empty_psk_ext,srv_extra),=false) = (mode,send_kex) in (
         let o_cur_log = ((zero,o_client_hello),server_hello) in
@@ -268,6 +274,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
 
         let (o_client_hello':msg,i_client_hello':msg,i_cr':bytes32,o_cr':bytes32,i_kex_ext':keyShareExt,o_kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) =
           generate_client_hello_message_ech (
+            id_client,
             use_grease,use_psk,c_dom,i_dom,
             g,true,h_alg,a_alg, (* For main configuration *)
             ech_conf,enc,context,2, (* For ech *)
@@ -299,15 +306,19 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
         else out(io,unexpected_message)
       )
       else out(io,illegal_parameter)
+!>)dnl
     else
-      (* This is a normal server hello message *)
-      process_server_hello_ech(id_client,
-        use_grease,use_psk,
-        i_cr,o_cr,c_dom,i_dom,o_dom,
-        kex_data,h_alg,a_alg,psk_data,
-        (zero,i_client_hello),(zero,o_client_hello),
-        server_hello
-      )
+      if send_kex
+      then
+        (* This is a normal server hello message *)
+        process_server_hello_ech(id_client,
+          use_grease,use_psk,
+          i_cr,o_cr,c_dom,i_dom,o_dom,
+          kex_data,h_alg,a_alg,psk_data,
+          (zero,i_client_hello),(zero,o_client_hello),
+          server_hello
+        )
+      else out(io,illegal_parameter)
   )
   else out(io,unexpected_message)
 .

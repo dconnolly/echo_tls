@@ -120,22 +120,62 @@ process
   )
 
 ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 1
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 2
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 3
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 4
 END *)
 ')dnl
+')dnl
 ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`',`
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 5
 END *)
+')dnl
+')dnl
+ifdef(`SCENARIO1',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 6
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO2',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 7
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO3',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 8
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO4',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 9
+END *)
+')dnl
+')dnl
+ifdef(`SCENARIO5',`
+ifdef(`NOHRR',`
+(* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 10
+END *)
+')dnl
 ')dnl

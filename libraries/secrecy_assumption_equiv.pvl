@@ -67,26 +67,26 @@
 *)
 
 nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -5000
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -15000
 .
 
 nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate;
-  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'])) / -5000
+  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'])) / -15000
 .
 
 nounif config,config':echConfig,skR,skR':bitstring;
-  table(ech_configurations(diff[*config,*config'], diff[*skR,*skR'])) / -5000
+  table(ech_configurations(diff[*config,*config'], diff[*skR,*skR'])) / -15000
 .
 
-nounif x,x':bitstring; mess(ch_client_CFIN,diff[*x,*x']) / -3000.
-nounif x,x':bitstring; mess(ch_client_FIN,diff[*x,*x']) / -3000.
-nounif x,x':bitstring; mess(ch_client_CRT,diff[*x,*x']) / -3000.
-nounif x,x':bitstring; mess(ch_client_after_EE,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_client_CFIN,diff[*x,*x']) / -13000.
+nounif x,x':bitstring; mess(ch_client_FIN,diff[*x,*x']) / -13000.
+nounif x,x':bitstring; mess(ch_client_CRT,diff[*x,*x']) / -13000.
+nounif x,x':bitstring; mess(ch_client_after_EE,diff[*x,*x']) / -13000.
 
-nounif x,x':bitstring; mess(ch_server_CFIN,diff[*x,*x'])/ -3000.
-nounif x,x':bitstring; mess(ch_server_FIN,diff[*x,*x']) / -3000.
-nounif x,x':bitstring; mess(ch_server_CRT,diff[*x,*x']) / -3000.
-nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -3000.
+nounif x,x':bitstring; mess(ch_server_CFIN,diff[*x,*x'])/ -13000.
+nounif x,x':bitstring; mess(ch_server_FIN,diff[*x,*x']) / -13000.
+nounif x,x':bitstring; mess(ch_server_CRT,diff[*x,*x']) / -13000.
+nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -13000.
 
 restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 

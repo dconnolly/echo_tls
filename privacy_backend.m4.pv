@@ -94,11 +94,12 @@ process
     | gen_dishonest_pre_shared_keys(tls_h)
     | (
       !
+      new id_client:idProc;
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool);')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
       in(io,(c_dom:domain,s_dom:domain));
       event Same((use_psk,send_kex,c_dom,s_dom));
-      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(id_client,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool);')
@@ -128,23 +129,63 @@ process
     )
   )
 
-ifdef(`SCENARIO1',`
-(* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 1
-END *)
-')dnl
-ifdef(`SCENARIO2',`
-(* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 2
-END *)
-')dnl
-ifdef(`SCENARIO3',`
-(* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 3
-END *)
-')dnl
-ifdef(`SCENARIO4',`
-(* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 4
-END *)
-')dnl
-ifdef(`SCENARIO5',`
-(* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 5
-END *)
-')dnl
+  ifdef(`SCENARIO1',`
+  ifdef(`NOHRR',`',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 1
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO2',`
+  ifdef(`NOHRR',`',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 2
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO3',`
+  ifdef(`NOHRR',`',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 3
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO4',`
+  ifdef(`NOHRR',`',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 4
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO5',`
+  ifdef(`NOHRR',`',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 5
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO1',`
+  ifdef(`NOHRR',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 6
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO2',`
+  ifdef(`NOHRR',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 7
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO3',`
+  ifdef(`NOHRR',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 8
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO4',`
+  ifdef(`NOHRR',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 9
+  END *)
+  ')dnl
+  ')dnl
+  ifdef(`SCENARIO5',`
+  ifdef(`NOHRR',`
+  (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 10
+  END *)
+  ')dnl
+  ')dnl

@@ -1,3 +1,5 @@
+changequote(<!,!>)dnl
+
 (* Sanity checks *)
 
 type idProc.
@@ -37,8 +39,13 @@ event SanityClientCFIN(idProc,
 (* For restriction *)
 
 event Selected_lgt(domain,domain,privkey,pubkey,certificate).
-event Selected_psk(domain,domain,domain,domain,identityPsk,internal_preSharedKey).
 event PreciseMess(channel,idProc,bitstring,bitstring).
+
+ifdef(<!CLIENT!>,<!dnl
+event Selected_psk(idProc,domain,domain,domain,domain,identityPsk,internal_preSharedKey).
+!>,<!dnl
+event Selected_psk(domain,domain,domain,domain,identityPsk,internal_preSharedKey).
+!>)
 
 (* For the equivalence proof *)
 

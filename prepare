@@ -1,6 +1,13 @@
 #!/bin/sh
 
 mkdir -p generated_models
+mkdir -p generated_libraries
+
+for i in client_ech client server
+do
+  m4 libraries/$i.m4.pvl > generated_libraries/$i.pvl
+  m4 -D NOHRR libraries/$i.m4.pvl > generated_libraries/"$i"_NOHRR.pvl
+done
 
 for i in SCENARIO1 SCENARIO2 SCENARIO3 SCENARIO4 SCENARIO5
 do
