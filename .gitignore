@@ -2,3 +2,4 @@ generated_models
 generated_libraries
 tests
 tmp
+**.DS_Store

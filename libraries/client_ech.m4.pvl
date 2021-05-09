@@ -49,19 +49,6 @@ let receive_encrypted_extension_message_ech (id_client:idProc,
 
   let EE(x) = ee_msg in
 
-  let update_ech_conf =
-    if not (is_accepted)
-    then
-      let echExt2b(server_ECH(ech_conf)) = x in
-        (* Case of a ECH Server / Client Facing server *)
-        (* QUESTION : What do we do with it ?*)
-        ()
-      else
-        (* Case of a Normal Server *)
-        ()
-    else ()
-  in
-
   let cur_log2 = (cur_log,ee_msg) in
   out(ch_client_after_EE,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,psk,master_secret,chk,shk,cfin,sfin,cur_log2,comp_psk,safe_psk))
 .
@@ -107,36 +94,36 @@ let process_server_hello_ech(id_client:idProc,
           sr8 = crop_into_bytes8(accept_confirmation)
       in
 
-      let (cr:bytes32,handshake_secret:bitstring,s_dom:domain,cur_log:bitstring) =
+      let (cr:bytes32,handshake_secret:bitstring,s_dom:domain,cur_log:bitstring,real_psk:preSharedKey) =
         if is_accepted
         then (
           let i_gxy = dh_decap(g,gy_srv,i_x) in
           let i_handshake_secret = kdf_hs(h_alg,early_secret,i_gxy) in
-          (i_cr,i_handshake_secret,i_dom,(i_cur_log,server_hello))
+          (i_cr,i_handshake_secret,i_dom,(i_cur_log,server_hello),psk)
         )
         else
-          (* Must compute early secret with NoPSK *)
+          (* Must compute early secret with NoPSK when not using grease or with the given PSK if grease is used. *)
           let o_gxy = dh_decap(g,gy_srv,o_x) in
-          let o_early_secret =
+          let (o_early_secret:bitstring,o_psk:preSharedKey) =
             if use_grease
-            then early_secret
+            then (early_secret,psk)
             else
               let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK)  in
-              es
+              (es,NoPSK)
           in
-          (o_cr,kdf_hs(h_alg,o_early_secret,o_gxy), o_dom,(o_cur_log,server_hello))
+          (o_cr,kdf_hs(h_alg,o_early_secret,o_gxy), o_dom,(o_cur_log,server_hello),o_psk)
       in
 
       let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
         kdf_ms(h_alg,handshake_secret,cur_log)
       in
 
-      event SanityClientSH(id_client,cr,B32(sr24,sr8),c_dom,s_dom,handshake_secret,psk,cur_log);
+      event SanityClientSH(id_client,cr,B32(sr24,sr8),c_dom,s_dom,handshake_secret,real_psk,cur_log);
 
       receive_encrypted_extension_message_ech(id_client,
         is_accepted,
         cr,B32(sr24,sr8),h_alg,a_alg,
-        c_dom,s_dom,psk,
+        c_dom,s_dom,real_psk,
         master_secret,chk,shk,cfin,sfin,
         cur_log,
         comp_psk,safe_psk

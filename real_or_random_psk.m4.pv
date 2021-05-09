@@ -76,7 +76,7 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,false);
-  out(io,id)
+  out(io,psk_d)
 .
 
 process

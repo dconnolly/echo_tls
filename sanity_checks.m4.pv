@@ -48,6 +48,10 @@ restriction c_dom1,c_dom2,s_dom1,s_dom2:domain,id:identityPsk,ipsk:internal_preS
   Existence of a complete handshake
 ***************************************)
 
+(* The ID of pre-shared key are always deducible *)
+query c_dom,s_dom:domain,h_alg:hash_alg,id:identityPsk,psk:internal_preSharedKey;
+  table(pre_shared_keys(c_dom,s_dom,h_alg,id,psk)) && attacker(id).
+
 query
   id_s,id_c:idProc,
   i_cr,o_cr,cr,cr_hrr,sr:bytes32,
@@ -746,8 +750,9 @@ process
     | (
 ifdef(<!TLS_CLIENT!>,<!dnl
       !
+      new id_client:idProc;
       in(io,(use_psk:bool,send_kex:bool,c_dom:domain,s_dom:domain));
-      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(id_client,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
 !>)dnl
 ifdef(<!ECH_CLIENT!>,<!dnl

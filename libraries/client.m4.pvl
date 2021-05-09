@@ -83,7 +83,7 @@ let send_finished_message =
   ));
 ifdef(<!ROR!>,<!dnl
   new st[]:bitstring;
-  event PreciseMess(ch_client_CFIN,id_client,st,(cur_log,comp_psk,safe_psk));
+  event PreciseMess(ch_client_CFIN,id_client,st,cur_log);
 !>)dnl
 
   let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
@@ -107,7 +107,7 @@ ifdef(<!ROR!>,<!dnl
   let (new_psk:internal_preSharedKey,new_safe:bool) =
     if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
     if psk = NoPSK || safe_psk then
-      new rand_ipsk:internal_preSharedKey;
+      new rand_ipsk[]:internal_preSharedKey;
       (diff[rand_ipsk,b2ipsk(rms)],not(comp_psk))
     else (b2ipsk(rms),false)
     else (b2ipsk(rms),false)
@@ -115,8 +115,7 @@ ifdef(<!ROR!>,<!dnl
   let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,new_safe);
   if comp_psk then
-  out(io,new_psk);
-  out(io,id)
+  out(io,new_psk)
 !>)dnl
 .
 
