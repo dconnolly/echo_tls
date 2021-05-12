@@ -123,7 +123,6 @@ function analyze_one_file() {
 }
 
 mkdir -p tests
-mkdir -p tmp
 mkdir -p generated_models
 mkdir -p generated_libraries
 
