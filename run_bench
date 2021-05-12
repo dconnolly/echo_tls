@@ -207,7 +207,7 @@ case .$1 in
 		;;
 	.clean)
 		echo Removing all generated files
-		rm generated_libraries/*.pvl
-		rm generated_models/*.pv
+		rm -f generated_libraries/*.pvl
+		rm -f generated_models/*.pv
 		;;
 esac
