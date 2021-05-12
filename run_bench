@@ -3,6 +3,8 @@
 lib=""
 tmp_name=""
 
+TMPDIR="$(mktemp -d "./tmp.XXXXXXXXXX")"
+
 # Arguments:
 # 	$1: name of the file
 # 	$2: list of valid options in the correct order
@@ -117,7 +119,7 @@ function analyze_one_file() {
 	file=$1
 	filename_ext=${file##*/}
 	filename=${filename_ext%.*}
-	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $2 file generated_models $filename_ext
+	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add "$TMPDIR" $2 file generated_models $filename_ext
 }
 
 mkdir -p tests
@@ -211,3 +213,5 @@ case .$1 in
 		rm -f generated_models/*.pv
 		;;
 esac
+
+rm -r "$TMPDIR"
