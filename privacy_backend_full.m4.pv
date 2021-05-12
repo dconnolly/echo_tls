@@ -38,6 +38,16 @@ restriction
     )
 .
 
+axiom c_dom1,c_dom1',c_dom1'',c_dom2,c_dom2',c_dom2'',s_dom1,s_dom1',s_dom1'',s_dom2,s_dom2',s_dom2'':domain,id,id',id'':identityPsk,ipsk,ipsk',ipsk'':internal_preSharedKey,idP,idP',idP'':idProc;
+  event(Selected_psk(diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[ipsk,ipsk'],diff[idP,idP'])) &&
+  event(Selected_psk(diff[s_dom1,s_dom1''],diff[s_dom2,s_dom2''],diff[ipsk,ipsk''],diff[idP,idP''])) ==>
+  ipsk' = ipsk'' && s_dom1' = s_dom1'' && s_dom2' = s_dom2'' && idP' = idP'';
+
+  event(Selected_psk(diff[s_dom1',s_dom1],diff[s_dom2',s_dom2],diff[ipsk',ipsk],diff[idP',idP])) &&
+  event(Selected_psk(diff[s_dom1'',s_dom1],diff[s_dom2'',s_dom2],diff[ipsk'',ipsk],diff[idP'',idP])) ==>
+  ipsk' = ipsk'' && s_dom1' = s_dom1'' && s_dom2' = s_dom2'' && idP' = idP''.
+
+
 let swap_long_term_keys =
   !
   get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
@@ -151,13 +161,14 @@ ifdef(`SCENARIO5',`
   define(`UCERT')dnl
 ')dnl
 
-free BackendA,BackendB:domain.
+free BackendA,BackendB,HonestServer:domain.
 
 (* Dishonest key generation *)
 
 let gen_dishonest_long_term_keys =
   !
   in(io,a:domain);
+  if a <> HonestServer then
   event Same(d2b(a));
   new sk_d:privkey;
   out(io,(sk_d,valid_cert(a,pk(sk_d))))
@@ -232,11 +243,11 @@ process
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool) [precise];')
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')
-      in(io,(c_dom:domain,cfs_dom:domain)) [precise];
-      event Same((use_grease,use_psk,send_kex,c_dom,cfs_dom));
-      get ech_configurations(ech_config(id,g,pkR,=cfs_dom,h_alg,a_alg),skR) [precise] in
+      in(io,c_dom:domain) [precise];
+      event Same((use_grease,use_psk,send_kex,c_dom));
+      get ech_configurations(ech_config(id,g,pkR,=HonestServer,h_alg,a_alg),skR) [precise] in
       (* if is_uncompromised_DH_key(skR) then *)
-      let ech_conf = ech_config(id,g,pkR,cfs_dom,h_alg,a_alg) in
+      let ech_conf = ech_config(id,g,pkR,HonestServer,h_alg,a_alg) in
       echo_client(id_client_diff,use_grease,use_psk,send_kex,c_dom,diff[BackendA,BackendB],tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )

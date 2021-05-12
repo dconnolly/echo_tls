@@ -55,7 +55,7 @@ function generate_format() {
 }
 
 function generate_proof_helper() {
-	generate_file_name "proof_helper" "EQUIV ROR" "$1"
+	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
