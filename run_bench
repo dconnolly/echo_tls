@@ -147,14 +147,17 @@ function sanity() {
 	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
 	do
 		full_file="generated_models/sanity_checks_$i.pv"
-		m4 -D$i sanity_checks.m4.pv > $full_file
+		m4 -D$i $3 sanity_checks.m4.pv > $full_file
 		run_file $full_file $1 $2
 	done
 }
 
 case .$1 in
-	.sanity|.sanity_nohrr)
+	.sanity)
 		sanity $1 $2
+		;;
+	.sanity_nohrr)
+		sanity $1 $2 "-D NOHRR"
 		;;
 	.backend)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
