@@ -75,13 +75,13 @@ nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':in
   [ignoreAFewTimes]
 .
 !>,<!dnl
-nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x']))/ -15000
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP']))/ -15000
 .
 !>)dnl
 
-nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate;
-  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'])) / -15000
+nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate,idP,idP':idProc;
+  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'], diff[*idP,*idP'])) / -15000
 .
 
 nounif config,config':echConfig,skR,skR':bitstring;
@@ -106,24 +106,6 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,
   event(PreciseMess(ch,diff[id1,id2],diff[st,st2],diff[x1,x2])) && event(PreciseMess(ch,diff[id1',id2'],diff[st,st2'],diff[x1',x2'])) ==> id1 = id1' && x1 = x1';
   event(PreciseMess(ch,diff[id1,id2],diff[st1,st],diff[x1,x2])) && event(PreciseMess(ch,diff[id1',id2'],diff[st1',st],diff[x1',x2'])) ==> id2 = id2' && x2 = x2'
 .
-
-ifdef(<!ROR!>,<!!>,<!dnl
-let swap_long_term_keys =
-  !
-  get long_term_keys(dom1,sk1,pk1,cert1) in
-  get long_term_keys(dom2,sk2,pk2,cert2) in
-  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2]);
-  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1])
-.
-
-let swap_pre_shared_keys =
-  !
-  get pre_shared_keys(c_dom1,s_dom1,h_alg1,id1,psk1) in
-  get pre_shared_keys(c_dom2,s_dom2,h_alg2,id2,psk2) in
-  insert pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
-  insert pre_shared_keys(diff[c_dom2,c_dom1],diff[s_dom2,s_dom1],diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1])
-.
-!>)dnl
 
 (***** Secrecy assumption ****)
 

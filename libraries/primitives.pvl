@@ -77,6 +77,8 @@ fun dh_k(seed):bitstring [private].
 fun dh_xy(seed,bitstring):element [private].
 fun dh_f(seed):element [private].
 
+reduc forall s:seed; is_uncompromised_DH_key(dh_k(s)) = true [private].
+
 letfun dh_keygen(g:group) =
   new s[]:seed;
   let gx = dh_pub(g,dh_k(s)) in

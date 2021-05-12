@@ -22,6 +22,22 @@ restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,i
     )
 .
 
+let swap_long_term_keys =
+  !
+  get long_term_keys(dom1,sk1,pk1,cert1) in
+  get long_term_keys(dom2,sk2,pk2,cert2) in
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1])
+.
+
+let swap_pre_shared_keys =
+  !
+  get pre_shared_keys(c_dom1,s_dom,h_alg1,id1,psk1) in
+  get pre_shared_keys(c_dom2,=s_dom,h_alg2,id2,psk2) in
+  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1])
+.
+
 (********************************************************)
 (* Equivalence scenario                                 *)
 (********************************************************)

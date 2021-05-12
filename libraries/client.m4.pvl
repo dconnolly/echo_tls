@@ -29,16 +29,22 @@ letfun make_pre_shared_key_extension(
 ifdef(<!CLIENT!>,<!dnl
   (* When checking the privacy of the client, we add in the event the idProc.
     We will request that for the tested client, the psk was not already used. *)
-  get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
-  event Selected_psk(idP,c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+  get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk,idP') [precise] in
+  event Selected_psk(c_dom,c_dom',s_dom,s_dom',id,internal_psk,idP',id_P);
   let is_safe=false in (* This value is never used in this scenario *)
 !>,<!dnl
 ifdef(<!ROR!>,<!dnl
-  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,is_safe) [precise] in
+  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
 !>,<!dnl
-  get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk) [precise] in
-  event Selected_psk(c_dom,c_dom',s_dom,s_dom',id,internal_psk);
+ifdef(<!BACKEND!>,<!dnl
+  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP') [precise] in
+  event Selected_psk(s_dom,s_dom',idP');
   let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
+  get pre_shared_keys(c_dom',s_dom',=h_alg,id,internal_psk,idP') [precise] in
+  event Selected_psk(c_dom,c_dom',s_dom,s_dom',id,internal_psk,idP');
+  let is_safe=false in (* This value is never used in this scenario *)
+!>)dnl
 !>)dnl
 !>)dnl
 
@@ -130,10 +136,10 @@ let send_certificate_message(id_client:idProc,
   =
 
 ifdef(<!ROR!>,<!dnl
-  get long_term_keys(=c_dom,sk,c_pkey,crt) [precise] in
+  get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
 !>,<!dnl
-  get long_term_keys(c_dom',sk,c_pkey,crt) [precise] in
-  event Selected_lgt(c_dom',c_dom,sk,c_pkey,crt);
+  get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+  event Selected_lgt(c_dom',c_dom,idP);
 !>)dnl
 
   (* The Certificate message *)

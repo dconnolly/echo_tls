@@ -4,17 +4,19 @@ changequote(<!,!>)dnl
 
 let gen_honest_long_term_keys =
   !
+  new idP:idProc;
   in(io,a:domain);
   event Same(d2b(a));
   new s:seed;
   let sk_h = uc_privkey(s) in
   event GenCert(a,pk(sk_h));
-  insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)));
+  insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)),idP);
   out(io,pk(sk_h))
 .
 
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
+  new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
   new s:seed;
@@ -22,24 +24,20 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk) in
   event GenPsk(c_dom,s_dom,PSK(psk));
 ifdef(<!ROR!>,<!dnl
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,true)
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,true)
 !>,<!dnl
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk)
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP)
 !>)dnl
-.
-
-letfun make_ech_config(o_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
-  new id: configId;
-  let (skR:bitstring,pkR:element) = dh_keygen(g) in
-  let config = ech_config(id,g,pkR,o_dom,h_alg,a_alg) in
-  insert ech_configurations(config,skR);
-  config
 .
 
 let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
   !
   in(io,o_dom:domain);
-  let config = make_ech_config(o_dom,g,h_alg,a_alg) in
+  event Same(d2b(o_dom));
+  new id: configId;
+  let (skR:bitstring,pkR:element) = dh_keygen(g) in
+  let config = ech_config(id,g,pkR,o_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR);
   out(io,config)
 .
 

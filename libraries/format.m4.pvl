@@ -2,6 +2,8 @@ changequote(<!,!>)dnl
 
 channel io.
 
+type idProc.
+
 type domain.
 const NoDomain:domain [data].
 fun d2b(domain):bitstring [typeConverter].
@@ -67,9 +69,9 @@ table pre_shared_keys(
   domain (* Client domain *),
   domain (* Server domain *),
 ifdef(<!ROR!>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey,bool).
+  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
 !>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey).
+  hash_alg,identityPsk,internal_preSharedKey,idProc).
 !>)dnl
 
 (********************************************************)
@@ -94,7 +96,7 @@ fun verify_cert(certificate):bool
 reduc forall d:domain, p:pubkey;
   verify_cert(valid_cert(d,p)) = true .
 
-table long_term_keys(domain,privkey,pubkey,certificate).
+table long_term_keys(domain,privkey,pubkey,certificate,idProc).
 
 (***************************************
   Echo Configuration

@@ -28,7 +28,7 @@ function generate_file_name() {
 }
 
 function generate_misc() {
-	generate_file_name "misc" "CLIENT" "$1"
+	generate_file_name "misc" "CLIENT BACKEND" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -38,7 +38,7 @@ function generate_client_ech() {
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND" "$1"
 	echo --------
 	lib="$lib -lib $tmp_name"
 }
@@ -75,10 +75,16 @@ function generate_libraries() {
 		sanity)
 			option=""
 			;;
-		backend_nohrr|inner_nohrr|client_ech_nohrr)
+		backend_nohrr)
+			option="NOHRR EQUIV BACKEND"
+			;;
+		backend)
+			option="EQUIV BACKEND"
+			;;
+		inner_nohrr|client_ech_nohrr)
 			option="NOHRR EQUIV"
 			;;
-		backend|inner|client_ech)
+		inner|client_ech)
 			option="EQUIV"
 			;;
 		client_nohrr)
@@ -140,38 +146,52 @@ function sanity() {
 	done
 }
 
-case $1 in
-	sanity|sanity_nohrr)
+case .$1 in
+	.sanity|.sanity_nohrr)
 		sanity $1 $2
 		;;
-	inner)
+	.backend)
+		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_backend.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.backend_nohrr)
+		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_backend.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.inner)
 		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 strong_secrecy_inner.m4.pv > $full_file
 		run_file $full_file $1 $3
 		;;
-	inner_nohrr)
+	.inner_nohrr)
 		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR strong_secrecy_inner.m4.pv > $full_file
 		run_file $full_file $1 $3
 		;;
-	client)
+	.client)
 		full_file="generated_models/privacy_client_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 privacy_client.m4.pv > $full_file
 		run_file $full_file $1 $3
 		;;
-	client_nohrr)
+	.client_nohrr)
 		full_file="generated_models/privacy_client_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR privacy_client.m4.pv > $full_file
 		run_file $full_file $1 $3
 		;;
-	ror)
+	.ror)
 		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 real_or_random_psk.m4.pv > $full_file
 		run_file $full_file $1 $3
 		;;
-	ror_nohrr)
+	.ror_nohrr)
 		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR real_or_random_psk.m4.pv > $full_file
 		run_file $full_file $1 $3
+		;;
+	.clean)
+		rm generated_libraries/*.pvl
+		rm generated_models/*.pv
 		;;
 esac

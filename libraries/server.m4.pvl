@@ -129,10 +129,10 @@ let send_server_certificate_message =
   event PreciseMess(ch_server_CRT,id_server,st,master_secret);
 
 ifdef(<!ROR!>,<!dnl
-  get long_term_keys(=s_dom,sk,s_pkey,crt) [precise] in
+  get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
 !>,<!dnl
-  get long_term_keys(s_dom',sk,s_pkey,crt) [precise] in
-  event Selected_lgt(s_dom',s_dom,sk,s_pkey,crt);
+  get long_term_keys(s_dom',sk,s_pkey,crt,idP) [precise] in
+  event Selected_lgt(s_dom',s_dom,idP);
 !>)dnl
 
   (* The Certificate message *)
