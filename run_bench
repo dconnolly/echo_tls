@@ -30,17 +30,17 @@ function generate_file_name() {
 }
 
 function generate_misc() {
-	generate_file_name "misc" "" "$1"
+	generate_file_name "misc" "BACKENDFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_client_ech() {
-	generate_file_name "client_ech" "NOHRR ROR" "$1"
+	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND INNER SANITY" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL INNER SANITY" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -81,6 +81,12 @@ function generate_libraries() {
 			;;
 		backend)
 			option="EQUIV BACKEND"
+			;;
+		backend_full_nohrr)
+			option="NOHRR EQUIV BACKENDFULL"
+			;;
+		backend_full)
+			option="EQUIV BACKENDFULL"
 			;;
 		inner_nohrr)
 			option="NOHRR EQUIV INNER"
@@ -147,14 +153,17 @@ function sanity() {
 	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
 	do
 		full_file="generated_models/sanity_checks_$i.pv"
-		m4 -D$i sanity_checks.m4.pv > $full_file
+		m4 -D$i $3 sanity_checks.m4.pv > $full_file
 		run_file $full_file $1 $2
 	done
 }
 
 case .$1 in
-	.sanity|.sanity_nohrr)
+	.sanity)
 		sanity $1 $2
+		;;
+	.sanity_nohrr)
+		sanity $1 $2 "-D NOHRR"
 		;;
 	.backend)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
@@ -164,6 +173,16 @@ case .$1 in
 	.backend_nohrr)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR privacy_backend.m4.pv > $full_file
+		run_file $full_file "$1-$2" $3
+		;;
+	.backend_full)
+		full_file="generated_models/privacy_backend_full_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_backend_full.m4.pv > $full_file
+		run_file $full_file "$1-$2" $3
+		;;
+	.backend_full_nohrr)
+		full_file="generated_models/privacy_backend_full_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_backend_full.m4.pv > $full_file
 		run_file $full_file "$1-$2" $3
 		;;
 	.inner)
