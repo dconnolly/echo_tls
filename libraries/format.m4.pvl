@@ -3,6 +3,7 @@ changequote(<!,!>)dnl
 channel io.
 
 type idProc.
+fun id2b(idProc):bitstring [typeConverter].
 
 type domain.
 const NoDomain:domain [data].

@@ -216,6 +216,15 @@ let echo_client(comp_psk:bool,use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i
   ech_conf:echConfig,
   i_extra,o_extra:extraExt
   ) =
+  new id_client[]:idProc;
+!>,<!dnl
+ifdef(<!BACKENDFULL!>,<!dnl
+let echo_client(id_client:idProc,use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
+  g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
+  ech_conf:echConfig,
+  i_extra,o_extra:extraExt
+  ) =
+  let comp_psk = false in
 !>,<!dnl
 let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
@@ -223,11 +232,12 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   i_extra,o_extra:extraExt
   ) =
   let comp_psk = false in
+  new id_client[]:idProc;
+!>)dnl
 !>)dnl
 
   (****************************************************)
   (* Only for sanity checks *)
-  new id_client[]:idProc;
   event SanityClient(id_client,true,use_grease,use_psk,send_kex);
   (****************************************************)
 

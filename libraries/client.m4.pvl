@@ -42,9 +42,15 @@ ifdef(<!BACKEND!>,<!dnl
   event Selected_psk(s_dom,s_dom',idP');
   let is_safe=false in (* This value is never used in this scenario *)
 !>,<!dnl
+ifdef(<!BACKENDFULL!>,<!dnl
+  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP') [precise] in
+  event Selected_psk(s_dom,s_dom',internal_psk,idP');
+  let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
   (* For Inner and Sanity *)
   get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP') [precise] in
   let is_safe=false in (* This value is never used in this scenario *)
+!>)dnl
 !>)dnl
 !>)dnl
 !>)dnl
@@ -109,6 +115,11 @@ ifdef(<!ROR!>,<!dnl
     cak,sak,ems,rms,
     cur_log')
 
+ifdef(<!BACKENDFULL!>,<!dnl
+  ;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,b2ipsk(rms)) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,b2ipsk(rms),id_client)
+!>)dnl
 ifdef(<!ROR!>,<!dnl
   ;
   let (new_psk:internal_preSharedKey,new_safe:bool) =

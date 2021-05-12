@@ -38,7 +38,11 @@ event SanityClientCFIN(idProc,
 event Selected_lgt(domain,domain,idProc).
 event PreciseMess(channel,idProc,bitstring,bitstring).
 
+ifdef(<!BACKENDFULL!>,<!dnl
+event Selected_psk(domain,domain,internal_preSharedKey,idProc).
+!>,<!dnl
 event Selected_psk(domain,domain,idProc).
+!>)dnl
 event Selected_otu_psk(idProc,internal_preSharedKey).
 
 (* For the equivalence proof *)
