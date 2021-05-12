@@ -6,21 +6,22 @@ set removeEventsForLemma = true.
 
 lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,
   c_dom1,c_dom2,s_dom1,s_dom2:domain,h_alg1,h_alg2:hash_alg,id1,id2:identityPsk,ipsk1,ipsk2:internal_preSharedKey,
-  safe,safe',safe1,safe2:bool;
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[safe,safe'])) ==>
+  safe,safe',safe1,safe2:bool,idP,idP',idP1,idP2:idProc;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
     h_alg = id_hash(StrongHash,1) &&
     h_alg' = id_hash(StrongHash,1) &&
     id = mk_idpsk(c_dom,s_dom,h_alg,ipsk) &&
     id' = mk_idpsk(c_dom',s_dom',h_alg',ipsk') &&
-    safe = safe';
-  table(pre_shared_keys(diff[c_dom,c_dom1],diff[s_dom,s_dom1],diff[h_alg,h_alg1],diff[id,id1],diff[ipsk,ipsk1],diff[safe,safe1])) &&
-  table(pre_shared_keys(diff[c_dom,c_dom2],diff[s_dom,s_dom2],diff[h_alg,h_alg2],diff[id,id2],diff[ipsk,ipsk2],diff[safe',safe2])) ==>
-  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe1 = safe2 && safe = safe';
-  table(pre_shared_keys(diff[c_dom1,c_dom],diff[s_dom1,s_dom],diff[h_alg1,h_alg],diff[id1,id],diff[ipsk1,ipsk],diff[safe1,safe])) &&
-  table(pre_shared_keys(diff[c_dom2,c_dom],diff[s_dom2,s_dom],diff[h_alg2,h_alg],diff[id2,id],diff[ipsk2,ipsk],diff[safe2,safe'])) ==>
-  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe1 = safe2 && safe = safe';
-  attacker(diff[ipsk,ipsk1]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk2],safe)) ==> ipsk1 = ipsk2 && safe <> true;
-  attacker(diff[ipsk1,ipsk]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk2,ipsk],safe)) ==> ipsk1 = ipsk2 && safe <> true
+    safe = safe' &&
+    idP = idP';
+  table(pre_shared_keys(diff[c_dom,c_dom1],diff[s_dom,s_dom1],diff[h_alg,h_alg1],diff[id,id1],diff[ipsk,ipsk1],idP,safe)) &&
+  table(pre_shared_keys(diff[c_dom,c_dom2],diff[s_dom,s_dom2],diff[h_alg,h_alg2],diff[id,id2],diff[ipsk,ipsk2],idP',safe')) ==>
+  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe = safe' && idP = idP';
+  table(pre_shared_keys(diff[c_dom1,c_dom],diff[s_dom1,s_dom],diff[h_alg1,h_alg],diff[id1,id],diff[ipsk1,ipsk],idP,safe)) &&
+  table(pre_shared_keys(diff[c_dom2,c_dom],diff[s_dom2,s_dom],diff[h_alg2,h_alg],diff[id2,id],diff[ipsk2,ipsk],idP',safe')) ==>
+  c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe = safe' && idP = idP';
+  attacker(diff[ipsk,ipsk1]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk2],idP,safe)) ==> ipsk1 = ipsk2 && safe <> true;
+  attacker(diff[ipsk1,ipsk]) &&  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk2,ipsk],idP,safe)) ==> ipsk1 = ipsk2 && safe <> true
   [induction]
 .
 
@@ -71,11 +72,12 @@ let gen_dishonest_long_term_keys =
 
 let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   !
+  new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,false);
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
   out(io,psk_d)
 .
 

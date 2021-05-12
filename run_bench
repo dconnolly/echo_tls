@@ -1,57 +1,207 @@
 #!/bin/bash
 
-lib_reach="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
-lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
+lib=""
+tmp_name=""
+
+# Arguments:
+# 	$1: name of the file
+# 	$2: list of valid options in the correct order
+# 	$3: list of requested options
+function generate_file_name() {
+	m4name=libraries/$1.m4.pvl
+	m4def=" "
+
+	tmp_name="generated_libraries/$1"
+	for v_op in $2
+	do
+		for op in $3
+		do
+			if [ \( $v_op = $op \) ]
+			then
+				tmp_name="$tmp_name"_$op
+				m4def="$m4def-D $op "
+			fi
+		done
+	done
+	tmp_name="$tmp_name.pvl"
+	m4 $m4def $m4name > $tmp_name
+}
+
+function generate_misc() {
+	generate_file_name "misc" "" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_client_ech() {
+	generate_file_name "client_ech" "NOHRR ROR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_client() {
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND INNER SANITY" "$1"
+	echo --------
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_server() {
+	generate_file_name "server" "NOHRR ROR INNER SANITY" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_format() {
+	generate_file_name "format" "ROR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_proof_helper() {
+	generate_file_name "proof_helper" "EQUIV ROR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_main_processes() {
+	generate_file_name "main_processes" "ROR" "$1"
+	lib="$lib -lib $tmp_name"
+}
+
+function generate_libraries() {
+	# Standard libraries
+
+	option=""
+
+	case $1 in
+		sanity_nohrr)
+			option="NOHRR SANITY"
+			;;
+		sanity)
+			option="SANITY"
+			;;
+		backend_nohrr)
+			option="NOHRR EQUIV BACKEND"
+			;;
+		backend)
+			option="EQUIV BACKEND"
+			;;
+		inner_nohrr)
+			option="NOHRR EQUIV INNER"
+			;;
+		inner)
+			option="EQUIV INNER"
+			;;
+		client_nohrr|client_ech_nohrr)
+			option="NOHRR EQUIV CLIENT"
+			;;
+		client|client_ech)
+			option="EQUIV CLIENT"
+			;;
+		ror_nohrr)
+			option="NOHRR EQUIV ROR"
+			;;
+		ror)
+			option="EQUIV ROR"
+			;;
+	esac
+
+	lib="$lib -lib libraries/primitives.pvl"
+	generate_format "$option"
+	lib="$lib -lib libraries/key_schedule.pvl"
+	generate_proof_helper "$option"
+	generate_misc "$option"
+	generate_client "$option"
+	generate_client_ech "$option"
+	generate_server "$option"
+	generate_main_processes "$option"
+}
+
+generate_libraries $1
+
+function analyze_one_file() {
+	file=$1
+	filename_ext=${file##*/}
+	filename=${filename_ext%.*}
+	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $2 file generated_models $filename_ext
+}
 
 mkdir -p tests
 mkdir -p tmp
+mkdir -p generated_models
+mkdir -p generated_libraries
 
-if [ \( .$1 = .clean \) ]
-then
-	rm -f tests/*
-else
-	function sanity() {
-		for file in generated_models/sanity*.pv
-		do
-			filename_ext=${file##*/}
-			filename=${filename_ext%.*}
-			analyze -progopt $lib_reach -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
-		done
-	}
+function run_file() {
+	if [ \( .$3 = .PV \) ]
+	then
+		echo proverif $lib $1
+		proverif $lib $1
+	else
+		echo analyze_one_file $1 "$2-"
+		analyze_one_file $1 "$2-"
+	fi
+}
 
-	function analyze_one_file() {
-		file=$1
-		filename_ext=${file##*/}
-		filename=${filename_ext%.*}
-		analyze -progopt $lib_equiv -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add tmp $filename file generated_models $filename_ext
-	}
+function sanity() {
+	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
+	do
+		full_file="generated_models/sanity_checks_$i.pv"
+		m4 -D$i sanity_checks.m4.pv > $full_file
+		run_file $full_file $1 $2
+	done
+}
 
-	### Prepare the scenation
-
-	./prepare
-
-	if [ \( .$1 = .inner \) ]
-	then
-		analyze_one_file "generated_models/strong_secrecy_inner_SCENARIO$2.pv"
-	fi
-	if [ \( .$1 = .backend \) ]
-	then
-		analyze_one_file "generated_models/privacy_backend_SCENARIO$2.pv"
-	fi
-	if [ \( .$1 = .client \) ]
-	then
-		analyze_one_file "generated_models/privacy_client_SCENARIO$2.pv"
-	fi
-	if [ \( .$1 = .client_ech \) ]
-	then
-		analyze_one_file "generated_models/privacy_client_ech_SCENARIO$2.pv"
-	fi
-	if [ \( .$1 = .ror \) ]
-	then
-		analyze_one_file "generated_models/real_or_random_psk_SCENARIO$2.pv"
-	fi
-	if [ \( .$1 = .sanity \) ]
-	then
-		sanity
-	fi
-fi
+case .$1 in
+	.sanity|.sanity_nohrr)
+		sanity $1 $2
+		;;
+	.backend)
+		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_backend.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.backend_nohrr)
+		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_backend.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.inner)
+		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 strong_secrecy_inner.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.inner_nohrr)
+		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR strong_secrecy_inner.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.client)
+		full_file="generated_models/privacy_client_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_client.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.client_nohrr)
+		full_file="generated_models/privacy_client_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_client.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.client_ech)
+		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 privacy_client_ech.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.client_ech_nohrr)
+		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR privacy_client_ech.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.ror)
+		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 real_or_random_psk.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.ror_nohrr)
+		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
+		m4 -D SCENARIO$2 -D NOHRR real_or_random_psk.m4.pv > $full_file
+		run_file $full_file $1 $3
+		;;
+	.clean)
+		rm generated_libraries/*.pvl
+		rm generated_models/*.pv
+		;;
+esac

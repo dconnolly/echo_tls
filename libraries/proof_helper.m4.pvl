@@ -70,8 +70,8 @@ changequote(<!,!>)dnl
 
 ifdef(<!EQUIV!>,<!
 ifdef(<!ROR!>,<!
-nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,safe,safe':bool;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'],diff[ *safe, *safe']))/ 5000
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,safe,safe':bool,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe']))/ 5000
   [ignoreAFewTimes]
 .
 !>,<!dnl
@@ -528,12 +528,12 @@ not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
 
 (* Nounif declaration. Useful for helping proverif terminates *)
 
-nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey;
-  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x)) / -5000
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:internal_preSharedKey, idP:idProc;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP)) / -5000
 .
 
-nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate;
-  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt)) / -5000
+nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate, idP:idProc;
+  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt, *idP)) / -5000
 .
 
 nounif config:echConfig,skR:bitstring;

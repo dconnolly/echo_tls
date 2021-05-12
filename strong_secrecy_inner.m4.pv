@@ -1,26 +1,6 @@
 
 set removeEventsForLemma = true.
 
-(* Restriction for equivalence *)
-
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
-  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
-  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-  (
-    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt')
-  )
-.
-
-restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
-  event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
-    s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
-    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-    s_dom1 = s_dom1' &&
-    (
-      (c_dom1 = c_dom1' && id = id' && ipsk = ipsk')
-    )
-.
-
 (********************************************************)
 (* Equivalence scenario                                 *)
 (********************************************************)
@@ -67,11 +47,12 @@ let gen_dishonest_long_term_keys =
 
 let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   !
+  new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP);
   out(io,psk_d)
 .
 
@@ -85,8 +66,6 @@ process
   let ech_g = id_g(StrongDH,2) in
   (
       main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
-    | swap_pre_shared_keys
-    | swap_long_term_keys
     | gen_dishonest_long_term_keys
     | gen_dishonest_pre_shared_keys(tls_h)
     | (

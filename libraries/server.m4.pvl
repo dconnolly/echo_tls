@@ -131,8 +131,16 @@ let send_server_certificate_message =
 ifdef(<!ROR!>,<!dnl
   get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
 !>,<!dnl
+ifdef(<!INNER!>,<!dnl
+  get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
+!>,<!dnl
+ifdef(<!SANITY!>,<!dnl
+  get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
+!>,<!dnl
   get long_term_keys(s_dom',sk,s_pkey,crt,idP) [precise] in
   event Selected_lgt(s_dom',s_dom,idP);
+!>)dnl
+!>)dnl
 !>)dnl
 
   (* The Certificate message *)

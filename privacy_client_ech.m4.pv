@@ -3,39 +3,46 @@ set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
 
-restriction c_dom1,c_dom1',c_dom2,c_dom2':domain,sk,sk':privkey,spkey,spkey':pubkey,crt,crt':certificate, s,s':seed;
-  event(Selected_lgt(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[sk,sk'],diff[spkey,spkey'],diff[crt,crt'])) ==>
-  c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-  (
-    (c_dom1 = c_dom1' && sk = sk' && spkey = spkey' && crt = crt') || (c_dom1 <> c_dom1')
-  )
+restriction
+  dom1,dom1',dom2,dom2':domain,idP,idP':idProc;
+  event(Selected_lgt(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&  (* On the left side *)
+    dom1' = dom2' && (* On the right side *)
+    (
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 = dom1' && idP = idP') || (dom1 <> dom1')
+    )
 .
 
-(* For privacy of client, the server is always the same on the left and on the right *)
-restriction c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2':domain,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey, s,s':seed;
-  event(Selected_psk(diff[c_dom1,c_dom1'],diff[c_dom2,c_dom2'],diff[s_dom1,s_dom1'],diff[s_dom2,s_dom2'],diff[id,id'],diff[ipsk,ipsk'])) ==>
-    s_dom1 = s_dom2 && s_dom1' = s_dom2' &&
-    c_dom1 = c_dom2 && c_dom1' = c_dom2' &&
-    s_dom1 = s_dom1' &&
+restriction
+  dom1,dom1',dom2,dom2':domain, idP,idP':idProc;
+  event(Selected_psk(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&
+    dom1' = dom2' &&
     (
-      (c_dom1 = c_dom1' && id = id' && ipsk = ipsk') || (c_dom1 <> c_dom1')
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 = dom1' && idP = idP') || (dom1 <> dom1')
     )
 .
 
 let swap_long_term_keys =
   !
-  get long_term_keys(dom1,sk1,pk1,cert1) in
-  get long_term_keys(dom2,sk2,pk2,cert2) in
-  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2]);
-  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1])
+  get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
+  get long_term_keys(dom2,sk2,pk2,cert2,idP2) in
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2],diff[idP1,idP2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1],diff[idP2,idP1])
 .
 
 let swap_pre_shared_keys =
   !
-  get pre_shared_keys(c_dom1,s_dom,h_alg1,id1,psk1) in
-  get pre_shared_keys(c_dom2,=s_dom,h_alg2,id2,psk2) in
-  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2]);
-  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1])
+  get pre_shared_keys(c_dom1,s_dom,h_alg1,id1,psk1,idP1) in
+  get pre_shared_keys(c_dom2,=s_dom,h_alg2,id2,psk2,idP2) in
+  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2],diff[idP1,idP2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1])
 .
 
 (********************************************************)
@@ -87,11 +94,12 @@ let gen_dishonest_long_term_keys =
 
 let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   !
+  new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
   new psk_d:internal_preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d);
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP);
   out(io,psk_d)
 .
 
@@ -126,7 +134,7 @@ process
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool);')
       in(io,(c_dom:domain,s_dom:domain));
       event Same((use_psk,send_kex,c_dom,s_dom));
-      standard_client(use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(id_client,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool);')
