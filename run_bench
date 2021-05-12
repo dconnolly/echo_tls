@@ -159,52 +159,52 @@ case .$1 in
 	.backend)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 privacy_backend.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.backend_nohrr)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR privacy_backend.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.inner)
 		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 strong_secrecy_inner.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.inner_nohrr)
 		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR strong_secrecy_inner.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.client)
 		full_file="generated_models/privacy_client_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 privacy_client.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.client_nohrr)
 		full_file="generated_models/privacy_client_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR privacy_client.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.client_ech)
 		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 privacy_client_ech.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.client_ech_nohrr)
 		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR privacy_client_ech.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.ror)
 		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 real_or_random_psk.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.ror_nohrr)
 		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
 		m4 -D SCENARIO$2 -D NOHRR real_or_random_psk.m4.pv > $full_file
-		run_file $full_file $1 $3
+		run_file $full_file "$1-$2" $3
 		;;
 	.clean)
 		echo Removing all generated files
