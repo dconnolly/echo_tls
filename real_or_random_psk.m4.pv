@@ -1,5 +1,3 @@
-changequote(<!,!>)dnl
-
 set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
@@ -25,41 +23,6 @@ lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,
   [induction]
 .
 
-
-(********************************************************)
-(* Equivalence scenario                                 *)
-(********************************************************)
-ifdef(<!SCENARIO1!>,<!
-  define(<!PSK!>)dnl
-  define(<!KEX!>)dnl
-  define(<!NOGREASE!>)dnl
-  define(<!NOCERT!>)dnl
-!>)dnl
-ifdef(<!SCENARIO2!>,<!
-  define(<!KEX!>)dnl
-  define(<!NOPSK!>)dnl
-  define(<!NOGREASE!>)dnl
-  define(<!NOCERT!>)dnl
-!>)dnl
-ifdef(<!SCENARIO3!>,<!
-  define(<!KEX!>)dnl
-  define(<!NOPSK!>)dnl
-  define(<!NOGREASE!>)dnl
-  define(<!CERT!>)dnl
-!>)dnl
-ifdef(<!SCENARIO4!>,<!
-  define(<!KEX!>)dnl
-  define(<!UPSK!>)dnl
-  define(<!NOGREASE!>)dnl
-  define(<!UCERT!>)dnl
-!>)dnl
-ifdef(<!SCENARIO5!>,<!
-  define(<!UKEX!>)dnl
-  define(<!UPSK!>)dnl
-  define(<!UGREASE!>)dnl
-  define(<!UCERT!>)dnl
-!>)dnl
-
 (* Dishonest key generation *)
 
 let gen_dishonest_long_term_keys =
@@ -81,6 +44,20 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   out(io,psk_d)
 .
 
+ifdef(<!DISECH!>,<!dnl
+let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
+  !
+  in(io,o_dom:domain);
+  event Same(d2b(o_dom));
+  new id: configId;
+  new skR_d:bitstring;
+  let pkR_d = dh_pub(g,skR_d) in
+  let config = ech_config(id,g,pkR_d,o_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR_d);
+  out(io,(config,skR_d))
+.
+!>)dnl
+
 process
   (* The group and cipher suite between TLS and Ech should be incompatible *)
   let tls_h = id_hash(StrongHash,1) in
@@ -93,6 +70,9 @@ process
       main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
     | gen_dishonest_long_term_keys
     | gen_dishonest_pre_shared_keys(tls_h)
+ifdef(<!DISECH!>,<!dnl
+    | gen_dishonest_ech_config(ech_g,ech_h,ech_a)
+!>)dnl
     | (
       !
       new id_client:idProc;
@@ -151,9 +131,15 @@ ifdef(<!NOHRR!>,<!!>,<!
 END *)
 !>)dnl
 !>)dnl
+ifdef(<!SCENARIO5!>,<!
+ifdef(<!NOHRR!>,<!!>,<!
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 6
+END *)
+!>)dnl
+!>)dnl
 ifdef(<!SCENARIO1!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 6
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 7
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_12,s_dom'],choice[h_alg_13,h_alg'_1],choice[id_8,id'],choice[ipsk,ipsk'],choice[idP_6,idP'_2],choice[safe_2,safe'])) ==> h_alg_13 = id_hash(StrongHash,1) && h_alg'_1 = id_hash(StrongHash,1) && id_8 = mk_idpsk(c_dom_8,s_dom_12,h_alg_13,ipsk) && id' = mk_idpsk(c_dom',s_dom',h_alg'_1,ipsk') && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom1],choice[s_dom_12,s_dom1],choice[h_alg_13,h_alg1],choice[id_8,id1],choice[ipsk,ipsk1],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom_8,c_dom2],choice[s_dom_12,s_dom2],choice[h_alg_13,h_alg2],choice[id_8,id2],choice[ipsk,ipsk2],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom1,c_dom_8],choice[s_dom1,s_dom_12],choice[h_alg1,h_alg_13],choice[id1,id_8],choice[ipsk1,ipsk],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom2,c_dom_8],choice[s_dom2,s_dom_12],choice[h_alg2,h_alg_13],choice[id2,id_8],choice[ipsk2,ipsk],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
@@ -166,7 +152,7 @@ END *)
 !>)dnl
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 7
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 8
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_12,s_dom'],choice[h_alg_13,h_alg'_1],choice[id_8,id'],choice[ipsk,ipsk'],choice[idP_6,idP'_2],choice[safe_2,safe'])) ==> h_alg_13 = id_hash(StrongHash,1) && h_alg'_1 = id_hash(StrongHash,1) && id_8 = mk_idpsk(c_dom_8,s_dom_12,h_alg_13,ipsk) && id' = mk_idpsk(c_dom',s_dom',h_alg'_1,ipsk') && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom1],choice[s_dom_12,s_dom1],choice[h_alg_13,h_alg1],choice[id_8,id1],choice[ipsk,ipsk1],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom_8,c_dom2],choice[s_dom_12,s_dom2],choice[h_alg_13,h_alg2],choice[id_8,id2],choice[ipsk,ipsk2],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom1,c_dom_8],choice[s_dom1,s_dom_12],choice[h_alg1,h_alg_13],choice[id1,id_8],choice[ipsk1,ipsk],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom2,c_dom_8],choice[s_dom2,s_dom_12],choice[h_alg2,h_alg_13],choice[id2,id_8],choice[ipsk2,ipsk],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
@@ -179,7 +165,7 @@ END *)
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 8
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 9
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_12,s_dom'],choice[h_alg_13,h_alg'_1],choice[id_8,id'],choice[ipsk,ipsk'],choice[idP_6,idP'_2],choice[safe_2,safe'])) ==> h_alg_13 = id_hash(StrongHash,1) && h_alg'_1 = id_hash(StrongHash,1) && id_8 = mk_idpsk(c_dom_8,s_dom_12,h_alg_13,ipsk) && id' = mk_idpsk(c_dom',s_dom',h_alg'_1,ipsk') && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom1],choice[s_dom_12,s_dom1],choice[h_alg_13,h_alg1],choice[id_8,id1],choice[ipsk,ipsk1],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom_8,c_dom2],choice[s_dom_12,s_dom2],choice[h_alg_13,h_alg2],choice[id_8,id2],choice[ipsk,ipsk2],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom1,c_dom_8],choice[s_dom1,s_dom_12],choice[h_alg1,h_alg_13],choice[id1,id_8],choice[ipsk1,ipsk],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom2,c_dom_8],choice[s_dom2,s_dom_12],choice[h_alg2,h_alg_13],choice[id2,id_8],choice[ipsk2,ipsk],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
@@ -192,7 +178,7 @@ END *)
 !>)dnl
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 9
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 10
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_12,s_dom'],choice[h_alg_13,h_alg'_1],choice[id_8,id'],choice[ipsk,ipsk'],choice[idP_6,idP'_2],choice[safe_2,safe'])) ==> h_alg_13 = id_hash(StrongHash,1) && h_alg'_1 = id_hash(StrongHash,1) && id_8 = mk_idpsk(c_dom_8,s_dom_12,h_alg_13,ipsk) && id' = mk_idpsk(c_dom',s_dom',h_alg'_1,ipsk') && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom_8,c_dom1],choice[s_dom_12,s_dom1],choice[h_alg_13,h_alg1],choice[id_8,id1],choice[ipsk,ipsk1],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom_8,c_dom2],choice[s_dom_12,s_dom2],choice[h_alg_13,h_alg2],choice[id_8,id2],choice[ipsk,ipsk2],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
 RESULT table(pre_shared_keys(choice[c_dom1,c_dom_8],choice[s_dom1,s_dom_12],choice[h_alg1,h_alg_13],choice[id1,id_8],choice[ipsk1,ipsk],idP_6,safe_2)) && table(pre_shared_keys(choice[c_dom2,c_dom_8],choice[s_dom2,s_dom_12],choice[h_alg2,h_alg_13],choice[id2,id_8],choice[ipsk2,ipsk],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_2 = safe' && idP_6 = idP'_2 is true.
@@ -205,7 +191,13 @@ END *)
 !>)dnl
 ifdef(<!SCENARIO5!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 10
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 11
+END *)
+!>)dnl
+!>)dnl
+ifdef(<!SCENARIO6!>,<!
+ifdef(<!NOHRR!>,<!
+(* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 12
 END *)
 !>)dnl
 !>)dnl

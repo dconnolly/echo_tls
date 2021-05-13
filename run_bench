@@ -167,6 +167,40 @@ function sanity_nohrr() {
 	done
 }
 
+function header() {
+	echo "" >> $TMPDIR/tmp.m4
+	echo "(* -------------------------------------------------------- " >> $TMPDIR/tmp.m4
+	echo "   This file should be executed with the following command: " >> $TMPDIR/tmp.m4
+	echo "" >> $TMPDIR/tmp.m4
+	echo "   		proverif $lib $1" >> $TMPDIR/tmp.m4
+	echo "" >> $TMPDIR/tmp.m4
+	echo "   -------------------------------------------------------- *)" >> $TMPDIR/tmp.m4
+	echo "" >> $TMPDIR/tmp.m4
+}
+
+# Argments:
+# 	1) First argument given to run_bench
+# 	2) Second argument given to run_bench
+#		4) Real file name
+# 	4) Third argument given to run_bench
+function runm4() {
+	full_file="generated_models/${3}_SCENARIO$2.pv"
+	cat scenario.m4 > $TMPDIR/tmp.m4
+	header $full_file
+	cat $3.m4.pv >> $TMPDIR/tmp.m4
+	m4 -D SCENARIO$2 $TMPDIR/tmp.m4 > $full_file
+	run_file $full_file "$1-$2" $4
+}
+
+function runm4_nohrr() {
+	full_file="generated_models/${3}_NOHRR_SCENARIO$2.pv"
+	cat scenario.m4 > $TMPDIR/tmp.m4
+	header $full_file
+	cat $3.m4.pv >> $TMPDIR/tmp.m4
+	m4 -D SCENARIO$2 -D NOHRR $TMPDIR/tmp.m4 > $full_file
+	run_file $full_file "$1-$2" $4
+}
+
 case .$1 in
 	.sanity)
 		sanity $1 $2
@@ -175,64 +209,40 @@ case .$1 in
 		sanity_nohrr $1 $2
 		;;
 	.backend)
-		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 privacy_backend.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "privacy_backend" $3
 		;;
 	.backend_nohrr)
-		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR privacy_backend.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "privacy_backend" $3
 		;;
 	.backend_full)
-		full_file="generated_models/privacy_backend_full_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 privacy_backend_full.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "privacy_backend_full" $3
 		;;
 	.backend_full_nohrr)
-		full_file="generated_models/privacy_backend_full_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR privacy_backend_full.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "privacy_backend_full" $3
 		;;
 	.inner)
-		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 strong_secrecy_inner.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "strong_secrecy_inner" $3
 		;;
 	.inner_nohrr)
-		full_file="generated_models/strong_secrecy_inner_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR strong_secrecy_inner.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "strong_secrecy_inner" $3
 		;;
 	.client)
-		full_file="generated_models/privacy_client_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 privacy_client.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "privacy_client" $3
 		;;
 	.client_nohrr)
-		full_file="generated_models/privacy_client_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR privacy_client.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "privacy_client" $3
 		;;
 	.client_ech)
-		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 privacy_client_ech.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "privacy_client_ech" $3
 		;;
 	.client_ech_nohrr)
-		full_file="generated_models/privacy_client_ech_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR privacy_client_ech.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "privacy_client_ech" $3
 		;;
 	.ror)
-		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 real_or_random_psk.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4 $1 $2 "real_or_random_psk" $3
 		;;
 	.ror_nohrr)
-		full_file="generated_models/real_or_random_psk_SCENARIO$2.pv"
-		m4 -D SCENARIO$2 -D NOHRR real_or_random_psk.m4.pv > $full_file
-		run_file $full_file "$1-$2" $3
+		runm4_nohrr $1 $2 "real_or_random_psk" $3
 		;;
 	.clean)
 		echo Removing all generated files
@@ -241,4 +251,4 @@ case .$1 in
 		;;
 esac
 
-rm -r "$TMPDIR"
+rm -rf "$TMPDIR"
