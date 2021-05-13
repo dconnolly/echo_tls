@@ -226,6 +226,14 @@ let echo_client(id_client:idProc,use_grease:bool,use_psk:bool,send_kex:bool,c_do
   ) =
   let comp_psk = false in
 !>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+let echo_client(id_client:idProc,use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
+  g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
+  ech_conf:echConfig,
+  i_extra,o_extra:extraExt
+  ) =
+  let comp_psk = false in
+!>,<!dnl
 let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
   ech_conf:echConfig,
@@ -233,6 +241,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   ) =
   let comp_psk = false in
   new id_client[]:idProc;
+!>)dnl
 !>)dnl
 !>)dnl
 

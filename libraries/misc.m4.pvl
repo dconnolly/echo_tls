@@ -41,9 +41,14 @@ event PreciseMess(channel,idProc,bitstring,bitstring).
 ifdef(<!BACKENDFULL!>,<!dnl
 event Selected_psk(domain,domain,internal_preSharedKey,idProc).
 !>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+event Selected_psk(domain,domain,idProc,bool).
+event Selected_otu_psk(idProc,internal_preSharedKey,bool).
+!>,<!dnl
 event Selected_psk(domain,domain,idProc).
-!>)dnl
 event Selected_otu_psk(idProc,internal_preSharedKey).
+!>)dnl
+!>)dnl
 
 (* For the equivalence proof *)
 

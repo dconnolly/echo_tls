@@ -47,9 +47,14 @@ ifdef(<!BACKENDFULL!>,<!dnl
   event Selected_psk(s_dom,s_dom',internal_psk,idP');
   let is_safe=false in (* This value is never used in this scenario *)
 !>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP',is_safe) [precise] in
+  event Selected_psk(s_dom,s_dom',idP',is_safe);
+!>,<!dnl
   (* For Inner and Sanity *)
   get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP') [precise] in
   let is_safe=false in (* This value is never used in this scenario *)
+!>)dnl
 !>)dnl
 !>)dnl
 !>)dnl
@@ -102,6 +107,10 @@ ifdef(<!BACKENDFULL!>,<!dnl
   new st[]:bitstring;
   event PreciseMess(ch_client_CFIN,id_client,st,(psk,s_pkey,c_pkey,master_secret,cur_log));
 !>)dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+  new st[]:bitstring;
+  event PreciseMess(ch_client_CFIN,id_client,st,(psk,s_pkey,c_pkey,master_secret,cur_log));
+!>)dnl
 
   let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
   let client_hash_msg = hmac(h_alg,cfin,cur_log) in
@@ -123,6 +132,16 @@ ifdef(<!BACKENDFULL!>,<!dnl
   ;
   let id = mk_idpsk(c_dom,s_dom,h_alg,b2ipsk(rms)) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,b2ipsk(rms),id_client)
+!>)dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+  ;
+  let new_safe:bool =
+    (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
+    (psk = NoPSK || safe_psk)
+  in
+  let new_psk = b2ipsk(rms) in
+  let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,id_client,new_safe)
 !>)dnl
 ifdef(<!ROR!>,<!dnl
   ;

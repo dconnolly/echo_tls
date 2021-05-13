@@ -30,17 +30,17 @@ function generate_file_name() {
 }
 
 function generate_misc() {
-	generate_file_name "misc" "BACKENDFULL" "$1"
+	generate_file_name "misc" "BACKENDFULL CLIENTFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_client_ech() {
-	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL" "$1"
+	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL CLIENTFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL INNER SANITY" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER SANITY" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -50,17 +50,17 @@ function generate_server() {
 }
 
 function generate_format() {
-	generate_file_name "format" "ROR" "$1"
+	generate_file_name "format" "ROR CLIENTFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_proof_helper() {
-	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL" "$1"
+	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL CLIENTFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_main_processes() {
-	generate_file_name "main_processes" "ROR" "$1"
+	generate_file_name "main_processes" "ROR CLIENTFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -99,6 +99,12 @@ function generate_libraries() {
 			;;
 		client|client_ech)
 			option="EQUIV CLIENT"
+			;;
+		client_full_nohrr|client_ech_nohrr|unlinkability_nohrr)
+			option="NOHRR EQUIV CLIENTFULL"
+			;;
+		client_full|client_ech|unlinkability)
+			option="EQUIV CLIENTFULL"
 			;;
 		ror_nohrr)
 			option="NOHRR EQUIV ROR"
@@ -231,6 +237,18 @@ case .$1 in
 		;;
 	.client_nohrr)
 		runm4_nohrr $1 $2 "privacy_client" $3
+		;;
+	.client_full)
+		runm4 $1 $2 "privacy_client_full" $3
+		;;
+	.client_full_nohrr)
+		runm4_nohrr $1 $2 "privacy_client_full" $3
+		;;
+	.unlinkability)
+		runm4 $1 $2 "unlinkability" $3
+		;;
+	.unlinkability_nohrr)
+		runm4_nohrr $1 $2 "unlinkability" $3
 		;;
 	.client_ech)
 		runm4 $1 $2 "privacy_client_ech" $3

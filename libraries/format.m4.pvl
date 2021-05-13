@@ -72,7 +72,11 @@ table pre_shared_keys(
 ifdef(<!ROR!>,<!dnl
   hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
 !>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
+!>,<!dnl
   hash_alg,identityPsk,internal_preSharedKey,idProc).
+!>)dnl
 !>)dnl
 
 (********************************************************)

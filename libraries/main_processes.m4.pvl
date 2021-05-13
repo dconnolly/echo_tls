@@ -26,7 +26,11 @@ let gen_honest_pre_shared_keys(h_alg:hash_alg) =
 ifdef(<!ROR!>,<!dnl
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,true)
 !>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,true)
+!>,<!dnl
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP)
+!>)dnl
 !>)dnl
 .
 
