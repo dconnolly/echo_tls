@@ -199,24 +199,32 @@ END *)
 ifdef(`SCENARIO1',`
 ifdef(`NOHRR',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 6
+RESULT Diff-equivalence is true.
+1134.264s (user 1128.088s + system 6.176s), max rss 4844360K
 END *)
 ')dnl
 ')dnl
 ifdef(`SCENARIO2',`
 ifdef(`NOHRR',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 7
+RESULT Diff-equivalence is true.
+261.450s (user 259.926s + system 1.524s), max rss 1823724K
 END *)
 ')dnl
 ')dnl
 ifdef(`SCENARIO3',`
 ifdef(`NOHRR',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 8
+RESULT Diff-equivalence is true.
+564.200s (user 561.896s + system 2.304s), max rss 3183628K
 END *)
 ')dnl
 ')dnl
 ifdef(`SCENARIO4',`
 ifdef(`NOHRR',`
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 9
+RESULT Diff-equivalence is true.
+16720.926s (user 16553.846s + system 167.081s), max rss 17030464K
 END *)
 ')dnl
 ')dnl
