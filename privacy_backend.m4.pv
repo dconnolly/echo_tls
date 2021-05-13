@@ -155,6 +155,7 @@ process
       event Same((use_ech,use_psk,cert_req,s_dom));
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
+      !
       ifdef(`GREASE',`let use_grease = true in') ifdef(`NOGREASE',`let use_grease = false in') ifdef(`UGREASE',`in(io,use_grease:bool) [precise];')
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')

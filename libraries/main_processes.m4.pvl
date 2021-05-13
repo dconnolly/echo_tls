@@ -16,8 +16,8 @@ let gen_honest_long_term_keys =
 
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
-  new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
+  new idP:idProc;
   event Same((c_dom,s_dom));
   new s:seed;
   let psk = uc_psk(s) in

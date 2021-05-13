@@ -45,17 +45,17 @@ let swap_pre_shared_keys =
   insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1])
 .
 
-free idClientDiff:idProc [private].
+fun idClientDiff(seed):idProc [private].
 
 (* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
   are one time used and uncompromised *)
 restriction
-  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc, s1,s2:seed;
+  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc, s1,s2,s:seed;
   (* One time used property *)
-  event(Selected_otu_psk(idClientDiff,diff[ipsk,ipsk1])) && event(Selected_otu_psk(idP,diff[ipsk,ipsk2])) ==> idP = idClientDiff;
-  event(Selected_otu_psk(idClientDiff,diff[ipsk1,ipsk])) && event(Selected_otu_psk(idP,diff[ipsk2,ipsk])) ==> idP = idClientDiff;
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk,ipsk1])) && event(Selected_otu_psk(idP,diff[ipsk,ipsk2])) ==> idP = idClientDiff(s);
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk])) && event(Selected_otu_psk(idP,diff[ipsk2,ipsk])) ==> idP = idClientDiff(s);
   (* Ucompromised property *)
-  event(Selected_otu_psk(idClientDiff,diff[ipsk1,ipsk2])) ==> ipsk1 = uc_psk(s1) && ipsk2 = uc_psk(s2)
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk2])) ==> ipsk1 = uc_psk(s1) && ipsk2 = uc_psk(s2)
 .
 
 (********************************************************)
@@ -159,10 +159,12 @@ process
       event Same((use_ech,use_psk,cert_req,s_dom));
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
+      !
+      new s:seed;
       ifdef(`PSK',`let use_psk = true in') ifdef(`NOPSK',`let use_psk = false in') ifdef(`UPSK',`in(io,use_psk:bool) [precise];')
       ifdef(`KEX',`let send_kex = true in') ifdef(`NOKEX',`let send_kex = false in') ifdef(`UKEX',`in(io,send_kex:bool) [precise];')
       event Same((use_psk,send_kex));
-      standard_client(idClientDiff,use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(idClientDiff(s),use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
 
