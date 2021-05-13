@@ -48,8 +48,8 @@ ifdef(<!BACKENDFULL!>,<!dnl
   let is_safe=false in (* This value is never used in this scenario *)
 !>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
-  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP',is_safe) [precise] in
-  event Selected_psk(s_dom,s_dom',idP',is_safe);
+  get pre_shared_keys(c_dom',=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
+  event Selected_psk(c_dom,c_dom',idP',is_safe);
   event Selected_otu_psk(idP,internal_psk,is_safe);
 !>,<!dnl
   (* For Inner and Sanity *)
