@@ -564,6 +564,7 @@ nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
 nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
 nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
 
+ifdef(<!REACH!>,<!!>,<!dnl
 axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
   event(PreciseMess(ch,id,st1,x1)) &&
   event(PreciseMess(ch,id,st1',x1'))
@@ -572,6 +573,7 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,
   event(PreciseMess(ch,id1',st,x1'))
   ==> id1 = id1' && x1 = x1'
 .
+!>)dnl
 
 (***** Secrecy assumption ****)
 

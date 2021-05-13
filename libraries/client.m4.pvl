@@ -50,6 +50,7 @@ ifdef(<!BACKENDFULL!>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP',is_safe) [precise] in
   event Selected_psk(s_dom,s_dom',idP',is_safe);
+  event Selected_otu_psk(idP,internal_psk,is_safe);
 !>,<!dnl
   (* For Inner and Sanity *)
   get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP') [precise] in
