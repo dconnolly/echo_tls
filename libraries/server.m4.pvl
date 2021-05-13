@@ -53,9 +53,10 @@ let receive_client_finished_message =
     s_pkey,c_pkey,
     cak,sak,ems,rms,
     cur_log_CFIN)
-
-  (* ;
-  insert serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) *)
+ifdef(<!DATA!>,<!dnl
+  ;
+  insert serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms)
+!>)dnl
 .
 
 (* Sends the server finish message *)

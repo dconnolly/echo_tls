@@ -127,7 +127,10 @@ ifdef(<!CLIENTFULL!>,<!dnl
     s_pkey,c_pkey,
     cak,sak,ems,rms,
     cur_log')
-
+ifdef(<!DATA!>,<!dnl
+  ;
+  insert clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms)
+!>)dnl
 ifdef(<!BACKENDFULL!>,<!dnl
   ;
   let id = mk_idpsk(c_dom,s_dom,h_alg,b2ipsk(rms)) in

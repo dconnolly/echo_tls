@@ -47,41 +47,41 @@ let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
 
 (* Application data *)
 
-event ClientSends(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ServerSends(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ClientReceives(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ServerReceives(TLS_version,bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ClientSends(bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ServerSends(bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ClientReceives(bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ServerReceives(bytes32,bytes32,preSharedKey,pubkey,bitstring,bitstring,bitstring).
 
-fun m_s(TLS_version,bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
-fun m_c(TLS_version,bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
+fun m_s(bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
+fun m_c(bytes32,bytes32,pubkey,preSharedKey): bitstring [private].
 
 let application_data =
   (
     !
     get clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
     in (io,(n:bitstring, ad:bitstring));
-    let mesg = m_c(TLS13,cr,sr,s_pkey,psk) in
-    event ClientSends(TLS13,cr,sr,psk,s_pkey,n,ad,mesg);
+    let mesg = m_c(cr,sr,s_pkey,psk) in
+    event ClientSends(cr,sr,psk,s_pkey,n,ad,mesg);
     out (io,aead_enc(a_alg,cak,n,ad,mesg))
   ) | (
     !
     get serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
     in (io,(n:bitstring, ad:bitstring, c:bitstring));
     let f = aead_dec(a_alg,cak,n,ad,c) in
-    event ServerReceives(TLS13,cr,sr,psk,s_pkey,n,ad,f)
+    event ServerReceives(cr,sr,psk,s_pkey,n,ad,f)
   ) | (
     !
     get serverSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
     in (io,(n:bitstring, ad:bitstring));
-    let mesg = m_s(TLS13,cr,sr,s_pkey,psk) in
-    event ServerSends(TLS13,cr,sr,psk,s_pkey,n,ad,mesg);
+    let mesg = m_s(cr,sr,s_pkey,psk) in
+    event ServerSends(cr,sr,psk,s_pkey,n,ad,mesg);
     out (io,aead_enc(a_alg,sak,n,ad,mesg))
   ) | (
     !
     get clientSession(a_alg,cr,sr,psk,s_pkey,cak,sak,ems,rms) in
     in (io,(n:bitstring, ad:bitstring, c:bitstring));
     let f = aead_dec(a_alg,sak,n,ad,c) in
-    event ClientReceives(TLS13,cr,sr,psk,s_pkey,n,ad,f)
+    event ClientReceives(cr,sr,psk,s_pkey,n,ad,f)
   )
 .
 
@@ -102,6 +102,8 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   | gen_honest_long_term_keys ()
   | gen_honest_pre_shared_keys (tls_h)
   | gen_ech_config(ech_g,ech_h,ech_a)
+ifdef(<!DATA!>,<!dnl
   (* The application data *)
-  (* | application_data *)
+  | application_data
+!>)dnl
 .
