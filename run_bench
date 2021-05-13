@@ -158,12 +158,21 @@ function sanity() {
 	done
 }
 
+function sanity_nohrr() {
+	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
+	do
+		full_file="generated_models/sanity_checks_NOHRR_$i.pv"
+		m4 -D$i -D NOHRR sanity_checks.m4.pv > $full_file
+		run_file $full_file $1 $2
+	done
+}
+
 case .$1 in
 	.sanity)
 		sanity $1 $2
 		;;
 	.sanity_nohrr)
-		sanity $1 $2 "-D NOHRR"
+		sanity_nohrr $1 $2
 		;;
 	.backend)
 		full_file="generated_models/privacy_backend_SCENARIO$2.pv"
