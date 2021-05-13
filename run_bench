@@ -40,12 +40,12 @@ function generate_client_ech() {
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER SANITY" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER SANITY DATA" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_server() {
-	generate_file_name "server" "NOHRR ROR INNER SANITY" "$1"
+	generate_file_name "server" "NOHRR ROR INNER SANITY DATA" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -60,7 +60,7 @@ function generate_proof_helper() {
 }
 
 function generate_main_processes() {
-	generate_file_name "main_processes" "ROR CLIENTFULL" "$1"
+	generate_file_name "main_processes" "ROR CLIENTFULL REACH DATA" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -111,6 +111,12 @@ function generate_libraries() {
 			;;
 		ror)
 			option="EQUIV ROR"
+			;;
+		reach_nohrr)
+			option="NOHRR REACH DATA SANITY"
+			;;
+		reach)
+			option="REACH DATA SANITY"
 			;;
 	esac
 
@@ -261,6 +267,12 @@ case .$1 in
 		;;
 	.ror_nohrr)
 		runm4_nohrr $1 $2 "real_or_random_psk" $3
+		;;
+	.reach)
+		runm4 $1 $2 "reachability" $3
+		;;
+	.reach_nohrr)
+		runm4_nohrr $1 $2 "reachability" $3
 		;;
 	.clean)
 		echo Removing all generated files

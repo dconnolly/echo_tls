@@ -53,3 +53,9 @@ event Selected_otu_psk(idProc,internal_preSharedKey).
 (* For the equivalence proof *)
 
 event Same(bitstring).
+
+(* For reachability proofs *)
+
+event ServerChoosesKEX(bytes32,bytes32,kex_alg).
+event ServerChoosesAE(bytes32,bytes32,aead_alg).
+event ServerChoosesHash(bytes32,bytes32,hash_alg).

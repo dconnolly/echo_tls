@@ -26,7 +26,7 @@ define(<!UKEX!>)dnl
 	(*  - ECH config keys of client-facing servers are not compromised *)
 	(*  - The attacker can choose to compromise a PSK *)
 	(*  - The attacker can choose to compromise a certificate *)
-define(<!PSK!>)dnl
+define(<!DOPSK!>)dnl
 define(<!NOGREASE!>)dnl
 define(<!NOCERT!>)dnl
 !>)dnl

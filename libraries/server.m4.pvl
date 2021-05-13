@@ -219,6 +219,11 @@ let process_client_hello_noHRR =
       in
 
       let server_hello = SH(sr,s_offer) in
+
+      event ServerChoosesKEX(cr,sr,DHE_kex(g,gy));
+      event ServerChoosesAE(cr,sr,a_alg);
+      event ServerChoosesHash(cr,sr,h_alg);
+
       out(io,server_hello);
       let cur_log_SH = (cur_log_CH,server_hello) in
       event SanityServerSH(id_server,cr,sr,s_dom,handshake_secret,psk,cur_log_SH);
