@@ -75,7 +75,7 @@ let process_server_hello_ech(id_client:idProc,
         (NoPSK,es,true,false)
       )
       else
-        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring,is_safe:bool) = psk_data in
+        let (h'_alg:hash_alg,psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in
         (psk,es,(h'_alg = h_alg && server_psk_ext(1) = psk_ext && use_psk),is_safe)
     in
 
