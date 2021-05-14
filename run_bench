@@ -5,6 +5,10 @@ tmp_name=""
 
 TMPDIR="$(mktemp -d "./tmp.XXXXXXXXXX")"
 
+mkdir -p tests
+mkdir -p generated_models
+mkdir -p generated_libraries
+
 # Arguments:
 # 	$1: name of the file
 # 	$2: list of valid options in the correct order
@@ -139,10 +143,6 @@ function analyze_one_file() {
 	filename=${filename_ext%.*}
 	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add "$TMPDIR" $2 file generated_models $filename_ext
 }
-
-mkdir -p tests
-mkdir -p generated_models
-mkdir -p generated_libraries
 
 function run_file() {
 	if [ \( .$3 = .PV \) ]

@@ -114,11 +114,11 @@ ifdef(<!ROR!>,<!dnl
 !>)dnl
 ifdef(<!BACKENDFULL!>,<!dnl
   new st[]:bitstring;
-  event PreciseMess(ch_client_CFIN,id_client,st,(psk,s_pkey,c_pkey,master_secret,cur_log));
+  event PreciseMess(ch_client_CFIN,id_client,st,(c_dom,s_dom,psk,s_pkey,c_pkey,master_secret,safe_psk,cur_log));
 !>)dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   new st[]:bitstring;
-  event PreciseMess(ch_client_CFIN,id_client,st,(psk,s_pkey,c_pkey,master_secret,cur_log));
+  event PreciseMess(ch_client_CFIN,id_client,st,(c_dom,s_dom,psk,s_pkey,c_pkey,master_secret,safe_psk,cur_log));
 !>)dnl
 
   let (cak:aead_key,sak:aead_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
