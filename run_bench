@@ -141,7 +141,7 @@ function analyze_one_file() {
 	file=$1
 	filename_ext=${file##*/}
 	filename=${filename_ext%.*}
-	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV test_add "$TMPDIR" $2 file generated_models $filename_ext
+	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV add "$TMPDIR" $2 file generated_models $filename_ext
 }
 
 function run_file() {
@@ -162,8 +162,7 @@ function run_file() {
 }
 
 function sanity() {
-	# for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
-	for i in ech_C_tls_S
+	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
 	do
 		full_file="generated_models/sanity_checks_$i.pv"
 		m4 -D$i sanity_checks.m4.pv > $full_file
