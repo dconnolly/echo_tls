@@ -44,7 +44,7 @@ function generate_client_ech() {
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER INNERFULLSANITY DATA" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER INNERFULL SANITY DATA" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
