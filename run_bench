@@ -40,7 +40,7 @@ function generate_client_ech() {
 }
 
 function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER SANITY DATA" "$1"
+	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER INNERFULLSANITY DATA" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -50,17 +50,17 @@ function generate_server() {
 }
 
 function generate_format() {
-	generate_file_name "format" "ROR CLIENTFULL" "$1"
+	generate_file_name "format" "ROR CLIENTFULL BACKENDFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_proof_helper() {
-	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL CLIENTFULL REACH" "$1"
+	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL CLIENTFULL INNERFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
 function generate_main_processes() {
-	generate_file_name "main_processes" "ROR CLIENTFULL REACH DATA" "$1"
+	generate_file_name "main_processes" "ROR CLIENTFULL DATA BACKENDFULL" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -94,16 +94,22 @@ function generate_libraries() {
 		inner)
 			option="EQUIV INNER"
 			;;
+		inner_full_nohrr)
+			option="NOHRR EQUIV INNER INNERFULL"
+			;;
+		inner_full)
+			option="EQUIV INNER INNERFULL"
+			;;
 		client_nohrr|client_ech_nohrr)
 			option="NOHRR EQUIV CLIENT"
 			;;
 		client|client_ech)
 			option="EQUIV CLIENT"
 			;;
-		client_full_nohrr|client_ech_nohrr|unlinkability_nohrr)
+		client_full_nohrr|client_ech_full_nohrr|unlinkability_nohrr)
 			option="NOHRR EQUIV CLIENTFULL"
 			;;
-		client_full|client_ech|unlinkability)
+		client_full|client_ech_full|unlinkability)
 			option="EQUIV CLIENTFULL"
 			;;
 		ror_nohrr)
@@ -111,12 +117,6 @@ function generate_libraries() {
 			;;
 		ror)
 			option="EQUIV ROR"
-			;;
-		reach_nohrr)
-			option="NOHRR REACH DATA SANITY"
-			;;
-		reach)
-			option="REACH DATA SANITY"
 			;;
 	esac
 
@@ -238,6 +238,12 @@ case .$1 in
 	.inner_nohrr)
 		runm4_nohrr $1 $2 "strong_secrecy_inner" $3
 		;;
+	.inner_full)
+		runm4 $1 $2 "strong_secrecy_inner_full" $3
+		;;
+	.inner_full_nohrr)
+		runm4_nohrr $1 $2 "strong_secrecy_inner_full" $3
+		;;
 	.client)
 		runm4 $1 $2 "privacy_client" $3
 		;;
@@ -262,17 +268,17 @@ case .$1 in
 	.client_ech_nohrr)
 		runm4_nohrr $1 $2 "privacy_client_ech" $3
 		;;
+	.client_ech_full)
+		runm4 $1 $2 "privacy_client_ech_full" $3
+		;;
+	.client_ech_full_nohrr)
+		runm4_nohrr $1 $2 "privacy_client_ech_full" $3
+		;;
 	.ror)
 		runm4 $1 $2 "real_or_random_psk" $3
 		;;
 	.ror_nohrr)
 		runm4_nohrr $1 $2 "real_or_random_psk" $3
-		;;
-	.reach)
-		runm4 $1 $2 "reachability" $3
-		;;
-	.reach_nohrr)
-		runm4_nohrr $1 $2 "reachability" $3
 		;;
 	.clean)
 		echo Removing all generated files

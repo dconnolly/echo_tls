@@ -145,6 +145,7 @@ ifdef(<!DISECH!>,<!dnl
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
+      in(io,(clientA:domain,clientB:domain)) [precise];
       new s:seed;
       ifdef(<!DOPSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool) [precise];!>)
       ifdef(<!KEX!>,<!let send_kex = true in!>) ifdef(<!NOKEX!>,<!let send_kex = false in!>) ifdef(<!UKEX!>,<!in(io,send_kex:bool) [precise];!>)

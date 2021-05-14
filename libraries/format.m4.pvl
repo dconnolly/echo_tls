@@ -75,7 +75,11 @@ ifdef(<!ROR!>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
 !>,<!dnl
+ifdef(<!BACKENDFULL!>,<!dnl
+  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
+!>,<!dnl
   hash_alg,identityPsk,internal_preSharedKey,idProc).
+!>)dnl
 !>)dnl
 !>)dnl
 

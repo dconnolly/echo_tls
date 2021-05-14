@@ -14,17 +14,6 @@ let gen_honest_long_term_keys =
   out(io,pk(sk_h))
 .
 
-ifdef(<!REACH!>,<!dnl
-let gen_honest_pre_shared_keys =
-  !
-  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
-  new idP:idProc;
-  new s:seed;
-  let psk = uc_psk(s) in
-  let id = mk_idpsk(c_dom,s_dom,h_alg,psk) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP)
-.
-!>,<!dnl
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =
   !
   in(io,(c_dom:domain,s_dom:domain));
@@ -40,11 +29,14 @@ ifdef(<!ROR!>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,true)
 !>,<!dnl
+ifdef(<!BACKENDFULL!>,<!dnl
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,true)
+!>,<!dnl
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP)
 !>)dnl
 !>)dnl
-.
 !>)dnl
+.
 
 let gen_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
   !
@@ -99,11 +91,7 @@ let application_data =
 
 (* Calling the main processes *)
 
-ifdef(<!REACH!>,<!
-let main_process(ech_h:hash_alg,ech_a:aead_alg,ech_g:group) =
-!>,<!dnl
 let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
-!>)dnl
   (* The clients subprocesses *)
     send_finished_message
   | receive_finished_message
@@ -116,11 +104,7 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   | process_client_hello_noHRR
   (* The key generation *)
   | gen_honest_long_term_keys ()
-ifdef(<!REACH!>,<!
-  | gen_honest_pre_shared_keys
-!>,<!dnl
   | gen_honest_pre_shared_keys (tls_h)
-!>)dnl
   | gen_ech_config(ech_g,ech_h,ech_a)
 ifdef(<!DATA!>,<!dnl
   (* The application data *)

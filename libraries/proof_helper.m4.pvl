@@ -77,7 +77,7 @@ nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':in
 !>,<!dnl
 ifdef(<!BACKENDFULL!>,<!
 nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,safe,safe':bool,idP,idP':idProc;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP']))/ 5000
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe']))/ 5000
   [ignoreAFewTimes]
 .
 !>,<!dnl
@@ -87,9 +87,16 @@ nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':in
   [ignoreAFewTimes]
 .
 !>,<!dnl
+ifdef(<!INNERFULL!>,<!
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP']))/ 5000
+  [ignoreAFewTimes]
+.
+!>,<!dnl
 nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':internal_preSharedKey,idP,idP':idProc;
   table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP']))/ -15000
 .
+!>)dnl
 !>)dnl
 !>)dnl
 !>)dnl
@@ -564,7 +571,6 @@ nounif x:bitstring; mess(ch_server_FIN,*x) / -3000.
 nounif x:bitstring; mess(ch_server_CRT,*x) / -3000.
 nounif x:bitstring; mess(ch_server_SH,*x) / -3000.
 
-ifdef(<!REACH!>,<!!>,<!dnl
 axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,x1',x2,x2':bitstring;
   event(PreciseMess(ch,id,st1,x1)) &&
   event(PreciseMess(ch,id,st1',x1'))
@@ -573,7 +579,6 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':bitstring, x1,
   event(PreciseMess(ch,id1',st,x1'))
   ==> id1 = id1' && x1 = x1'
 .
-!>)dnl
 
 (***** Secrecy assumption ****)
 

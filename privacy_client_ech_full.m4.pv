@@ -1,3 +1,4 @@
+
 set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
@@ -94,20 +95,6 @@ restriction dom:domain,idP,idP',idP'':idProc,safe,safe',safe'':bool;
   event(Selected_psk(dom,dom,diff[idP'',idP],diff[safe'',safe])) ==>
   idP' = idP''.
 
-(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
-  are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
-  or  *)
-restriction
-  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
-  (* One time used property *)
-  event(Selected_otu_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
-  event(Selected_otu_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
-  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk],diff[safe1,safe])) &&
-  event(Selected_otu_psk(idP,diff[ipsk2,ipsk],diff[safe2,safe])) ==> idP = idClientDiff(s);
-  (* Ucompromised property *)
-  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
-.
-
 (* Lemma to help the proof *)
 
 lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,s:seed,
@@ -152,21 +139,21 @@ lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
   attacker(diff[ipsk'',ipsk']) ==>  ipsk = ipsk'' && safe <> true && safe' <> true;
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) ==> safe = true;
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) ==> safe' = true;
-
   (* Insertion with id_client_diff cannot be be deducible *)
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) &&
   attacker(diff[ipsk,ipsk'']);
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) &&
   attacker(diff[ipsk'',ipsk'])
+
   [induction]
 .
 
 (* Some public free domains *)
 
 free HonestServer:domain.
+
+(* Dishonest key generation *)
 
 let gen_dishonest_long_term_keys =
   !
@@ -203,9 +190,14 @@ let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
 .
 !>)dnl
 
-(* For privacy of client, we require that certificate of the server with whom
-   ClientA/ClientB will talk to should not be compromised. Otherwise we
-   find an attack where the attacker plays the role of the server
+(* For privacy of client, we require that certificate of the client-facing-server
+   with whom ClientA/ClientB will talk to should not be compromised. Otherwise ProVerif
+   finds an attack where the attacker plays the role of the server. Note that this
+   works also in the PSK scenario as the attacker sends back a server hello
+   indicating that the outer client hello was not accepted and so a normal
+   TLS connexion follows.
+   Similarly, we also requires that the ECH config key of the client-facing-server
+   with whom ClientA/ClientB will talk to should not be compromised.
 *)
 
 process
@@ -253,84 +245,89 @@ ifdef(<!DISECH!>,<!dnl
       server(use_ech,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
     ) | (
       !
-      in(io,(clientA:domain,clientB:domain)) [precise];
-      new s:seed;
+      (* For the equivalence, we assume that the echo client will not use grease. Otherwise it is similar
+         to a standard TLS client. If we allow the attacker to choose whether or not the ech_client uses grease,
+         we would need to require the psk to be one time used and uncompromised (as in the privacy of TLS client). *)
       ifdef(<!DOPSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool) [precise];!>)
       ifdef(<!KEX!>,<!let send_kex = true in!>) ifdef(<!NOKEX!>,<!let send_kex = false in!>) ifdef(<!UKEX!>,<!in(io,send_kex:bool) [precise];!>)
-      event Same((use_psk,send_kex,clientA,clientB));
-      standard_client(idClientDiff(s),use_psk,send_kex,diff[clientA,clientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
+      in(io,(s_dom:domain,clientA:domain,clientB:domain)) [precise];
+      new s:seed;
+      event Same((use_psk,s_dom));
+      get ech_configurations(ech_config(id,g,pkR,=HonestServer,h_alg,a_alg),skR) [precise] in
+      let ech_conf = ech_config(id,g,pkR,HonestServer,h_alg,a_alg) in
+      echo_client(idClientDiff(s),false,use_psk,send_kex,diff[clientA,clientB],s_dom,tls_g,tls_h,tls_a,ech_conf,empty_extra_ext,empty_extra_ext)
     )
   )
 
 ifdef(<!SCENARIO1!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 1
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 1
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 2
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 2
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 3
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 3
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 4
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 4
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO5!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 5
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 5
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO6!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 6
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 6
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO1!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 7
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 7
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 8
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 8
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 9
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 9
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 10
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 10
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO5!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 11
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 11
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO6!>,<!
 ifdef(<!NOHRR!>,<!
-(* EXPECTPV FILENAME: ./privacy_client_full.m4.pv TAG: 12
+(* EXPECTPV FILENAME: ./privacy_client_ech_full.m4.pv TAG: 12
 END *)
 !>)dnl
 !>)dnl

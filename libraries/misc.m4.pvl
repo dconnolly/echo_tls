@@ -39,7 +39,7 @@ event Selected_lgt(domain,domain,idProc).
 event PreciseMess(channel,idProc,bitstring,bitstring).
 
 ifdef(<!BACKENDFULL!>,<!dnl
-event Selected_psk(domain,domain,internal_preSharedKey,idProc).
+event Selected_psk(domain,domain,idProc,bool).
 !>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
 event Selected_psk(domain,domain,idProc,bool).
