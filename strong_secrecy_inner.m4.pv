@@ -144,32 +144,24 @@ END *)
 ifdef(<!SCENARIO1!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 7
-RESULT Diff-equivalence is true.
-847.397s (user 841.737s + system 5.660s), max rss 4201712K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 8
-RESULT Diff-equivalence is true.
-258.231s (user 256.991s + system 1.240s), max rss 1823692K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 9
-RESULT Diff-equivalence is true.
-587.264s (user 583.412s + system 3.852s), max rss 3183740K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 10
-RESULT Diff-equivalence is true.
-11621.533s (user 11516.651s + system 104.882s), max rss 14762232K
 END *)
 !>)dnl
 !>)dnl
