@@ -22,57 +22,65 @@ changequote(<!,!>)dnl
 
 (* Generate the pre shared key extension *)
 letfun make_pre_shared_key_extension(
-  idP:idProc,use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
+  idP:idProc,old_psk_data:bitstring,use_psk:bool,c_dom,s_dom:domain,cr:bytes32, h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
   extra:extraExt,cur_log:bitstring
   ) =
 
-ifdef(<!CLIENT!>,<!dnl
-  (* When checking the privacy of the client, we add in the event the idProc.
-    We will request that for the tested client, the psk was not already used. *)
-  get pre_shared_keys(c_dom',=s_dom,=h_alg,id,internal_psk,idP') [precise] in
-  event Selected_psk(c_dom,c_dom',idP');
-  event Selected_otu_psk(idP,internal_psk);
-  let is_safe=false in (* This value is never used in this scenario *)
-!>,<!dnl
-ifdef(<!ROR!>,<!dnl
-  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
-!>,<!dnl
-ifdef(<!BACKEND!>,<!dnl
-  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP') [precise] in
-  event Selected_psk(s_dom,s_dom',idP');
-  let is_safe=false in (* This value is never used in this scenario *)
-!>,<!dnl
-ifdef(<!BACKENDFULL!>,<!dnl
-  get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP',is_safe) [precise] in
-  event Selected_psk(s_dom,s_dom',idP',is_safe);
-  let is_safe=false in (* This value is never used in this scenario *)
-!>,<!dnl
-ifdef(<!CLIENTFULL!>,<!dnl
-  get pre_shared_keys(c_dom',=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
-  event Selected_psk(c_dom,c_dom',idP',is_safe);
-  event Selected_otu_psk(idP,internal_psk,is_safe);
-!>,<!dnl
-  (* For Inner and Sanity *)
-  get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP') [precise] in
-  let is_safe=false in (* This value is never used in this scenario *)
-!>)dnl
-!>)dnl
-!>)dnl
-!>)dnl
-!>)dnl
-
   if use_psk
   then (
-    let psk = PSK(internal_psk) in
-    let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
-    let cur_log' = (cur_log,CH(cr,offer)) in
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
-    let binders = hmac(h_alg,kb,cur_log') in
-    (client_psk_ext(id,binders), (h_alg,psk,es,is_safe))
+    let (=h_alg,psk:preSharedKey,id:identityPsk,old_es:bitstring,is_safe:bool) = old_psk_data in (
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+      let binders = hmac(h_alg,kb,cur_log') in
+      (client_psk_ext(id,binders), (h_alg,psk,id,es,is_safe))
+    )
+    else (
+ifdef(<!CLIENT!>,<!dnl
+      (* When checking the privacy of the client, we add in the event the idProc.
+        We will request that for the tested client, the psk was not already used. *)
+      get pre_shared_keys(c_dom',=s_dom,=h_alg,id,internal_psk,idP') [precise] in
+      event Selected_psk(c_dom,c_dom',idP');
+      event Selected_otu_psk(idP,internal_psk);
+      let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
+ifdef(<!ROR!>,<!dnl
+      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
+!>,<!dnl
+ifdef(<!BACKEND!>,<!dnl
+      get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP') [precise] in
+      event Selected_psk(s_dom,s_dom',idP');
+      let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
+ifdef(<!BACKENDFULL!>,<!dnl
+      get pre_shared_keys(=c_dom,s_dom',=h_alg,id,internal_psk,idP',is_safe) [precise] in
+      event Selected_psk(s_dom,s_dom',idP',is_safe);
+      let is_safe=false in (* This value is never used in this scenario *)
+!>,<!dnl
+ifdef(<!CLIENTFULL!>,<!dnl
+      get pre_shared_keys(c_dom',=s_dom,=h_alg,id,internal_psk,idP',is_safe) [precise] in
+      event Selected_psk(c_dom,c_dom',idP',is_safe);
+      event Selected_otu_psk(idP,internal_psk,is_safe);
+!>,<!dnl
+      (* For Inner and Sanity *)
+      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,internal_psk,idP') [precise] in
+      let is_safe=false in (* This value is never used in this scenario *)
+!>)dnl
+!>)dnl
+!>)dnl
+!>)dnl
+!>)dnl
+      let psk = PSK(internal_psk) in
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,trunc_client_psk_ext(id),extra) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+      let binders = hmac(h_alg,kb,cur_log') in
+      (client_psk_ext(id,binders), (h_alg,psk,id,es,is_safe))
+    )
   )
   else
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (empty_psk_ext,(h_alg,NoPSK,es,false))
+    (empty_psk_ext,(h_alg,NoPSK,b2idpsk(zero),es,false))
 .
 
 (* Generate the key share extension. *)
@@ -383,7 +391,7 @@ let process_server_hello(id_client:idProc,
         (NoPSK,es,true,false)
       )
       else
-        let (h'_alg:hash_alg,psk:preSharedKey,es:bitstring,is_safe:bool) = psk_data in
+        let (h'_alg:hash_alg,psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in
         (psk,es,((h'_alg = h_alg) && (server_psk_ext(1) = psk_ext) && use_psk),is_safe)
     in
 
@@ -397,7 +405,7 @@ let process_server_hello(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
-  idP:idProc,use_psk:bool,c_dom,s_dom:domain,
+  idP:idProc,old_psk_data:bitstring,use_psk:bool,c_dom,s_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,extra:extraExt, cur_log:bitstring
   )
   =
@@ -409,7 +417,7 @@ letfun generate_client_hello_message (
 
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension(idP,use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
+    make_pre_shared_key_extension(idP,old_psk_data,use_psk,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,extra,cur_log)
   in
 
   (* The client hello *)
@@ -431,12 +439,12 @@ let standard_client(id_client:idProc,use_psk:bool,send_kex:bool,c_dom,s_dom:doma
 
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(id_client,use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) = generate_client_hello_message(id_client,zero,use_psk,c_dom,s_dom,g,send_kex,h_alg,a_alg,extra,cur_log) in
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
   (* For sanity checks*)
-  let (=h_alg,psk:preSharedKey,es:bitstring,safe:bool) = psk_data in
+  let (=h_alg,psk:preSharedKey,id:identityPsk,es:bitstring,safe:bool) = psk_data in
   event SanityClientCH(id_client,true,cr,c_dom,s_dom,psk,cur_log2);
 
   (* Message from server *)
@@ -453,12 +461,13 @@ ifdef(<!NOHRR!>,<!dnl
         let cur_log3 = (cur_log2,server_hello) in
         event SanityClientHRR(id_client);
 
-        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(id_client,use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+        let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) = generate_client_hello_message(id_client,psk_data,use_psk,c_dom,s_dom,g,true,h_alg,a_alg,extra,cur_log3) in
+
         out(io,client_hello');
         let cur_log4 = (cur_log3,client_hello') in
 
         (* For sanity checks*)
-        let (=h_alg,psk':preSharedKey,es':bitstring,safe':bool) = psk_data' in
+        let (=h_alg,psk':preSharedKey,id':identityPsk,es':bitstring,safe':bool) = psk_data' in
         event SanityClientCH(id_client,false,cr',c_dom,s_dom,psk',cur_log4);
 
         (* Message from server *)

@@ -137,7 +137,7 @@ let process_server_hello_ech(id_client:idProc,
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message_ech (
-  idP:idProc,
+  idP:idProc,old_psk_data:bitstring,
   use_grease,use_psk:bool,c_dom,i_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
   ech_conf:echConfig,enc:element,context:hpkeContext,n:nat, (* For ech *)
@@ -171,7 +171,7 @@ letfun generate_client_hello_message_ech (
       then (o_dom,o_cr,o_kex_ext,o_extra)
       else (i_dom,i_cr,i_kex_ext,i_extra)
     in
-    make_pre_shared_key_extension(idP,use_psk,c_dom,dom_psk,cr_psk,h_alg,a_alg,kex_ext_psk,ech_inner_or_grease,extra_psk,cur_log)
+    make_pre_shared_key_extension(idP,old_psk_data,use_psk,c_dom,dom_psk,cr_psk,h_alg,a_alg,kex_ext_psk,ech_inner_or_grease,extra_psk,cur_log)
   in
 
   (* The inner client hello *)
@@ -256,7 +256,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
 
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
     generate_client_hello_message_ech (
-      id_client,
+      id_client,zero,
       use_grease,use_psk,c_dom,i_dom,
       g,send_kex,h_alg,a_alg, (* For main configuration *)
       ech_conf,enc,context,1,(* For ech *)
@@ -266,7 +266,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   out(io,o_client_hello);
 
   (* For sanity checks*)
-  let (=h_alg,psk:preSharedKey,es:bitstring,safe:bool) = psk_data in
+  let (=h_alg,psk:preSharedKey,id:identityPsk,es:bitstring,safe:bool) = psk_data in
   event SanityClientCH_ECH(id_client,true,i_cr,o_cr,c_dom,o_dom,i_dom,psk,(zero,o_client_hello),(zero,i_client_hello));
 
   (* Message from server *)
@@ -292,7 +292,7 @@ ifdef(<!NOHRR!>,<!dnl
 
         let (o_client_hello':msg,i_client_hello':msg,i_cr':bytes32,o_cr':bytes32,i_kex_ext':keyShareExt,o_kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) =
           generate_client_hello_message_ech (
-            id_client,
+            id_client,psk_data,
             use_grease,use_psk,c_dom,i_dom,
             g,true,h_alg,a_alg, (* For main configuration *)
             ech_conf,enc,context,2, (* For ech *)
@@ -304,7 +304,7 @@ ifdef(<!NOHRR!>,<!dnl
         let i_cur_log2 = (i_cur_log,i_client_hello') in
 
         (* For sanity checks*)
-        let (=h_alg,psk':preSharedKey,es':bitstring,safe':bool) = psk_data' in
+        let (=h_alg,psk':preSharedKey,id':identityPsk,es':bitstring,safe':bool) = psk_data' in
         event SanityClientCH_ECH(id_client,false,i_cr',o_cr',c_dom,o_dom,i_dom,psk',o_cur_log2,i_cur_log2);
 
         (* Message from server *)

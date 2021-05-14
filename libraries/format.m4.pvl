@@ -45,6 +45,8 @@ fun PSK(internal_preSharedKey): preSharedKey [data].
 reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
 
 type identityPsk.
+fun b2idpsk(bitstring):identityPsk [typeConverter].
+
 fun mk_idpsk(domain,domain,hash_alg,internal_preSharedKey):identityPsk [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
   get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = s_dom [private].
