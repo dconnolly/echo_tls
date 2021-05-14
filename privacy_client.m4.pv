@@ -193,24 +193,32 @@ END *)
 ifdef(<!SCENARIO1!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 7
+RESULT Diff-equivalence is true.
+1013.876s (user 1006.575s + system 7.301s), max rss 4923704K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 8
+RESULT Diff-equivalence is true.
+187.263s (user 185.607s + system 1.656s), max rss 1613856K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 9
+RESULT Diff-equivalence is true.
+414.997s (user 412.449s + system 2.549s), max rss 2817428K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_client.m4.pv TAG: 10
+RESULT Diff-equivalence is true.
+10956.341s (user 10905.061s + system 51.280s), max rss 15005904K
 END *)
 !>)dnl
 !>)dnl
