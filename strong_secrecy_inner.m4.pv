@@ -114,6 +114,8 @@ END *)
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner.m4.pv TAG: 2
+RESULT Diff-equivalence is true.
+8213.890s (user 8195.073s + system 18.817s), max rss 11365608K
 END *)
 !>)dnl
 !>)dnl

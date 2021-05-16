@@ -170,6 +170,8 @@ END *)
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 3
+RESULT Diff-equivalence is true.
+53726.064s (user 53058.432s + system 667.632s), max rss 39986852K
 END *)
 !>)dnl
 !>)dnl
