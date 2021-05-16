@@ -220,7 +220,6 @@ END *)
 ifdef(<!SCENARIO4!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_client_ech.m4.pv TAG: 10
-xtime: killed by a signal
 END *)
 !>)dnl
 !>)dnl
