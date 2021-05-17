@@ -213,6 +213,13 @@ END *)
 ifdef(<!SCENARIO5!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./real_or_random_psk.m4.pv TAG: 11
+RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_14,s_dom'],choice[h_alg_15,h_alg'_1],choice[id_22,id'],choice[ipsk,ipsk'],choice[idP_6,idP'_2],choice[safe_6,safe'])) ==> h_alg_15 = id_hash(StrongHash,1) && h_alg'_1 = id_hash(StrongHash,1) && id_22 = mk_idpsk(c_dom_8,s_dom_14,h_alg_15,ipsk) && id' = mk_idpsk(c_dom',s_dom',h_alg'_1,ipsk') && safe_6 = safe' && idP_6 = idP'_2 is true.
+RESULT table(pre_shared_keys(choice[c_dom_8,c_dom1],choice[s_dom_14,s_dom1],choice[h_alg_15,h_alg1],choice[id_22,id1],choice[ipsk,ipsk1],idP_6,safe_6)) && table(pre_shared_keys(choice[c_dom_8,c_dom2],choice[s_dom_14,s_dom2],choice[h_alg_15,h_alg2],choice[id_22,id2],choice[ipsk,ipsk2],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_6 = safe' && idP_6 = idP'_2 is true.
+RESULT table(pre_shared_keys(choice[c_dom1,c_dom_8],choice[s_dom1,s_dom_14],choice[h_alg1,h_alg_15],choice[id1,id_22],choice[ipsk1,ipsk],idP_6,safe_6)) && table(pre_shared_keys(choice[c_dom2,c_dom_8],choice[s_dom2,s_dom_14],choice[h_alg2,h_alg_15],choice[id2,id_22],choice[ipsk2,ipsk],idP'_2,safe')) ==> c_dom1 = c_dom2 && s_dom1 = s_dom2 && h_alg1 = h_alg2 && id1 = id2 && ipsk1 = ipsk2 && safe_6 = safe' && idP_6 = idP'_2 is true.
+RESULT attacker(choice[ipsk,ipsk1]) && table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_14,s_dom'],choice[h_alg_15,h_alg'_1],choice[id_22,id'],choice[ipsk,ipsk2],idP_6,safe_6)) ==> ipsk1 = ipsk2 && safe_6 ≠ true is true.
+RESULT attacker(choice[ipsk1,ipsk]) && table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_14,s_dom'],choice[h_alg_15,h_alg'_1],choice[id_22,id'],choice[ipsk2,ipsk],idP_6,safe_6)) ==> ipsk1 = ipsk2 && safe_6 ≠ true is true.
+RESULT Diff-equivalence is true.
+18164.025s (user 18038.058s + system 125.967s), max rss 14462944K
 END *)
 !>)dnl
 !>)dnl
