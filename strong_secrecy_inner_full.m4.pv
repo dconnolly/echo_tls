@@ -175,6 +175,16 @@ END *)
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./strong_secrecy_inner_full.m4.pv TAG: 3
+RESULT table(pre_shared_keys(choice[c_dom_8,c_dom'],choice[s_dom_23,s_dom'],choice[h_alg_25,h_alg'_2],choice[id_52,id'_18],choice[ipsk,ipsk'],choice[idP_9,idP'_8])) ==> h_alg_25 = id_hash(StrongHash,1) && h_alg'_2 = id_hash(StrongHash,1) && id_52 = mk_idpsk(c_dom_8,s_dom_23,h_alg_25,ipsk) && id'_18 = mk_idpsk(c_dom',s_dom',h_alg'_2,ipsk') && c_dom_8 = c_dom' && s_dom_23 = s_dom' && idP_9 = idP'_8 is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && table(pre_shared_keys(c_dom1,s_dom1,h_alg1,choice[id1,id2],choice[ipsk1,ipsk2],idP_9)) ==> c_dom_8 = c_dom1 && s_dom_23 = s_dom1 && h_alg_25 = h_alg1 && id_52 = id1 && id'_18 = id2 && ipsk = ipsk1 && ipsk' = ipsk2 is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && table(pre_shared_keys(c_dom1,s_dom1,h_alg1,choice[id1,id2],choice[ipsk,ipsk2],idP1)) ==> idP_9 = idP1 is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk',ipsk],idP_9)) && table(pre_shared_keys(c_dom1,s_dom1,h_alg1,choice[id1,id2],choice[ipsk2,ipsk],idP1)) ==> idP_9 = idP1 is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && attacker(choice[ipsk,ipsk'']) ==> ipsk' = ipsk'' is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && attacker(choice[ipsk'',ipsk']) ==> ipsk = ipsk'' is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && event(Dishonest(ipsk)) ==> ipsk = ipsk' is true.
+RESULT table(pre_shared_keys(c_dom_8,s_dom_23,h_alg_25,choice[id_52,id'_18],choice[ipsk,ipsk'],idP_9)) && event(Dishonest(ipsk')) ==> ipsk = ipsk' is true.
+RESULT Diff-equivalence is true.
+54372.650s (user 53185.601s + system 1187.049s), max rss 26969272K
 END *)
 !>)dnl
 !>)dnl
