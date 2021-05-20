@@ -207,7 +207,6 @@ function runm4() {
 	header $full_file
 	cat $3.m4.pv >> $TMPDIR/tmp.m4
 	m4 -D SCENARIO$2 $TMPDIR/tmp.m4 > $full_file
-	rm -rf "$TMPDIR"
 	run_file $full_file "$1-$2" $4
 }
 
@@ -217,7 +216,6 @@ function runm4_nohrr() {
 	header $full_file
 	cat $3.m4.pv >> $TMPDIR/tmp.m4
 	m4 -D SCENARIO$2 -D NOHRR $TMPDIR/tmp.m4 > $full_file
-	rm -rf "$TMPDIR"
 	run_file $full_file "$1-$2" $4
 }
 
@@ -226,7 +224,6 @@ function runm4_main() {
 	header $full_file
 	cat $2.m4.pv >> $TMPDIR/tmp.m4
 	cat $TMPDIR/tmp.m4 > $full_file
-	rm -rf "$TMPDIR"
 	run_file $full_file "$1" $3
 }
 
@@ -318,3 +315,5 @@ case .$1 in
 		rm -f generated_models/*.pv
 		;;
 esac
+
+rm -rf "$TMPDIR"
