@@ -156,12 +156,16 @@ END *)
 ifdef(<!SCENARIO2!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 2
+RESULT Diff-equivalence is true.
+18140.639s (user 17957.752s + system 182.887s), max rss 17030852K
 END *)
 !>)dnl
 !>)dnl
 ifdef(<!SCENARIO3!>,<!
 ifdef(<!NOHRR!>,<!!>,<!
 (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 3
+RESULT Diff-equivalence is true.
+68709.676s (user 67670.320s + system 1039.356s), max rss 39337724K
 END *)
 !>)dnl
 !>)dnl
@@ -218,6 +222,8 @@ END *)
 ifdef(<!SCENARIO5!>,<!
 ifdef(<!NOHRR!>,<!
 (* EXPECTPV FILENAME: ./privacy_backend.m4.pv TAG: 11
+RESULT Diff-equivalence is true.
+215224.809s (user 212004.915s + system 3219.893s), max rss 51935608K
 END *)
 !>)dnl
 !>)dnl
