@@ -64,7 +64,7 @@ function generate_proof_helper() {
 }
 
 function generate_main_processes() {
-	generate_file_name "main_processes" "ROR CLIENTFULL DATA BACKENDFULL" "$1"
+	generate_file_name "main_processes" "ROR CLIENTFULL DATA BACKENDFULL TLSONLY" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -83,7 +83,7 @@ function generate_libraries() {
 		backend_nohrr)
 			option="NOHRR EQUIV BACKEND"
 			;;
-		backend)
+		backend|main_backend)
 			option="EQUIV BACKEND"
 			;;
 		backend_full_nohrr)
@@ -95,7 +95,7 @@ function generate_libraries() {
 		inner_nohrr)
 			option="NOHRR EQUIV INNER"
 			;;
-		inner)
+		inner|main_inner)
 			option="EQUIV INNER"
 			;;
 		inner_full_nohrr)
@@ -107,7 +107,7 @@ function generate_libraries() {
 		client_nohrr|client_ech_nohrr)
 			option="NOHRR EQUIV CLIENT"
 			;;
-		client|client_ech)
+		client|client_ech|main_client_ech)
 			option="EQUIV CLIENT"
 			;;
 		client_full_nohrr|client_ech_full_nohrr|unlinkability_nohrr)
@@ -121,6 +121,12 @@ function generate_libraries() {
 			;;
 		ror)
 			option="EQUIV ROR"
+			;;
+		main_client)
+			option="EQUIV CLIENTFULL TLSONLY"
+			;;
+		main_ror)
+			option="EQUIV ROR TLSONLY"
 			;;
 	esac
 
@@ -201,6 +207,7 @@ function runm4() {
 	header $full_file
 	cat $3.m4.pv >> $TMPDIR/tmp.m4
 	m4 -D SCENARIO$2 $TMPDIR/tmp.m4 > $full_file
+	rm -rf "$TMPDIR"
 	run_file $full_file "$1-$2" $4
 }
 
@@ -210,7 +217,17 @@ function runm4_nohrr() {
 	header $full_file
 	cat $3.m4.pv >> $TMPDIR/tmp.m4
 	m4 -D SCENARIO$2 -D NOHRR $TMPDIR/tmp.m4 > $full_file
+	rm -rf "$TMPDIR"
 	run_file $full_file "$1-$2" $4
+}
+
+function runm4_main() {
+	full_file="generated_models/$2.pv"
+	header $full_file
+	cat $2.m4.pv >> $TMPDIR/tmp.m4
+	cat $TMPDIR/tmp.m4 > $full_file
+	rm -rf "$TMPDIR"
+	run_file $full_file "$1" $3
 }
 
 case .$1 in
@@ -280,11 +297,24 @@ case .$1 in
 	.ror_nohrr)
 		runm4_nohrr $1 $2 "real_or_random_psk" $3
 		;;
+	.main_client)
+		runm4_main $1 "main_privacy_client_TLS_only" $2
+		;;
+	.main_ror)
+		runm4_main $1 "main_real_or_random_psk_TLS_only" $2
+		;;
+	.main_backend)
+		runm4_main $1 "main_privacy_backend_ECH_only" $2
+		;;
+	.main_inner)
+		runm4_main $1 "main_strong_secrecy_inner_ECH_only" $2
+		;;
+	.main_client_ech)
+		runm4_main $1 "main_privacy_client_ech_ECH_only" $2
+		;;
 	.clean)
 		echo Removing all generated files
 		rm -f generated_libraries/*.pvl
 		rm -f generated_models/*.pv
 		;;
 esac
-
-rm -rf "$TMPDIR"

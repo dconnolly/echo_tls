@@ -105,7 +105,9 @@ let main_process(tls_h,ech_h:hash_alg,tls_a,ech_a:aead_alg,tls_g,ech_g:group) =
   (* The key generation *)
   | gen_honest_long_term_keys ()
   | gen_honest_pre_shared_keys (tls_h)
+ifdef(<!TLSONLY!>,<!!>,<!dnl
   | gen_ech_config(ech_g,ech_h,ech_a)
+!>)dnl
 ifdef(<!DATA!>,<!dnl
   (* The application data *)
   | application_data

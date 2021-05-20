@@ -1,0 +1,237 @@
+set removeEventsForLemma = true.
+
+(* Restriction for equivalence *)
+
+restriction
+  dom1,dom1',dom2,dom2':domain,idP,idP':idProc;
+  event(Selected_lgt(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&  (* On the left side *)
+    dom1' = dom2' && (* On the right side *)
+    (
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 = dom1' && idP = idP') || (dom1 <> dom1')
+    )
+.
+
+fun idClientDiff(seed):idProc [private].
+
+restriction
+  dom1,dom1',dom2,dom2':domain, idP,idP':idProc, s:seed, safe,safe':bool;
+  event(Selected_psk(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'],diff[safe,safe'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&
+    dom1' = dom2' &&
+    (
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 <> dom1') ||
+      (dom1 = dom1' &&
+        (
+          (* We match an inserted key at idClientDiff with an uncompromised key, otherwise we use
+             the key that was generated at the same time. Note that the mathing to an uncompromised
+             key is necessary as we prove in the lemma below that all keys inserted at idClientDiff
+             are uncompromised.
+
+             Note that the conditions ipsk' = uc_psk(s') and ipsk = uc_psk(s) request that we match
+             the key to a freshly generated uncompromised key rather than just an uncompromised key
+             (for instance, an uncompromised key generated at the end of a TLS session).
+             However, since we proved that the uncompromised key generated at the end of a TLS session
+             satisfy the real_or_random property, this is not a restriction.
+
+             The conditions ipsk' = uc_psk(s') and ipsk = uc_psk(s) could be weakened to allow matching
+             with a psk generated at the end of a TLS session by using a similar encoding as in
+             real_or_random.m4.pv, that is adding a boolean "safe" in the table pre_shared_keys that
+             that is set to true when the key is either freshly generated or
+          *)
+          (idP = idClientDiff(s) && safe' = true) ||
+          (idP' = idClientDiff(s) && safe = true) ||
+          idP = idP'
+        )
+      )
+    )
+.
+
+let swap_long_term_keys =
+  !
+  get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
+  get long_term_keys(dom2,sk2,pk2,cert2,idP2) in
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2],diff[idP1,idP2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1],diff[idP2,idP1])
+.
+
+let swap_pre_shared_keys =
+  !
+  get pre_shared_keys(c_dom1,s_dom,h_alg1,id1,psk1,idP1,safe1) in
+  event Same(id2b(idP1));
+  get pre_shared_keys(c_dom2,=s_dom,h_alg2,id2,psk2,idP2,safe2) in
+  event Same(id2b(idP2));
+  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2],diff[idP1,idP2],diff[safe1,safe2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
+.
+
+(* We request for the matching that when the requested server is the same on both side,
+  and that we already used a psk "ipskL" and "ipskR" respectively to match them then
+  if a new session want to use the psk "ipskL" on the left (resp. "ipskR" on the right),
+  we should match it again with the psk "ipskR" on the right (resp. "ipskL" on the left).
+
+  Otherwise the attacker would be able to distinguish two session of a client using
+  the same psk vs two sessions of the same client using different psk just by looking
+  at their ID in the client hello message.
+
+  Note that we do not prevent resuing multiple time the same psk. We only build the equivalence
+  relation to ensure that if the same psk was used multiple times on one side then
+  we match it by another psk also used multiple times.
+*)
+
+restriction dom:domain,idP,idP',idP'':idProc,safe,safe',safe'':bool;
+  event(Selected_psk(dom,dom,diff[idP,idP'],diff[safe,safe'])) &&
+  event(Selected_psk(dom,dom,diff[idP,idP''],diff[safe,safe''])) ==>
+  idP' = idP'';
+
+  event(Selected_psk(dom,dom,diff[idP',idP],diff[safe',safe])) &&
+  event(Selected_psk(dom,dom,diff[idP'',idP],diff[safe'',safe])) ==>
+  idP' = idP''.
+
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
+  are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
+  or  *)
+restriction
+  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
+  (* One time used property *)
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
+  event(Selected_otu_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk],diff[safe1,safe])) &&
+  event(Selected_otu_psk(idP,diff[ipsk2,ipsk],diff[safe2,safe])) ==> idP = idClientDiff(s);
+  (* Ucompromised property *)
+  event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
+.
+
+(* Lemma to help the proof *)
+
+lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,s:seed,
+  c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom3,s_dom3',s_dom4,s_dom4':domain,
+  h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:internal_preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
+  safe,safe',safe1,safe2:bool;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
+    h_alg = id_hash(StrongHash,1) &&
+    h_alg' = id_hash(StrongHash,1) &&
+    id = mk_idpsk(c_dom,s_dom,h_alg,ipsk) &&
+    id' = mk_idpsk(c_dom',s_dom',h_alg',ipsk') &&
+    s_dom = s_dom';
+
+  (* Same idP implies same ipsk *)
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[ipsk1,ipsk2],diff[idP,idP2],diff[safe1,safe2])) ==>
+  c_dom = c_dom1 && s_dom = s_dom1 && h_alg = h_alg1 && id = id1 && ipsk = ipsk1 && safe = safe1;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[ipsk1,ipsk2],diff[idP1,idP'],diff[safe1,safe2])) ==>
+  c_dom' = c_dom2 && s_dom' = s_dom2 && h_alg' = h_alg2 && id' = id2 && ipsk' = ipsk2 && safe' = safe2;
+
+  (* Same ipsk implies same idP *)
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[ipsk,ipsk2],diff[idP1,idP2],diff[safe1,safe2])) ==>
+  idP = idP1;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom1,c_dom2],diff[s_dom1,s_dom2],diff[h_alg1,h_alg2],diff[id1,id2],diff[ipsk1,ipsk'],diff[idP1,idP2],diff[safe1,safe2])) ==>
+  idP' = idP2;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  attacker(diff[ipsk,ipsk'']) ==>  safe <> true;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  attacker(diff[ipsk'',ipsk']) ==>  safe' <> true;
+
+  (* If same idP and one ipsk deducible then both are deducible *)
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[ipsk,ipsk'']) ==>  ipsk' = ipsk'' && safe <> true && safe' <> true;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[ipsk'',ipsk']) ==>  ipsk = ipsk'' && safe <> true && safe' <> true;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) ==> safe = true;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) ==> safe' = true;
+
+  (* Insertion with id_client_diff cannot be be deducible *)
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) &&
+  attacker(diff[ipsk,ipsk'']);
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) &&
+  attacker(diff[ipsk'',ipsk'])
+  [induction]
+.
+
+(* Some public free domains *)
+
+free HonestServer:domain.
+
+let gen_dishonest_long_term_keys =
+  !
+  in(io,a:domain);
+  if a <> HonestServer then
+  event Same(d2b(a));
+  new sk_d:privkey;
+  out(io,(sk_d,valid_cert(a,pk(sk_d))))
+.
+
+let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  new idP:idProc;
+  event Same((c_dom,s_dom));
+  new psk_d:internal_preSharedKey;
+  let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  out(io,psk_d)
+.
+
+(* For privacy of client, we require that certificate of the server with whom
+   ClientA/ClientB will talk to should not be compromised. Otherwise we
+   find an attack where the attacker plays the role of the server
+*)
+
+process
+  (* The group and cipher suite between TLS and Ech should be incompatible *)
+  let tls_h = id_hash(StrongHash,1) in
+  let tls_a = id_aead(StrongAE,1) in
+  let tls_g = id_g(StrongDH,1) in
+  let ech_h = id_hash(StrongHash,2) in
+  let ech_a = id_aead(StrongAE,2) in
+  let ech_g = id_g(StrongDH,2) in
+  (
+      main_process(tls_h,ech_h,tls_a,ech_a,tls_g,ech_g)
+    | swap_pre_shared_keys
+    | swap_long_term_keys
+    | gen_dishonest_long_term_keys
+    | gen_dishonest_pre_shared_keys(tls_h)
+    | (
+      !
+      new id_client:idProc;
+      in(io,use_psk:bool);
+      in(io,send_kex:bool);
+      in(io,(c_dom:domain,s_dom:domain));
+      event Same((use_psk,send_kex,c_dom,s_dom));
+      standard_client(id_client,use_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+    ) | (
+      !
+      in(io,use_psk:bool) [precise];
+      in(io,cert_req:bool) [precise];
+      in(io,s_dom:domain) [precise];
+      event Same((use_psk,cert_req,s_dom));
+      server(false,use_psk,cert_req,s_dom,tls_g,tls_h,tls_a,empty_extra_ext)
+    ) | (
+      !
+      in(io,(clientA:domain,clientB:domain)) [precise];
+      new s:seed;
+      in(io,use_psk:bool) [precise];
+      in(io,send_kex:bool) [precise];
+      event Same((use_psk,send_kex,clientA,clientB));
+      standard_client(idClientDiff(s),use_psk,send_kex,diff[clientA,clientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
+    )
+  )
+
+(* EXPECTPV FILENAME: ./main_privacy_client_TLS_only.m4.pv TAG: 1
+END *)
