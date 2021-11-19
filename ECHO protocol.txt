@@ -3,3 +3,7 @@ Link for ECHO protocol
 ECHO : https://tools.ietf.org/html/draft-ietf-tls-esni-10
 TLS 1.3 : https://tools.ietf.org/html/rfc8446
 Blog : https://blog.cloudflare.com/encrypted-client-hello/
+
+
+RFC ECHO : https://tlswg.org/draft-ietf-tls-esni/draft-ietf-tls-esni.html#name-clienthello-malleability-mi
+HRR with ECHO : https://tlswg.org/draft-ietf-tls-esni/draft-ietf-tls-esni.html#name-sending-helloretryrequest-2

@@ -180,13 +180,25 @@ letfun hkdf_expand_label(a:hash_alg,k:bitstring,l:label,h:bitstring) = prf(a,k,(
 (* We consider here the HPKE without pre shared key so the functions are
    simplified to remove all references to pre shared key. *)
 
-type hpkeMode.
-const R,S:hpkeMode.
+(* Cryptographic dependencies (Section 4 of RFC) *)
+
+letfun hpke_encap(g:group,pkR:element) = dh_encap(g,pkR,e2b(pkR)).
+letfun hpke_decap(g:group,enc:bitstring,skR:bitstring) = dh_decap(g,enc,skR).
+letfun hpke_label_extract(h_alg:hash_alg,salt:bitstring,label:label,ikm:bitstring) = hkdf_extract(h_alg,salt,(label,ikm)).
+letfun hpke_label_expand(h_alg:hash_alg,prk:bitstring,label:label,info:bitstring) = hkdf_expand_label(h_alg,k,l,info).
+  (* Compare to the RFC, we removed the argument of the size. *)
+
+(* Hybrid Public Key Encryption *)
+
+type hpkeRole.
+const R,S:hpkeRole.
 
 type hpkeContext.
-fun hpke_context(hpkeMode,aead_key,bitstring):hpkeContext [data].
+fun hpke_context(hpkeRole,aead_key,bitstring):hpkeContext [data].
 
 const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
+
+(* Encryption and decryption *)
 
 letfun kpke_seal(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,pt:bitstring) =
   let hpke_context(=S,key,base_nonce) = context in
@@ -196,22 +208,23 @@ letfun hpke_open(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,ct:bitstring
   let hpke_context(=R,key,base_nonce) = context in
   aead_dec(a,key,(base_nonce,n),aad,ct).
 
+(* Key schedule *)
 
-letfun hpke_key_schedule(h:hash_alg,m:hpkeMode,shared_secret:element,info:bitstring) =
-  let info_hash = hkdf_extract(h,zero,(hpke_info_hash,info)) in
-  let xsecret = hkdf_extract(h,e2b(shared_secret),(hpke_secret,zero)) in
+letfun hpke_key_schedule(h:hash_alg,r:hpkeRole,shared_secret:element,info:bitstring) =
+  let info_hash = hpke_label_extract(h,zero,hpke_info_hash,info) in
+  let xsecret = hpke_label_extract(h,e2b(shared_secret),hpke_secret,zero) in
 
-  let key = b2ae(hkdf_expand_label(h,xsecret,hpke_key,info_hash)) in
-  let base_nonce = hkdf_expand_label(h,xsecret,hpke_base_nonce,info_hash) in
+  let key = b2ae(hpke_label_expand(h,xsecret,hpke_key,info_hash)) in
+  let base_nonce = hpke_label_expand(h,xsecret,hpke_base_nonce,info_hash) in
 
-  hpke_context(m,key,base_nonce).
+  hpke_context(r,key,base_nonce).
 
 (* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
 
 letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
-  let (shared_secret:element,enc:element) = dh_encap(g,pkR,e2b(pkR)) in
+  let (shared_secret:element,enc:element) = hpke_encap(g,pkR) in
   (enc,hpke_key_schedule(h,S,shared_secret,info)).
 
 letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:bitstring,info:bitstring) =
-  let shared_secret:element = dh_decap(g,enc,skR) in
+  let shared_secret = hpke_decap(g,enc,skR) in
   hpke_key_schedule(h,R,shared_secret,info).

@@ -39,7 +39,7 @@ function generate_misc() {
 }
 
 function generate_client_ech() {
-	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL CLIENTFULL" "$1"
+	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL CLIENTFULL ATTACK_HRR_HIJACK ATTACK_REACTION ATTACK_TEST" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -49,7 +49,7 @@ function generate_client() {
 }
 
 function generate_server() {
-	generate_file_name "server" "NOHRR ROR INNER SANITY DATA" "$1"
+	generate_file_name "server" "NOHRR ROR INNER SANITY DATA ATTACK_HRR_HIJACK ATTACK_TEST" "$1"
 	lib="$lib -lib $tmp_name"
 }
 
@@ -79,6 +79,15 @@ function generate_libraries() {
 			;;
 		sanity)
 			option="SANITY"
+			;;
+		attack_hrr_hijack)
+			option="EQUIV BACKEND ATTACK_HRR_HIJACK"
+			;;
+		attack_reaction)
+			option="NOHRR EQUIV BACKEND ATTACK_REACTION"
+			;;
+		attack_test)
+			option="NOHRR EQUIV BACKEND ATTACK_TEST"
 			;;
 		backend_nohrr)
 			option="NOHRR EQUIV BACKEND"
@@ -236,6 +245,15 @@ case .$1 in
 		;;
 	.backend)
 		runm4 $1 $2 "privacy_backend" $3
+		;;
+	.attack_hrr_hijack)
+		runm4 $1 2 "privacy_backend_attack_hrr_hijack" $2
+		;;
+	.attack_reaction)
+		runm4_nohrr $1 2 "privacy_backend_attack_reaction" $2
+		;;
+	.attack_test)
+		runm4_nohrr $1 2 "privacy_backend_attack_test" $2
 		;;
 	.backend_nohrr)
 		runm4_nohrr $1 $2 "privacy_backend" $3

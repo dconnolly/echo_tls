@@ -15,7 +15,11 @@ letfun make_key_share_extension_ech(g:group,send_key_share:bool) =
     else (DHE_group(g),DHE_group(g))
   in
 
+ifdef(<!ATTACK_REACTION!>,<!dnl
+  (client_kex_ext(i_kex),client_kex_ext(i_kex),(i_x,i_x,g,send_key_share))
+!>,<!dnl
   (client_kex_ext(i_kex),client_kex_ext(o_kex),(i_x,o_x,g,send_key_share))
+!>)dnl
 .
 
 (* Authenticating the ClientHelloOuter. Section 5.1 *)
@@ -153,7 +157,11 @@ letfun generate_client_hello_message_ech (
 
   (* Generate the random for the inner and outer client hello *)
   let i_cr = gen_B32_random () in
+ifdef(<!ATTACK_REACTION!>,<!dnl
+  let o_cr = i_cr in
+!>,<!dnl
   let o_cr = gen_B32_random () in
+!>)dnl
 
   (* Generate the ech_extension for the inner when grease <> true and outer when grease = true *)
   let ech_inner_or_grease =
@@ -200,11 +208,15 @@ letfun generate_client_hello_message_ech (
 
     let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello1) in
 
+ifdef(<!ATTACK_TEST!>,<!dnl
+    let payload = kpke_seal(a_alg_ech,context,n,zero,m2b(i_client_hello)) in
+!>,<!dnl
     let payload = kpke_seal(a_alg_ech,context,n,aad2b(client_hello_AAD),m2b(i_client_hello)) in
+!>)dnl
 
     let ech_ext = client_ECH(h_alg_ech,a_alg_ech,config_id,enc,payload) in
-
     let o_offer = nego(TLS13,h_alg,a_alg,o_kex_ext,SNI(o_dom),ech_ext,o_psk_ext,o_extra) in
+
     (CH(o_cr,o_offer),i_client_hello,i_cr,o_cr,i_kex_ext,o_kex_ext,kex_data,psk_data)
   )
 .
@@ -213,8 +225,8 @@ letfun generate_client_hello_message_ech (
 ifdef(<!ROR!>,<!dnl
 let echo_client(comp_psk:bool,use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   g:group,h_alg:hash_alg,a_alg:aead_alg, (* For main configuration *)
-  ech_conf:echConfig,
-  i_extra,o_extra:extraExt
+  ech_conf:echConfig, (* The ECH configuration used by the client *)
+  i_extra,o_extra:extraExt (* Additional fields for inner/outer *)
   ) =
   new id_client[]:idProc;
 !>,<!dnl
@@ -254,6 +266,7 @@ let echo_client(use_grease:bool,use_psk:bool,send_kex:bool,c_dom,i_dom:domain,
   let ech_config(config_id,g_ech,pkR,o_dom,h_alg_ech,a_alg_ech) = ech_conf in
   let (enc:element,context:hpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
 
+  (* May remove i_kex_ext and o_kex_ext *)
   let (o_client_hello:msg,i_client_hello:msg,i_cr:bytes32,o_cr:bytes32,i_kex_ext:keyShareExt,o_kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
     generate_client_hello_message_ech (
       id_client,zero,
@@ -290,12 +303,19 @@ ifdef(<!NOHRR!>,<!dnl
         in
         event SanityClientHRR(id_client);
 
+ifdef(<!ATTACK_HRR_HIJACK!>,<!dnl
+        let (enc':element,context':hpkeContext) = hpke_setup_base_S(h_alg_ech,g_ech,pkR,(tls_ech_str,ech_conf)) in
+!>)dnl
         let (o_client_hello':msg,i_client_hello':msg,i_cr':bytes32,o_cr':bytes32,i_kex_ext':keyShareExt,o_kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) =
           generate_client_hello_message_ech (
             id_client,psk_data,
             use_grease,use_psk,c_dom,i_dom,
             g,true,h_alg,a_alg, (* For main configuration *)
+ifdef(<!ATTACK_HRR_HIJACK!>,<!dnl
+            ech_conf,enc',context',1, (* For ech *)
+!>,<!dnl
             ech_conf,enc,context,2, (* For ech *)
+!>)dnl
             i_extra,o_extra, cur_log_for_psk
             )
         in

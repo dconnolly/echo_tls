@@ -130,7 +130,12 @@ ifdef(<!INNERFULL!>,<!dnl
   let client_finished_msg = FIN(client_hash_msg) in
 
   let cur_log' = (cur_log,client_finished_msg) in
+
+  (* The resumption_master_secret in Key schedule *)
   let rms = kdf_psk(h_alg,master_secret,cur_log') in
+
+  (* TO DO : Send a message from server to client with the new ticket (currently
+  no message is sent and the client magically knows it thanks to the table.) *)
 
   let enc_client_finished_msg = aead_enc(a_alg,chk,zero,zero,m2b(client_finished_msg)) in
   out(io,enc_client_finished_msg);
@@ -150,14 +155,18 @@ ifdef(<!BACKENDFULL!>,<!dnl
     (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
     (psk = NoPSK || safe_psk)
   in
-  let new_psk = b2ipsk(rms) in
-  let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,id_client,new_safe)
+  new ticket_nonce[];
+  let new_psk = hkdf_expand_label(a_alg,rms,tls13_resumption,ticket) in
+  let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  (* OLD : let new_psk = b2ipsk(rms) in *)
+  insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
 !>)dnl
 ifdef(<!INNERFULL!>,<!dnl
   ;
-  let id = mk_idpsk(c_dom,s_dom,h_alg,b2ipsk(rms)) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,b2ipsk(rms),id_client)
+  new ticket_nonce[];
+  let new_psk = hkdf_expand_label(a_alg,rms,tls13_resumption,ticket) in
+  let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,b2ipsk(rms),id_client)
 !>)dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   ;
@@ -165,21 +174,24 @@ ifdef(<!CLIENTFULL!>,<!dnl
     (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
     (psk = NoPSK || safe_psk)
   in
-  let new_psk = b2ipsk(rms) in
-  let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,id_client,new_safe)
+  new ticket_nonce[];
+  let new_psk = hkdf_expand_label(a_alg,rms,tls13_resumption,ticket) in
+  let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
 !>)dnl
 ifdef(<!ROR!>,<!dnl
   ;
   let (new_psk:internal_preSharedKey,new_safe:bool) =
+    new ticket_nonce[];
+    let new_psk' = hkdf_expand_label(a_alg,rms,tls13_resumption,ticket) in
     if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
     if psk = NoPSK || safe_psk then
       new rand_ipsk[]:internal_preSharedKey;
-      (diff[rand_ipsk,b2ipsk(rms)],not(comp_psk))
-    else (b2ipsk(rms),false)
-    else (b2ipsk(rms),false)
+      (diff[rand_ipsk,new_psk'],not(comp_psk))
+    else (new_psk',false)
+    else (new_psk',false)
   in
-  let id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
+  let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,new_psk,id_client,new_safe);
   if comp_psk then
   out(io,new_psk)
