@@ -183,9 +183,9 @@ letfun hkdf_expand_label(a:hash_alg,k:bitstring,l:label,h:bitstring) = prf(a,k,(
 (* Cryptographic dependencies (Section 4 of RFC) *)
 
 letfun hpke_encap(g:group,pkR:element) = dh_encap(g,pkR,e2b(pkR)).
-letfun hpke_decap(g:group,enc:bitstring,skR:bitstring) = dh_decap(g,enc,skR).
+letfun hpke_decap(g:group,enc:element,skR:bitstring) = dh_decap(g,enc,skR).
 letfun hpke_label_extract(h_alg:hash_alg,salt:bitstring,label:label,ikm:bitstring) = hkdf_extract(h_alg,salt,(label,ikm)).
-letfun hpke_label_expand(h_alg:hash_alg,prk:bitstring,label:label,info:bitstring) = hkdf_expand_label(h_alg,k,l,info).
+letfun hpke_label_expand(h_alg:hash_alg,prk:bitstring,label:label,info:bitstring) = hkdf_expand_label(h_alg,prk,label,info).
   (* Compare to the RFC, we removed the argument of the size. *)
 
 (* Hybrid Public Key Encryption *)

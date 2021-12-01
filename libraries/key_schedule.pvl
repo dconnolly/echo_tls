@@ -11,14 +11,15 @@ const
   tls13_key, tls13_iv,
   tls13_early_exporter_master_secret,
   tls13_exporter_master_secret,
+  tls13_resumption,
   tls13_resumption_master_secret,
   tls13_resumption_psk_binder_key,
   tls13_finished,tls13_derived,tls13_esni_key,tls13_esni_iv: label.
 
 (** Key Schedule. TLS 1.3 RFC Section 7.1 *)
 
-letfun derive_secret(a:hash_alg,k:bitstring,l:label,m:bitstring) =
-  hkdf_expand_label(a,k,l,hash(a,m)).
+letfun derive_secret(h:hash_alg,k:bitstring,l:label,m:bitstring) =
+  hkdf_expand_label(h,k,l,hash(h,m)).
 
 (* Function to generate "Early Secret" + binder_key *)
 letfun kdf_es(h:hash_alg,psk:preSharedKey) =

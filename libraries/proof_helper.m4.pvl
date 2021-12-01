@@ -516,14 +516,14 @@ not t:bitstring,i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_a
 not x:element,s,s':seed; attacker(diff[x,dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s))))]).
 not x:element,s,s':seed; attacker(diff[dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))),x]).
 
-not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
+not x:bitstring, s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))) in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
   let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
   attacker(diff[x,key])
 .
-not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
+not x:bitstring, s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))) in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
@@ -531,14 +531,14 @@ not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
   attacker(diff[key,x])
 .
 
-not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
+not x:bitstring, s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_f(s') in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
   let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
   attacker(diff[x,key])
 .
-not x:bitstring, s,s':seed, info:bitstring, m:hpkeMode;
+not x:bitstring, s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_f(s') in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
@@ -805,7 +805,7 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
 not s,s':seed; attacker(dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s))))).
 
-not s,s':seed, info:bitstring, m:hpkeMode;
+not s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))) in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
@@ -813,7 +813,7 @@ not s,s':seed, info:bitstring, m:hpkeMode;
   attacker(key)
 .
 
-not s,s':seed, info:bitstring, m:hpkeMode;
+not s,s':seed, info:bitstring, m:hpkeRole;
   let shared_secret = dh_f(s') in
   let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
   let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
