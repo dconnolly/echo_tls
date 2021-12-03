@@ -26,7 +26,7 @@ fun crop_into_bytes8(bitstring):bytes8.
 (********************************************************)
 
 (* Aead algorithm. Abstracted into whether we consider strong or weak security
-    guarantees. We also consider multiple algorithms.  *)
+  guarantees. We also consider multiple algorithms.  *)
 
 type aead_strengh.
 const WeakAE, StrongAE: aead_strengh [data].
@@ -72,11 +72,17 @@ fun discrete_log(element): bitstring
 reduc forall i:nat, x:bitstring;
   discrete_log(dh_pub(id_g(WeakDH,i),x)) = x.
 
+(* Generation of fresh nonce using a private function. Instead of using the
+  classical syntax
+    new k:bitstring; ...
+  we use a private function and a seed s as:
+    let k = new s:seed; dh_k(s) in ...
+  This is equivalent but it allows us to more easily talk about keys when
+  writing some proof helpers (see proof_helper.m4.pvl) and lemmas, axioms and
+  restrictions. *)
 fun dh_k(seed):bitstring [private].
 fun dh_xy(seed,bitstring):element [private].
 fun dh_f(seed):element [private].
-
-reduc forall s:seed; is_uncompromised_DH_key(dh_k(s)) = true [private].
 
 letfun dh_keygen(g:group) =
   new s[]:seed;
@@ -143,16 +149,29 @@ otherwise forall i:nat, x:bitstring, k:mac_key;
 type privkey.
 type pubkey.
 
-(* Uncompromised private key: To identify key that are honestly generated
-   and that were not directly given to the attacker, we create these keys
-   with [uc_privkey] instead of [new sk:privkey]. These way, we can mention
-   these keys in lemmas, axioms and restrictions. *)
+(* uc_privkey is a private function used when generating uncompromised certificate
+  long term keys. Instead of using the classic syntax
+    new sk:privkey; ...
+  we generate a seed and use the private function uc_privkey.
+    let sk = new s:seed; uc_privkey(s) in ...
+  This is equivalent but it allows us to more easily talk about keys when
+  writing some proof helpers (see proof_helper.m4.pvl) and lemmas, axioms and
+  restrictions. *)
 fun uc_privkey(seed):privkey [private].
 
 const NoPubKey: pubkey.
 fun pk(privkey): pubkey.
 
-reduc forall s:seed; uncompromised_privkey(pk(uc_privkey(s))) = true [private].
+(* uncompromised_privkey(pk) returns true iff the public key pk corresponds to
+  a public key of an uncompromised private key. This is used to determine when
+  a pre shared key is compromised or not. Note that we do not assume that
+  uncompromised private key are not deducible by the attacker. We will prove that
+  it is the case in the protocol however. *)
+fun uncompromised_privkey(pubkey):bool
+reduc
+  forall s:seed; uncompromised_privkey(pk(uc_privkey(s))) = true;
+  forall x:pubkey; uncompromised_privkey(x) = false
+  [private].
 
 (* RSA Signatures, typically the argument is a hash over some data *)
 
@@ -179,7 +198,7 @@ letfun hkdf_expand_label(a:hash_alg,k:bitstring,l:label,h:bitstring) = prf(a,k,(
 (* We consider here the HPKE without pre shared key so the functions are
    simplified to remove all references to pre shared key. *)
 
-(* Cryptographic dependencies (Section 4 of RFC) *)
+(* Cryptographic dependencies (Section 4 of HPKE RFC) *)
 
 letfun hpke_encap(g:group,pkR:element) = dh_encap(g,pkR,e2b(pkR)).
 letfun hpke_decap(g:group,enc:element,skR:bitstring) = dh_decap(g,enc,skR).
@@ -187,7 +206,7 @@ letfun hpke_label_extract(h_alg:hash_alg,salt:bitstring,label:label,ikm:bitstrin
 letfun hpke_label_expand(h_alg:hash_alg,prk:bitstring,label:label,info:bitstring) = hkdf_expand_label(h_alg,prk,label,info).
   (* Compare to the RFC, we removed the argument of the size. *)
 
-(* Hybrid Public Key Encryption *)
+(* Hybrid Public Key Encryption (Section 5 of HPKE RFC) *)
 
 type hpkeRole.
 const R,S:hpkeRole.
@@ -195,9 +214,15 @@ const R,S:hpkeRole.
 type hpkeContext.
 fun hpke_context(hpkeRole,aead_key,bitstring):hpkeContext [data].
 
-const hpke_info_hash,hpke_secret, hpke_key, hpke_base_nonce, hpke_exp: label.
+const
+  hpke_info_hash,   (* Constant "info_hash" in HPKE RFC *)
+  hpke_secret,      (* Constant "secret" in HPKE RFC *)
+  hpke_key,         (* Constant "key" in HPKE RFC *)
+  hpke_base_nonce   (* Constant "base_nonce" in HPKE RFC *)
+  :label
+.
 
-(* Encryption and decryption *)
+(* Encryption and decryption (Section 5.2 of HPKE RFC) *)
 
 letfun kpke_seal(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,pt:bitstring) =
   let hpke_context(=S,key,base_nonce) = context in
@@ -207,7 +232,7 @@ letfun hpke_open(a:aead_alg,context:hpkeContext,n:nat,aad:bitstring,ct:bitstring
   let hpke_context(=R,key,base_nonce) = context in
   aead_dec(a,key,(base_nonce,n),aad,ct).
 
-(* Key schedule *)
+(* Key schedule (Section 5.1 of HPKE RFC) *)
 
 letfun hpke_key_schedule(h:hash_alg,r:hpkeRole,shared_secret:element,info:bitstring) =
   let info_hash = hpke_label_extract(h,zero,hpke_info_hash,info) in
@@ -218,7 +243,7 @@ letfun hpke_key_schedule(h:hash_alg,r:hpkeRole,shared_secret:element,info:bitstr
 
   hpke_context(r,key,base_nonce).
 
-(* SetupBaseS and SetupBaseR (5.1.1 in RFC HPKE )*)
+(* SetupBaseS and SetupBaseR (5.1.1 of RFC HPKE )*)
 
 letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
   let (shared_secret:element,enc:element) = hpke_encap(g,pkR) in
