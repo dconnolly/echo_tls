@@ -1,5 +1,3 @@
-changequote(<!,!>)dnl
-
 channel io. (* The public channel *)
 
 (* The type idProc represents process identifiers. Terms of this type are not
@@ -57,15 +55,18 @@ type preSharedKey.
 fun uc_psk(seed):preSharedKey [private].
 const NoPsk: preSharedKey.
 
+
+
 fun b2psk(bitstring):preSharedKey [typeConverter].
+(* A type converter only used for some proof helpers and following definition. *)
+fun psk2b_pf(preSharedKey):bitstring [typeConverter].
 fun psk2b(preSharedKey): bitstring
 reduc
   psk2b(NoPsk) = zero
-  otherwise forall x:preSharedKey; psk2b(x) = x
+  otherwise forall x:preSharedKey; psk2b(x) = psk2b_pf(x)
 .
 
-(* A type converter only used for some proof helpers. *)
-fun psk2b_pf(preSharedKey):bitstring [typeConverter].
+
 
 type identityPsk.
 fun b2idpsk(bitstring):identityPsk [typeConverter].
@@ -250,7 +251,7 @@ fun FIN(bitstring):msg [data].
 fun NST(
   bitstring, (* ticket_nonce *)
   identityPsk (* ticket that as used as pre shared key identity *)
-):msg
+):msg [data].
 
 type error_signal.
 const

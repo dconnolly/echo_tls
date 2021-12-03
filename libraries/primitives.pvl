@@ -169,8 +169,8 @@ fun pk(privkey): pubkey.
   it is the case in the protocol however. *)
 fun uncompromised_privkey(pubkey):bool
 reduc
-  forall s:seed; uncompromised_privkey(pk(uc_privkey(s))) = true;
-  forall x:pubkey; uncompromised_privkey(x) = false
+  forall s:seed; uncompromised_privkey(pk(uc_privkey(s))) = true
+  otherwise forall x:pubkey; uncompromised_privkey(x) = false
   [private].
 
 (* RSA Signatures, typically the argument is a hash over some data *)
