@@ -3,37 +3,46 @@
 (********************************************************)
 
 const
-  tls13_client_handshake_traffic_secret,
-  tls13_server_handshake_traffic_secret,
-  tls13_client_early_traffic_secret,
-  tls13_client_application_traffic_secret,
-  tls13_server_application_traffic_secret,
-  tls13_key, tls13_iv,
-  tls13_early_exporter_master_secret,
-  tls13_exporter_master_secret,
-  tls13_resumption,
-  tls13_resumption_master_secret,
-  tls13_resumption_psk_binder_key,
-  tls13_finished,tls13_derived,tls13_esni_key,tls13_esni_iv: label.
+  tls13_client_handshake_traffic_secret, (* "c hs traffic" of Section 7.1 TLS RFC *)
+  tls13_server_handshake_traffic_secret, (* "s hs traffic" of Section 7.1 TLS RFC *)
+  tls13_client_early_traffic_secret, (* "c e traffic" of Section 7.1 TLS RFC *)
+  tls13_client_application_traffic_secret, (* "c ap traffic" of Section 7.1 TLS RFC *)
+  tls13_server_application_traffic_secret, (* "s ap traffic" of Section 7.1 TLS RFC *)
+  tls13_key, (* "key" of Section 7.3 TLS RFC. Note that we do not model the Record Protocol
+   (Section 5 of TLS RFC. Hence we do not need "iv" of Section 7.3 TLS RFC *)
+  tls13_early_exporter_master_secret, (* "e exp master" of Section 7.1 TLS RFC *)
+  tls13_exporter_master_secret, (* "exp master" of Section 7.1 TLS RFC *)
+  tls13_resumption, (* "resumption" of Section 4.6.1 TLS RFC *)
+  tls13_resumption_master_secret, (* "res master" of Section 7.1 TLS RFC *)
+  tls13_ext_binder, (* "ext binder" of Section 7.1 TLS RFC *)
+  tls13_res_binder, (* "res binder" of Section 7.1 TLS RFC *)
+  tls13_finished, (* "finished" of Section 4.4.4 of TLS RFC *)
+  tls13_derived (* "derived" of Section 7.1 TLS RFC *)
+  : label.
 
-(** Key Schedule. TLS 1.3 RFC Section 7.1 *)
+(** Key Schedule (Section 7.1 of TLS RFC *)
 
 letfun derive_secret(h:hash_alg,k:bitstring,l:label,m:bitstring) =
   hkdf_expand_label(h,k,l,hash(h,m)).
 
 (* Function to generate "Early Secret" + binder_key *)
-letfun kdf_es(h:hash_alg,psk:preSharedKey) =
+letfun kdf_es(h:hash_alg,psk:preSharedKey,is_external:bool) =
   let early_secret = hkdf_extract(h,zero,psk2b(psk)) in
-  let binder_key = derive_secret(h,early_secret,tls13_resumption_psk_binder_key,zero) in
+  let label = if is_external then tls13_ext_binder else tls13_res_binder in
+  let binder_key = derive_secret(h,early_secret,label,zero) in
   (early_secret,b2mk(binder_key)).
 
+(* Function to generate
+  - client_write_key for 0-RTT Application
+  - early_exporter_master_secret *)
 letfun kdf_k0(h:hash_alg,early_secret:bitstring,client_hello:bitstring) =
   (* client_early_traffic_secret *)
   let atsc0 = derive_secret(h,early_secret,tls13_client_early_traffic_secret,client_hello) in
-  let kc0   = hkdf_expand_label(h,atsc0,tls13_key,zero) in
+  (* client_write_key for *)
+  let kc0 = hkdf_expand_label(h,atsc0,tls13_key,zero) in
 
   (* early_exporter_master_secret*)
-  let ems0   = derive_secret(h,early_secret,tls13_early_exporter_master_secret,client_hello) in
+  let ems0 = derive_secret(h,early_secret,tls13_early_exporter_master_secret,client_hello) in
 
   (b2ae(kc0),ems0).
 
@@ -43,9 +52,9 @@ letfun kdf_hs(h:hash_alg,early_secret:bitstring,e:element) =
   hkdf_extract(h,extra,e2b(e)).
 
 (* Function to generate
-  - Master Secret
   - client_handshake_traffic_secret
   - server_handshake_traffic_secret
+  - Master Secret
   - client_write_key for handshake record (Section 7.3 of TLS RFC)
   - server_write_key for handshake record  (Section 7.3 of TLS RFC)
   - client_finished_key (Section 4.4.4 of TLS RFC)
@@ -87,3 +96,7 @@ letfun kdf_k(h:hash_alg,master_secret:bitstring,log:bitstring) =
   ClientHello up to client Finished. *)
 letfun kdf_psk(h:hash_alg,master_secret:bitstring, log:bitstring) =
   derive_secret(h,master_secret,tls13_resumption_master_secret,log).
+
+(* Function to generate the pre shared key from the ticket *)
+letfun psk_from_ticket(h:hash_alg,resumption_master_secret:bitstring,ticket_nonce:bitstring) =
+  b2psk(hkdf_expand_label(h,resumption_master_secret,tls13_resumption,ticket_nonce)).

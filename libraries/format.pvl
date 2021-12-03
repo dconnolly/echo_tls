@@ -55,8 +55,6 @@ type preSharedKey.
 fun uc_psk(seed):preSharedKey [private].
 const NoPsk: preSharedKey.
 
-
-
 fun b2psk(bitstring):preSharedKey [typeConverter].
 (* A type converter only used for some proof helpers and following definition. *)
 fun psk2b_pf(preSharedKey):bitstring [typeConverter].
@@ -66,26 +64,27 @@ reduc
   otherwise forall x:preSharedKey; psk2b(x) = psk2b_pf(x)
 .
 
-
-
 type identityPsk.
 fun b2idpsk(bitstring):identityPsk [typeConverter].
 
 (* The private function mk_idpsk is an abstraction on how the server is able to
   retrieve the pre shared key from its identity and additional information such
-  as the ciphersuite used. By defining the function as private and its projections
+  as the ciphersuite used and if it is an external or resumption PSK.
+  By defining the function as private and its projections
   as private, we ensure that only the honest server can access its content.
   Note that it does not prevent the attacker to play the role of a server. *)
-fun mk_idpsk(domain,domain,hash_alg,preSharedKey):identityPsk [private].
+fun mk_idpsk(domain,domain,hash_alg,preSharedKey,bool):identityPsk [private].
 
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
+  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = c_dom [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
-  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = c_dom [private].
+  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = s_dom [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
-  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = s_dom [private].
+  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = h_alg [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
-  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = h_alg [private].
+  get_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = psk [private].
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
-  get_ipsk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = psk [private].
+  get_is_external_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = is_external [private].
 
 (* The extension itself *)
 type preSharedKeyExt.
@@ -102,6 +101,7 @@ table pre_shared_keys(
   hash_alg, (* The hash algorithm used in the handshake *)
   identityPsk, (* The identify of the pre shared key generated *)
   preSharedKey, (* The pre shared key itself *)
+  bool, (* Indicate if it is an external PSK or a resumption PSK *)
   idProc, (* The process identifier that generated the pre shared key *)
   bool (* Value determining if the key was considered uncompromised (true) or
     not (false).*)

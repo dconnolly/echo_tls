@@ -157,7 +157,7 @@ ifdef(<!BACKENDFULL!>,<!dnl
     (psk = NoPsk || safe_psk)
   in
   new ticket_nonce[]:bitstring;
-  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   (* OLD : let new_psk = b2psk(rms) in *)
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
@@ -165,7 +165,7 @@ ifdef(<!BACKENDFULL!>,<!dnl
 ifdef(<!INNERFULL!>,<!dnl
   ;
   new ticket_nonce[]:bitstring;
-  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,b2psk(rms),id_client)
 !>)dnl
@@ -176,7 +176,7 @@ ifdef(<!CLIENTFULL!>,<!dnl
     (psk = NoPsk || safe_psk)
   in
   new ticket_nonce[]:bitstring;
-  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
 !>)dnl
@@ -184,7 +184,7 @@ ifdef(<!ROR!>,<!dnl
   ;
   let (new_psk:preSharedKey,is_safe:bool) =
     new ticket_nonce[]:bitstring;
-    let new_psk' = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+    let new_psk' = psk_from_ticket(h_alg,rms,ticket_nonce) in
     if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
     if psk = NoPsk || safe_psk then
       new rand_ipsk[]:preSharedKey;
