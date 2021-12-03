@@ -10,8 +10,9 @@ let gen_honest_long_term_keys =
   new s:seed;
   let sk_h = uc_privkey(s) in
   event GenCert(a,pk(sk_h));
-  insert long_term_keys(a,sk_h,pk(sk_h),valid_cert(a,pk(sk_h)),idP);
-  out(io,pk(sk_h))
+  let crt = valid_cert(a,pk(sk_h)) in
+  insert long_term_keys(a,sk_h,pk(sk_h),crt,idP);
+  out(io,(pk(sk_h),crt))
 .
 
 let gen_honest_pre_shared_keys(h_alg:hash_alg) =

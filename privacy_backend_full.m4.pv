@@ -158,7 +158,7 @@ free BackendA,BackendB,HonestServer:domain.
 let gen_dishonest_long_term_keys =
   !
   in(io,a:domain);
-  if a <> HonestServer then
+  (* if a <> HonestServer then *)
   event Same(d2b(a));
   new sk_d:privkey;
   out(io,(sk_d,valid_cert(a,pk(sk_d))))

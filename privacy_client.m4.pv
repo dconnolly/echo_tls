@@ -150,7 +150,7 @@ ifdef(<!DISECH!>,<!dnl
       ifdef(<!DOPSK!>,<!let use_psk = true in!>) ifdef(<!NOPSK!>,<!let use_psk = false in!>) ifdef(<!UPSK!>,<!in(io,use_psk:bool) [precise];!>)
       ifdef(<!KEX!>,<!let send_kex = true in!>) ifdef(<!NOKEX!>,<!let send_kex = false in!>) ifdef(<!UKEX!>,<!in(io,send_kex:bool) [precise];!>)
       event Same((use_psk,send_kex));
-      standard_client(idClientDiff(s),use_psk,send_kex,diff[ClientA,ClientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
+      standard_client(idClientDiff(s),use_psk,send_kex,diff[clientA,clientB],HonestServer,tls_g,tls_h,tls_a,empty_extra_ext)
     )
   )
 

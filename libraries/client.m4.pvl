@@ -156,8 +156,8 @@ ifdef(<!BACKENDFULL!>,<!dnl
     (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
     (psk = NoPSK || safe_psk)
   in
-  new ticket_nonce[];
-  let new_psk = b2ispk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket)) in
+  new ticket_nonce[]:bitstring;
+  let new_psk = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   (* OLD : let new_psk = b2ipsk(rms) in *)
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
@@ -182,7 +182,7 @@ ifdef(<!CLIENTFULL!>,<!dnl
 !>)dnl
 ifdef(<!ROR!>,<!dnl
   ;
-  let (new_psk:internal_preSharedKey,new_safe:bool) =
+  let (new_psk:internal_preSharedKey,is_safe:bool) =
     new ticket_nonce[]:bitstring;
     let new_psk' = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
     if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
