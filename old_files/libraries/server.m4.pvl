@@ -18,12 +18,12 @@ letfun generate_early_secret_psk_extension(use_psk:bool,s_dom:domain,client_hell
       (early_secret, server_psk_ext(1), psk)
     )
     else
-      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-      (es, empty_psk_ext, NoPSK)
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+      (es, empty_psk_ext, NoPsk)
   )
   else
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (es, empty_psk_ext, NoPSK)
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+    (es, empty_psk_ext, NoPsk)
 .
 
 (* Receive the client finished message *)
@@ -79,7 +79,7 @@ let send_server_finished_message =
   let cur_log_FIN = (cur_log,finished_msg) in
 
   (* Receiving messages from the client depending on psk and cert_req *)
-  if psk = NoPSK && cert_req
+  if psk = NoPsk && cert_req
   then (
       (* A certificate request from the client is requested *)
       in(io,enc_cert_msg:bitstring);
@@ -239,7 +239,7 @@ let process_client_hello_noHRR =
       let cur_log_EE = (cur_log_SH,ee_msg) in
 
       (* Sends either the finish message or the certificate messages *)
-      if psk = NoPSK
+      if psk = NoPsk
       then
         if cert_req
         then (

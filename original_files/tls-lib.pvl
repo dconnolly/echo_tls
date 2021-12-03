@@ -176,18 +176,18 @@ table longTermKeys(prin,privkey,pubkey).
 table esniKeys(prin,group,bitstring,element).
 table ticketEncryptionKeys(prin,ae_key).
 
-type preSharedKey.
-const NoPSK: preSharedKey.
-fun PSK(bitstring): preSharedKey [data].
-fun psk2b(preSharedKey): bitstring
-reduc forall b:bitstring; psk2b(PSK(b)) = b
-otherwise psk2b(NoPSK) = zero.
+type preSharedKeyExt.
+const NoPsk: preSharedKeyExt.
+fun PSK(bitstring): preSharedKeyExt [data].
+fun psk_ext2b(preSharedKeyExt): bitstring
+reduc forall b:bitstring; psk_ext2b(PSK(b)) = b
+otherwise psk_ext2b(NoPsk) = zero.
 
-table preSharedKeys(prin,prin,bitstring,preSharedKey).
+table preSharedKeys(prin,prin,bitstring,preSharedKeyExt).
 
 event Reachable(bitstring).
 event WeakOrCompromisedKey(pubkey).
-event CompromisedPreSharedKey(preSharedKey).
+event CompromisedPreSharedKey(preSharedKeyExt).
 event PostSessionCompromisedKey(pubkey).
 
 let LongTermKeys() =
@@ -271,8 +271,8 @@ letfun derive_secret(k:bitstring,l:label,m:bitstring) =
 letfun kdf_0() = hkdf_extract(zero,zero).
 
 
-letfun kdf_es(psk:preSharedKey) =
-       let es = hkdf_extract(zero,psk2b(psk)) in
+letfun kdf_es(psk:preSharedKeyExt) =
+       let es = hkdf_extract(zero,psk_ext2b(psk)) in
        let kb = derive_secret(es,tls13_resumption_psk_binder_key,zero) in
        (es,b2mk(kb)).
 
@@ -357,11 +357,11 @@ event ClientOffersAE(random,ae_alg).
 event ClientOffersHash(random,hash_alg).
 
 event ClientFinished(version,random,random,
-                     preSharedKey,pubkey,
+                     preSharedKeyExt,pubkey,
 		     params,params,
 		     ae_key,ae_key,bitstring,bitstring).
 
-event ClientFinished0(version,random,preSharedKey,
+event ClientFinished0(version,random,preSharedKeyExt,
   		      params,ae_key,bitstring).
 
 event ServerChoosesVersion(random,random,pubkey,version).
@@ -369,40 +369,40 @@ event ServerChoosesKEX(random,random,pubkey,version,kex_alg).
 event ServerChoosesAE(random,random,pubkey,version,ae_alg).
 event ServerChoosesHash(random,random,pubkey,version,hash_alg).
 
-event ServerFinished0(version,random,preSharedKey,
+event ServerFinished0(version,random,preSharedKeyExt,
 		     params,ae_key).
 
 event ServerFinished(version,random,random,
-                     preSharedKey,pubkey,
+                     preSharedKeyExt,pubkey,
 		     params,params,
 		     ae_key,ae_key,bitstring,bitstring).
 event PreServerFinished(version,random,random,
-			preSharedKey,pubkey,
+			preSharedKeyExt,pubkey,
 			params,params,
 			ae_key,ae_key,bitstring).
 
-table clientSession(random,random,preSharedKey,pubkey,
+table clientSession(random,random,preSharedKeyExt,pubkey,
 		    params,params,
 		    ae_key,ae_key,bitstring,bitstring).
-table serverSession(random,random,preSharedKey,pubkey,
+table serverSession(random,random,preSharedKeyExt,pubkey,
 		    params,params,
 		    ae_key,ae_key,bitstring,bitstring).
 
-table serverSession0_5(random,random,preSharedKey,pubkey,
+table serverSession0_5(random,random,preSharedKeyExt,pubkey,
 		    params,params,
 		    ae_key,ae_key,bitstring).
 
-table clientSession0(random,preSharedKey,params,ae_key,bitstring).
-table serverSession0(random,preSharedKey,params,ae_key,bitstring).
+table clientSession0(random,preSharedKeyExt,params,ae_key,bitstring).
+table serverSession0(random,preSharedKeyExt,params,ae_key,bitstring).
 
 (********************************************************)
 (*  Security Events  *)
 (********************************************************)
 
-event ClientAEKeyLeaked(version,random,random,preSharedKey,pubkey).
-event ServerAEKeyLeaked(version,random,random,preSharedKey,pubkey).
-event ClientAEKeyLeaked0(version,random,preSharedKey,params).
-event ServerAEKeyLeaked0(version,random,preSharedKey,params).
+event ClientAEKeyLeaked(version,random,random,preSharedKeyExt,pubkey).
+event ServerAEKeyLeaked(version,random,random,preSharedKeyExt,pubkey).
+event ClientAEKeyLeaked0(version,random,preSharedKeyExt,params).
+event ServerAEKeyLeaked0(version,random,preSharedKeyExt,params).
 
 let secrecyQuery() =
     (get clientSession(cr,sr,psk,p,o,m,ck,sk,cb,ms) in
@@ -423,8 +423,8 @@ let secrecyQuery() =
 event MatchingChannelBinding(version,random,random,pubkey,version,random,random,pubkey).
 event MatchingResumptionSecret(version,random,random,pubkey,version,random,random,pubkey).
 event MatchingAEKey(version,random,random,pubkey,version,random,random,pubkey).
-event MatchingAEKey0(version,random,preSharedKey,params,random,preSharedKey,params).
-event MatchingEMS0(version,random,preSharedKey,params,random,preSharedKey,params).
+event MatchingAEKey0(version,random,preSharedKeyExt,params,random,preSharedKeyExt,params).
+event MatchingEMS0(version,random,preSharedKeyExt,params,random,preSharedKeyExt,params).
 
 let channelBindingQuery() =
     (get clientSession0(cr,psk,o,ck,ems) in
@@ -461,39 +461,39 @@ let channelBindingQuery() =
 
 (*
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ClientFinished(TLS12,cr,sr,psk,p,m,o,ck,sk,cb,ms)) ==>
       event(ServerFinished(TLS12,cr,sr,psk,p,m,o,ck,sk,cb,ms)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ClientFinished(TLS13,cr,sr,psk,p,m,o,ck,sk,cb,ms)) ==>
       event(PreServerFinished(TLS13,cr,sr,psk,p,m,o,ck,sk,cb)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ServerFinished(TLS12,cr,sr,psk,p,m,o,ck,sk,cb,ms)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ClientFinished(TLS12,cr,sr,psk,p,m,o,ck,sk,cb,ms)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ServerFinished(TLS13,cr,sr,psk,p,m,o,ck,sk,cb,ms)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(PreServerFinished(TLS13,cr,sr,psk,p,m,o,ck,sk,cb)).
 
 query cr:random, sr:random,
-      psk:preSharedKey,p:pubkey,o:params, m:params,
+      psk:preSharedKeyExt,p:pubkey,o:params, m:params,
       ck:ae_key, sk:ae_key, cb:bitstring, ms:bitstring;
       event(ClientFinished(TLS13,cr,sr,psk,p,m,o,ck,sk,cb,ms)).
 *)
@@ -529,8 +529,8 @@ let Client12() =
 	  if m2 = tls12_prf(ms,server_finished,log) then
 	     let ck = b2ae(tls12_prf(ms,client_key_expansion,(sr,cr))) in
 	     let sk = b2ae(tls12_prf(ms,server_key_expansion,(sr,cr))) in
-	     event ClientFinished(TLS12,cr,sr,NoPSK,p,offer,mode,ck,sk,m1,ms);
-	     insert clientSession(cr,sr,NoPSK,p,offer,mode,ck,sk,m1,ms))
+	     event ClientFinished(TLS12,cr,sr,NoPsk,p,offer,mode,ck,sk,m1,ms);
+	     insert clientSession(cr,sr,NoPsk,p,offer,mode,ck,sk,m1,ms))
     else let RSA(r) = k in
       (new pms: bitstring;
        let ms = tls12_prf(pms,master_secret,(cr,sr)) in
@@ -543,8 +543,8 @@ let Client12() =
        if m2 = tls12_prf(ms,server_finished,log) then
           let ck = b2ae(tls12_prf(ms,client_key_expansion,(sr,cr))) in
           let sk = b2ae(tls12_prf(ms,server_key_expansion,(sr,cr))) in
-	  event ClientFinished(TLS12,cr,sr,NoPSK,p,offer,mode,ck,sk,m1,ms);
-	  insert clientSession(cr,sr,NoPSK,p,offer,mode,ck,sk,m1,ms))).
+	  event ClientFinished(TLS12,cr,sr,NoPsk,p,offer,mode,ck,sk,m1,ms);
+	  insert clientSession(cr,sr,NoPsk,p,offer,mode,ck,sk,m1,ms))).
 
 
 let Server12() =
@@ -577,9 +577,9 @@ let Server12() =
 	  let m2 = tls12_prf(ms,server_finished,log) in
           let cak = b2ae(tls12_prf(ms,client_key_expansion,(sr,cr))) in
           let sak = b2ae(tls12_prf(ms,server_key_expansion,(sr,cr))) in
-	  event ServerFinished(TLS12,cr,sr,NoPSK,p,offer,mode,cak,sak,m1,ms);
+	  event ServerFinished(TLS12,cr,sr,NoPsk,p,offer,mode,cak,sak,m1,ms);
 	  out (io,FIN(m2));
-	  insert serverSession(cr,sr,NoPSK,p,offer,mode,cak,sak,m1,ms);
+	  insert serverSession(cr,sr,NoPsk,p,offer,mode,cak,sak,m1,ms);
  	  phase 1;
           event PostSessionCompromisedKey(pk(sk));
 	  out(io,sk))
@@ -595,16 +595,16 @@ let Server12() =
 	  let m2 = tls12_prf(ms,server_finished,log) in
           let cak = b2ae(tls12_prf(ms,client_key_expansion,(sr,cr))) in
           let sak = b2ae(tls12_prf(ms,server_key_expansion,(sr,cr))) in
-	  event ServerFinished(TLS12,cr,sr,NoPSK,p,offer,mode,cak,sak,m1,ms);
+	  event ServerFinished(TLS12,cr,sr,NoPsk,p,offer,mode,cak,sak,m1,ms);
 	  out (io,FIN(m2));
-	  insert serverSession(cr,sr,NoPSK,p,offer,mode,cak,sak,m1,ms);
+	  insert serverSession(cr,sr,NoPsk,p,offer,mode,cak,sak,m1,ms);
  	  phase 1;
           event PostSessionCompromisedKey(pk(sk));
 	  out (io,sk))).
 
 
 (********************************************************)
-(*  TLS 1.3 0+1-RTT Processes: no client auth, uses psk (potentially NoPSK) *)
+(*  TLS 1.3 0+1-RTT Processes: no client auth, uses psk (potentially NoPsk) *)
 (********************************************************)
 
 let Client13() =
@@ -717,7 +717,7 @@ let Server13() =
         event ServerFinished(TLS13,cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
         insert serverSession(cr,sr,psk,p,offer,mode,cak,sak,ems,rms);
 
-        (* insert preSharedKey(a,b,,rms)*)
+        (* insert preSharedKeyExt(a,b,,rms)*)
 
         phase 1;
         event PostSessionCompromisedKey(pk(sk));
@@ -729,17 +729,17 @@ let Server13() =
 (********************************************************)
 
 
-event ClientSends0(version,random,preSharedKey,bitstring,bitstring,bitstring).
-event ServerReceives0(version,random,preSharedKey,bitstring,bitstring,bitstring).
-event ClientSends(version,random,random,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ServerSends(version,random,random,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ClientReceives(version,random,random,preSharedKey,pubkey,bitstring,bitstring,bitstring).
-event ServerReceives(version,random,random,preSharedKey,pubkey,bitstring,bitstring,bitstring).
+event ClientSends0(version,random,preSharedKeyExt,bitstring,bitstring,bitstring).
+event ServerReceives0(version,random,preSharedKeyExt,bitstring,bitstring,bitstring).
+event ClientSends(version,random,random,preSharedKeyExt,pubkey,bitstring,bitstring,bitstring).
+event ServerSends(version,random,random,preSharedKeyExt,pubkey,bitstring,bitstring,bitstring).
+event ClientReceives(version,random,random,preSharedKeyExt,pubkey,bitstring,bitstring,bitstring).
+event ServerReceives(version,random,random,preSharedKeyExt,pubkey,bitstring,bitstring,bitstring).
 
 
-fun m_c0(version,random,preSharedKey): bitstring [private].
-fun m_s(version,random,random,pubkey,preSharedKey): bitstring [private].
-fun m_c(version,random,random,pubkey,preSharedKey): bitstring [private].
+fun m_c0(version,random,preSharedKeyExt): bitstring [private].
+fun m_s(version,random,random,pubkey,preSharedKeyExt): bitstring [private].
+fun m_c(version,random,random,pubkey,preSharedKeyExt): bitstring [private].
 
 let appData() =
     (get clientSession0(cr,psk,o,kc0,ems0) in

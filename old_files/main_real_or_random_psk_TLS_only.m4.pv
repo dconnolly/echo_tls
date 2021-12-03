@@ -2,8 +2,8 @@ set removeEventsForLemma = true.
 
 (* Restriction for equivalence *)
 
-lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,
-  c_dom1,c_dom2,s_dom1,s_dom2:domain,h_alg1,h_alg2:hash_alg,id1,id2:identityPsk,ipsk1,ipsk2:internal_preSharedKey,
+lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':preSharedKey,
+  c_dom1,c_dom2,s_dom1,s_dom2:domain,h_alg1,h_alg2:hash_alg,id1,id2:identityPsk,ipsk1,ipsk2:preSharedKey,
   safe,safe',safe1,safe2:bool,idP,idP',idP1,idP2:idProc;
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
     h_alg = id_hash(StrongHash,1) &&
@@ -38,7 +38,7 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
-  new psk_d:internal_preSharedKey;
+  new psk_d:preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
   out(io,psk_d)

@@ -98,7 +98,7 @@ restriction dom:domain,idP,idP',idP'':idProc,safe,safe',safe'':bool;
   are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
   or  *)
 restriction
-  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
+  ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
   (* One time used property *)
   event(Selected_otu_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
   event(Selected_otu_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
@@ -110,11 +110,11 @@ restriction
 
 (* Lemma to help the proof *)
 
-event Dishonest(internal_preSharedKey).
+event Dishonest(preSharedKey).
 
-lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':internal_preSharedKey,s:seed,
+lemma c_dom,c_dom',s_dom,s_dom':domain,h_alg',h_alg:hash_alg,id,id':identityPsk,ipsk,ipsk':preSharedKey,s:seed,
   c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom3,s_dom3',s_dom4,s_dom4':domain,
-  h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:internal_preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
+  h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
   safe,safe',safe1,safe2:bool;
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
     h_alg = id_hash(StrongHash,1) &&
@@ -199,7 +199,7 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   in(io,(c_dom:domain,s_dom:domain));
   new idP:idProc;
   event Same((c_dom,s_dom));
-  new psk_d:internal_preSharedKey;
+  new psk_d:preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
   out(io,psk_d)

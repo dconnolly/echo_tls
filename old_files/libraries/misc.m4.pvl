@@ -43,10 +43,10 @@ event Selected_psk(domain,domain,idProc,bool).
 !>,<!dnl
 ifdef(<!CLIENTFULL!>,<!dnl
 event Selected_psk(domain,domain,idProc,bool).
-event Selected_otu_psk(idProc,internal_preSharedKey,bool).
+event Selected_otu_psk(idProc,preSharedKey,bool).
 !>,<!dnl
 event Selected_psk(domain,domain,idProc).
-event Selected_otu_psk(idProc,internal_preSharedKey).
+event Selected_otu_psk(idProc,preSharedKey).
 !>)dnl
 !>)dnl
 

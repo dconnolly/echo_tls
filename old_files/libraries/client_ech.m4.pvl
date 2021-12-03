@@ -75,8 +75,8 @@ let process_server_hello_ech(id_client:idProc,
     let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
       if psk_ext = empty_psk_ext
       then (
-        let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        (NoPSK,es,true,false)
+        let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+        (NoPsk,es,true,false)
       )
       else
         let (h'_alg:hash_alg,psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in
@@ -106,14 +106,14 @@ let process_server_hello_ech(id_client:idProc,
           (i_cr,i_handshake_secret,i_dom,(i_cur_log,server_hello),psk)
         )
         else
-          (* Must compute early secret with NoPSK when not using grease or with the given PSK if grease is used. *)
+          (* Must compute early secret with NoPsk when not using grease or with the given PSK if grease is used. *)
           let o_gxy = dh_decap(g,gy_srv,o_x) in
           let (o_early_secret:bitstring,o_psk:preSharedKey) =
             if use_grease
             then (early_secret,psk)
             else
-              let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK)  in
-              (es,NoPSK)
+              let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk)  in
+              (es,NoPsk)
           in
           (o_cr,kdf_hs(h_alg,o_early_secret,o_gxy), o_dom,(o_cur_log,server_hello),o_psk)
       in

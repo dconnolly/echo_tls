@@ -49,7 +49,7 @@ fun idClientDiff(seed):idProc [private].
 (* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
   are one time used and uncompromised *)
 restriction
-  ipsk,ipsk1,ipsk2:internal_preSharedKey,idP:idProc, s1,s2,s:seed;
+  ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc, s1,s2,s:seed;
   (* One time used property *)
   event(Selected_otu_psk(idClientDiff(s),diff[ipsk,ipsk1])) && event(Selected_otu_psk(idP,diff[ipsk,ipsk2])) ==> idP = idClientDiff(s);
   event(Selected_otu_psk(idClientDiff(s),diff[ipsk1,ipsk])) && event(Selected_otu_psk(idP,diff[ipsk2,ipsk])) ==> idP = idClientDiff(s);
@@ -75,7 +75,7 @@ let gen_dishonest_pre_shared_keys(h_alg:hash_alg) =
   new idP:idProc;
   in(io,(c_dom:domain,s_dom:domain));
   event Same((c_dom,s_dom));
-  new psk_d:internal_preSharedKey;
+  new psk_d:preSharedKey;
   let id = mk_idpsk(c_dom,s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP);
   out(io,psk_d)

@@ -79,8 +79,8 @@ ifdef(<!CLIENTFULL!>,<!dnl
     )
   )
   else
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-    (empty_psk_ext,(h_alg,NoPSK,b2idpsk(zero),es,false))
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+    (empty_psk_ext,(h_alg,NoPsk,b2idpsk(zero),es,false))
 .
 
 (* Generate the key share extension. *)
@@ -154,40 +154,40 @@ ifdef(<!BACKENDFULL!>,<!dnl
   ;
   let new_safe:bool =
     (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
-    (psk = NoPSK || safe_psk)
+    (psk = NoPsk || safe_psk)
   in
   new ticket_nonce[]:bitstring;
-  let new_psk = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
-  (* OLD : let new_psk = b2ipsk(rms) in *)
+  (* OLD : let new_psk = b2psk(rms) in *)
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
 !>)dnl
 ifdef(<!INNERFULL!>,<!dnl
   ;
   new ticket_nonce[]:bitstring;
-  let new_psk = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,b2ipsk(rms),id_client)
+  insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,b2psk(rms),id_client)
 !>)dnl
 ifdef(<!CLIENTFULL!>,<!dnl
   ;
   let new_safe:bool =
     (s_pkey = NoPubKey || uncompromised_privkey(s_pkey)) &&
-    (psk = NoPSK || safe_psk)
+    (psk = NoPsk || safe_psk)
   in
   new ticket_nonce[]:bitstring;
-  let new_psk = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+  let new_psk = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
   let ticket_id = mk_idpsk(c_dom,s_dom,h_alg,new_psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,new_safe)
 !>)dnl
 ifdef(<!ROR!>,<!dnl
   ;
-  let (new_psk:internal_preSharedKey,is_safe:bool) =
+  let (new_psk:preSharedKey,is_safe:bool) =
     new ticket_nonce[]:bitstring;
-    let new_psk' = b2ipsk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
+    let new_psk' = b2psk(hkdf_expand_label(h_alg,rms,tls13_resumption,ticket_nonce)) in
     if s_pkey = NoPubKey || uncompromised_privkey(s_pkey) then
-    if psk = NoPSK || safe_psk then
-      new rand_ipsk[]:internal_preSharedKey;
+    if psk = NoPsk || safe_psk then
+      new rand_ipsk[]:preSharedKey;
       (diff[rand_ipsk,new_psk'],not(comp_psk))
     else (new_psk',false)
     else (new_psk',false)
@@ -238,7 +238,7 @@ ifdef(<!SANITY!>,<!dnl
   let cur_log3 = (cur_log2,certificate_verify_msg) in
 
   (* The finished message *)
-  out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,NoPSK,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3,comp_psk,false))
+  out(ch_client_CFIN,(id_client,cr,sr,h_alg,a_alg,c_dom,s_dom,NoPsk,s_pkey,c_pkey,master_secret,chk,shk,cfin,sfin,cur_log3,comp_psk,false))
 .
 
 (* Receiving Finished message from Server *)
@@ -318,7 +318,7 @@ let receive_after_encrypted_extension =
   new st[]:bitstring;
   event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
 
-  if psk = NoPSK
+  if psk = NoPsk
   then (
     (* If no PSK then we expect a certificate from the server *)
     in(io,enc_msg:bitstring);
@@ -404,8 +404,8 @@ let process_server_hello(id_client:idProc,
     let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
       if psk_ext = empty_psk_ext
       then (
-        let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPSK) in
-        (NoPSK,es,true,false)
+        let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+        (NoPsk,es,true,false)
       )
       else
         let (h'_alg:hash_alg,psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in

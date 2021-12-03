@@ -1,24 +1,35 @@
 changequote(<!,!>)dnl
 
-channel io.
+channel io. (* The public channel *)
 
+(* The type idProc represents process identifiers. Terms of this type are not
+  used in the protocol itself. They are only used in proof helpers or in the
+  lemmas, axioms and restrictions to talk specifically about a particular
+  replicated process. *)
 type idProc.
 fun id2b(idProc):bitstring [typeConverter].
 
+(* The type domain represents the public domain of the clients and servers.
+  All terms of this type will be public. When we refer to a client or a server
+  in our explanation, we always refer to their public domain. *)
 type domain.
-const NoDomain:domain [data].
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
 (* Extra extension                                      *)
 (********************************************************)
 
+(* The type for some unspecified extra extension in the client hello. *)
 type extraExt.
 const empty_extra_ext:extraExt [data].
 
 (********************************************************)
-(* Key Share Extension                                  *)
+(* Key share Extension (4.2.8 in TLS RFC)               *)
 (********************************************************)
+
+(* A client can send only a group which will trigger and Hello Retry Request
+  from the server, or a group and its key share. For Hello Retry Request, the
+  extension consist only of a group. *)
 
 type kex_alg.
 fun DHE_group(group): kex_alg [data].
@@ -33,34 +44,49 @@ fun hrr_kex_ext(group): keyShareExt [data].
 (* Pre Shared Keys Extension                            *)
 (********************************************************)
 
-type internal_preSharedKey.
-fun uc_psk(seed):internal_preSharedKey [private].
-
-fun b2ipsk(bitstring):internal_preSharedKey [typeConverter].
-fun ipsk2b(internal_preSharedKey):bitstring [typeConverter].
 type preSharedKey.
-const NoPSK: preSharedKey.
-fun PSK(internal_preSharedKey): preSharedKey [data].
 
-reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
+(* uc_psk is a private function used when generating uncompromised pre shared
+  keys. Instead of using the classic syntax
+    new psk:preSharedKey; ...
+  we generate a seed and use the private function uc_psk.
+    let psk = new s:seed; uc_psk(s) in ...
+  This is equivalent but it allows us to more easily talk about keys when
+  writing some proof helpers (see proof_helper.m4.pvl) and lemmas, axioms and
+  restrictions. *)
+fun uc_psk(seed):preSharedKey [private].
+const NoPsk: preSharedKey.
+
+fun b2psk(bitstring):preSharedKey [typeConverter].
+fun psk2b(preSharedKey): bitstring
+reduc
+  psk2b(NoPsk) = zero
+  otherwise forall x:preSharedKey; psk2b(x) = x
+.
+
+(* A type converter only used for some proof helpers. *)
+fun psk2b_pf(preSharedKey):bitstring [typeConverter].
 
 type identityPsk.
 fun b2idpsk(bitstring):identityPsk [typeConverter].
 
-fun mk_idpsk(domain,domain,hash_alg,internal_preSharedKey):identityPsk [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = s_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = c_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = h_alg [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_ipsk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = ipsk [private].
+(* The private function mk_idpsk is an abstraction on how the server is able to
+  retrieve the pre shared key from its identity and additional information such
+  as the ciphersuite used. By defining the function as private and its projections
+  as private, we ensure that only the honest server can access its content.
+  Note that it does not prevent the attacker to play the role of a server. *)
+fun mk_idpsk(domain,domain,hash_alg,preSharedKey):identityPsk [private].
 
-fun psk2b(preSharedKey): bitstring
-reduc forall b:internal_preSharedKey; psk2b(PSK(b)) = ipsk2b(b)
-otherwise psk2b(NoPSK) = zero.
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = c_dom [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = s_dom [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = h_alg [private].
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_ipsk(mk_idpsk(c_dom,s_dom,h_alg,psk)) = psk [private].
 
+(* The extension itself *)
 type preSharedKeyExt.
 const empty_psk_ext: preSharedKeyExt [data].
 fun trunc_client_psk_ext(identityPsk):preSharedKeyExt [data].
@@ -68,22 +94,17 @@ fun client_psk_ext(identityPsk,bitstring):preSharedKeyExt [data].
 fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk offered
   by the client currently so the server is always suppose to send 1. *)
 
+(* The global table storing the pre shared key on the client side. *)
 table pre_shared_keys(
   domain (* Client domain *),
   domain (* Server domain *),
-ifdef(<!ROR!>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
-!>,<!dnl
-ifdef(<!CLIENTFULL!>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
-!>,<!dnl
-ifdef(<!BACKENDFULL!>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey,idProc,bool).
-!>,<!dnl
-  hash_alg,identityPsk,internal_preSharedKey,idProc).
-!>)dnl
-!>)dnl
-!>)dnl
+  hash_alg, (* The hash algorithm used in the handshake *)
+  identityPsk, (* The identify of the pre shared key generated *)
+  preSharedKey, (* The pre shared key itself *)
+  idProc, (* The process identifier that generated the pre shared key *)
+  bool (* Value determining if the key was considered uncompromised (true) or
+    not (false).*)
+).
 
 (********************************************************)
 (* Long term keys and certificates                      *)
