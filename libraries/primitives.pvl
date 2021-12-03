@@ -6,9 +6,8 @@ type seed.
 (* Generation of random                                 *)
 (********************************************************)
 
-type bytes24.
 type bytes8.
-
+type bytes24.
 type bytes32.
 
 const zero8:bytes8.
