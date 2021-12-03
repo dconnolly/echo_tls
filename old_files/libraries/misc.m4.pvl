@@ -1,6 +1,3 @@
-changequote(<!,!>)dnl
-
-
 (* Events for specific data *)
 
 event GenPsk(domain,domain,preSharedKey).

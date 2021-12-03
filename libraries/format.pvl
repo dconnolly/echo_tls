@@ -77,13 +77,13 @@ fun mk_idpsk(domain,domain,hash_alg,preSharedKey,bool):identityPsk [private].
 
 reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
   get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = c_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
   get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = s_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
   get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = h_alg [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
   get_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = psk [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
   get_is_external_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = is_external [private].
 
 (* The extension itself *)
