@@ -441,7 +441,7 @@ ifdef(<!ATTACK_HRR_HIJACK!>,<!dnl
           let retry_config = create_retry_config(ech_conf) in
           standard_HRR_check(id_server,
             use_ech,use_psk,cert_req,
-            s_dom,g,h_alg,a_alg,kex_ext,echExt2b(server_ECH(retry_config)),s_extra,
+            s_dom,g,h_alg,a_alg,kex_ext,echExt2b(ECHConfigList(retry_config)),s_extra,
             x_client_hello)
         )
       )

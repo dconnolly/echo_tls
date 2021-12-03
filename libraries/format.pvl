@@ -140,7 +140,7 @@ reduc
 table long_term_keys(domain,privkey,pubkey,certificate,idProc).
 
 (***************************************
-  Echo Configuration
+  Ech Configuration
 ****************************************)
 
 (* Data structure of ECHConfig. We flatten the data structure with respect to the
@@ -186,7 +186,7 @@ fun echExt2b(echExt):bitstring [typeConverter].
 const empty_ech_ext: echExt.
 
 (* This extension should only occur in the ClientHelloInner. *)
-const ech_is_inner: echExt.
+const ECHClientHelloInner: echExt.
 
 (* This extension should only occur in the ClientHelloOuter. *)
 (* This includes the following element
@@ -196,11 +196,16 @@ const ech_is_inner: echExt.
     - enc of type [opaque] in RFC ([element] in this model). It's the The HPKE encapsulated key
     - payload of type [opaque] in RFC ([bitstring] in this model).
 *)
-fun client_ECH(hash_alg,aead_alg,configId,element,bitstring): echExt [data].
+fun ECHClientHelloOuter(hash_alg,aead_alg,configId,element,bitstring): echExt [data].
 
-(* The Encrypted Client Hello extension for the server. It should normally include
-  a list of accepted ECHConfig but we only model one here.*)
-fun server_ECH(echConfig): echExt [data].
+(* The encrypted_client_hello extension that may be included in the server EncryptedExtensions
+  message (see Section 5 of ECH RFC). It should normally contain retry_configs
+  which is a list of Ech configurations but we only model one here. *)
+fun ECHConfigList(echConfig):echExt [data]
+
+(* The encrypted_client_hello extension that is sent by the backend when sending
+  the HelloRetryRequest (see Section 5 and 7.2.1 of ECH RFC). *)
+fun ECHHelloRetryRequest(bitstring):echExt [data]
 
 (***************************************
   TLS messages
