@@ -7,3 +7,6 @@
 - Add an extra field to EE (in addition to ECH_retry) and prove privacy on it.
 - Add old security property from TLS model
 - Add a security property modelling safe against downgrade attack
+- WARNING : The sending of HRR request in ECH has been changed with respect to the
+	random
+- Model post handshake authentication

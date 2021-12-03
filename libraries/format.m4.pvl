@@ -111,7 +111,11 @@ table pre_shared_keys(
 (********************************************************)
 
 type certificate.
+(* By being private, the function valid_cert represents a certificate that has
+  been created by trusted authority. *)
 fun valid_cert(domain,pubkey):certificate [private].
+(* We give the attacker the ability to create his own certificate but they
+  would not be consider as trusted by the function verify_cert. *)
 fun cert(domain,pubkey):certificate.
 
 fun get_pkey(certificate):pubkey
@@ -125,9 +129,13 @@ reduc
   otherwise forall d:domain, pkey:pubkey; get_domain(cert(d,pkey)) = d.
 
 fun verify_cert(certificate):bool
-reduc forall d:domain, p:pubkey;
-  verify_cert(valid_cert(d,p)) = true .
+reduc
+  forall d:domain, p:pubkey; verify_cert(valid_cert(d,p)) = true
+  otherwise forall x:certificate; verify_cert(x) = false.
 
+(* The global table storing the long term keys for both the server and client.
+  The value of type idProc corresponds to the process identifier that generated
+  the long term key. *)
 table long_term_keys(domain,privkey,pubkey,certificate,idProc).
 
 (***************************************
@@ -144,7 +152,6 @@ table long_term_keys(domain,privkey,pubkey,certificate,idProc).
   to public_key.
 *)
 
-
 type configId.
 
 type echConfig.
@@ -157,23 +164,10 @@ fun ech_config(
   aead_alg (* aead_id *)
 ):echConfig [data].
 
-letfun get_public_key(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  public_key.
-
-letfun get_cipher_suite(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  (hl,al).
-
-letfun get_config_id(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  id.
-
-letfun get_public_name(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  dom.
-
-const ech_accept_confirmation,tls_ech_str:label.
+const
+  ech_accept_confirmation (* "ech accept confirmation" in Section 7.2 of ECH RFC *),
+  tls_ech_str (* "tls ech" in Section 6.1 of ECH RFC *)
+  :label.
 
 table ech_configurations(
   echConfig, (* Ech configuration *)
@@ -214,7 +208,7 @@ fun server_ECH(echConfig): echExt [data].
 type TLS_version.
 const TLS13: TLS_version.
 
-const rand_HelloRetryRequest:bytes32.
+const rand_HelloRetryRequest:bytes32. (* "HelloRetryRequest" in Section 4.1.3 of TLS RFC *)
 
 (* The SNI extension *)
 type sniExt.
@@ -235,9 +229,11 @@ fun SH(bytes32,params):msg [data].
 fun EE(bitstring): msg [data].
 
 (* Certificate Request message. We only model the certificate_request_context
-  but not the extesions, even though in the RFC, it is indicated that
+  but not the extensions, even though in the RFC, it is indicated that
     "the "signature_algorithms" extension MUST be specified"
-  Since we only model one signature algorithm, we omit it *)
+  Since we only model one signature algorithm, we omit it.
+  certificate_request_context must be zero during the main handshake and should
+  be a fresh random for post-handshake authentication. *)
 fun CRTR(bitstring): msg [data].
 
 (* The first argument of certificate corresponds to certificate_request_context *)
@@ -249,6 +245,12 @@ fun CV(bitstring):msg [data].
 
 (* The Finished message *)
 fun FIN(bitstring):msg [data].
+
+(* The NewSessionTicket (Section 4.6.1 in TLS RFC) *)
+fun NST(
+  bitstring, (* ticket_nonce *)
+  identityPsk (* ticket that as used as pre shared key identity *)
+):msg
 
 type error_signal.
 const

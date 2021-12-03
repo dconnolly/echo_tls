@@ -1,4 +1,6 @@
-To run the different scenarios, use the executable run_bench. It will generates files in the two folder generated_models and generated_librairies. The folder generated_models will contain the main proverif file that is executed (it also contain the full proverif command that is run). 
+To run the different scenarios, use the executable run_bench. It will generates files in the two folder generated_models and generated_librairies. The folder generated_models will contain the main proverif file that is executed (it also contain the full proverif command that is run).
+
+The model follow https://datatracker.ietf.org/doc/html/draft-ietf-tls-esni-13
 
 #### Syntax to follow:
 
@@ -11,7 +13,7 @@ In the following, the optional PV run proverif and display its output. Without i
 ./run_bench sanity [PV]
 ./run_bench sanity_nohrr [PV]
 
--- To run the privacy of the backend 
+-- To run the privacy of the backend
 
 * With PSK not reinjected
 
@@ -73,5 +75,3 @@ There is after the files for the scenario that Karthik requested (the one that s
 ./run_bench main_backend [PV]        (Privacy of the backend server, ECH client only)
 ./run_bench main_inner [PV]          (Strong secrecy of the extension in the inner client hello, ECH client only)
 ./run_bench main_client_ech [PV]     (Privacy client ECH only)
-
-
