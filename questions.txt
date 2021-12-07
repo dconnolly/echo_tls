@@ -2,8 +2,26 @@
     applying HKDF-Expand-Label, HKDF-Extract and generating a transcript hash.
   Is the hash algorithm used for these three the same as the TLS hash or is it
   the one from the ECH config ?
+    ANSWER: It's the TLS hash
 
 - Is it mandatory for the OuterClientHello to have the same cipher suite
   (hash alg and aead alg) than the InnerClientHello or can they be different ?
   If they must be the same, can you point me in the RFC ? (I want to add it in
-  comment in the code) 
+  comment in the code)
+    ANSWER : No
+
+- Assume that the client send an client hello with an encrypted_client_hello extension
+  that passes all the checks (the one from Section 7.1). Assume that in the inner client
+  hello, there are the proper cipher suite as well as a key share for the DH group.
+  However, assume that in the outer client hello, there is no key share for the DH group.
+  What should be the behavior of the frontend server ?
+  By reading the RFC, I have the impression that once the check on the encrypted_client_hello
+  extension extension are successful, the frontend server does not check anything else and
+  just forwards the inner_client_hello to the Backend.
+    ANSWER : If decryption works, the front end does not check anything.
+
+- in the same type of question: there is not requirement that the group of the outer
+  is the same as the group of the inner ?
+
+- Another question related to early data and HRR (both for TLS and ECH): If an HRR is sent,
+  does the server ignores necessarily the early data that was sent by the client or can he still uses them ?
