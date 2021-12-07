@@ -28,8 +28,8 @@ letfun derive_secret(h:hash_alg,k:bitstring,l:label,m:bitstring) =
 (* Function to generate "Early Secret" + binder_key *)
 letfun kdf_es(h:hash_alg,psk:preSharedKey,is_external:bool) =
   let early_secret = hkdf_extract(h,zero,psk2b(psk)) in
-  let label = if is_external then tls13_ext_binder else tls13_res_binder in
-  let binder_key = derive_secret(h,early_secret,label,zero) in
+  let lbl = if is_external then tls13_ext_binder else tls13_res_binder in
+  let binder_key = derive_secret(h,early_secret,lbl,zero) in
   (early_secret,b2mk(binder_key)).
 
 (* Function to generate

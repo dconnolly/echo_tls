@@ -21,6 +21,8 @@ letfun gen_B32_random() =
 
 fun crop_into_bytes8(bitstring):bytes8.
 
+fun b32_2_b(bytes32):bitstring [data].
+
 (********************************************************)
 (* Authenticated Encryption with Additional Data        *)
 (********************************************************)
@@ -64,6 +66,7 @@ fun id_g(group_strengh,nat):group [data].
 type element.
 const guessable: element.
 fun e2b(element): bitstring [typeConverter].
+fun b2e(bitstring): element [typeConverter].
 
 (* Key Generation *)
 fun dh_pub(group,bitstring): element.
@@ -95,7 +98,10 @@ fun dh_decap_fun(group,element,bitstring): element
 reduc forall g:group, x:bitstring, gxy:element;
   dh_decap_fun(g,dh_encap_fun(g,dh_pub(g,x),gxy),x) = gxy.
 
-(* Generate then Encap *)
+(* Generate then Encap. The argument m:bitstring
+  is used only as a proof helper, i.e. it would be correct to put m always
+  to 0 for example, but it indicates to ProVerif in which context the key
+  was generated. *)
 letfun dh_encap(g:group,gx:element,m:bitstring) =
   new s[]:seed;
   (dh_xy(s,m), dh_encap_fun(g,gx,dh_xy(s,m))).
@@ -123,9 +129,10 @@ fun hash_ideal(nat,bitstring):bitstring.
 
 fun hash(hash_alg,bitstring): bitstring
 reduc forall i:nat, x:bitstring;
-  hash(id_hash(WeakHash,i),x) = collision
-otherwise forall i:nat, x:bitstring;
-  hash(id_hash(StrongHash,i),x) = hash_ideal(i,x).
+  hash(id_hash(StrongHash,i),x) = hash_ideal(i,x)
+otherwise forall id:hash_alg, x:bitstring;
+  hash(id,x) = collision
+.
 
 (********************************************************)
 (* HMAC                                                 *)
@@ -138,9 +145,10 @@ fun hmac_ideal(nat,mac_key,bitstring): bitstring.
 
 fun hmac(hash_alg,mac_key,bitstring):bitstring
 reduc forall i:nat, k:mac_key, x:bitstring;
-  hmac(id_hash(WeakHash,i),k, x) = collision
-otherwise forall i:nat, x:bitstring, k:mac_key;
-  hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(i,k,x).
+  hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(i,k,x)
+otherwise forall id:hash_alg, x:bitstring, k:mac_key;
+  hmac(id,k,x) = collision
+.
 
 (********************************************************)
 (* Public Key Signatures                                *)

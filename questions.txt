@@ -1,0 +1,9 @@
+- In Section 7.2 of ECH RFC, the backend computes accept_confirmation by
+    applying HKDF-Expand-Label, HKDF-Extract and generating a transcript hash.
+  Is the hash algorithm used for these three the same as the TLS hash or is it
+  the one from the ECH config ?
+
+- Is it mandatory for the OuterClientHello to have the same cipher suite
+  (hash alg and aead alg) than the InnerClientHello or can they be different ?
+  If they must be the same, can you point me in the RFC ? (I want to add it in
+  comment in the code) 

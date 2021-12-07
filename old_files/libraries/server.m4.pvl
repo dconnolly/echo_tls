@@ -292,11 +292,7 @@ letfun open_inner(
   let ech_config(config_id,ech_g,pkR,o_dom,ech_h_alg,ech_a_alg) = ech_conf in
   let client_hello_AAD = generate_client_hello_outer_AAD(o_client_hello) in
 
-ifdef(<!ATTACK_TEST!>,<!dnl
-  let m2b(i_client_hello) = hpke_open(ech_a_alg,context,n,zero,payload) in
-!>,<!dnl
   let m2b(i_client_hello) = hpke_open(ech_a_alg,context,n,aad2b(client_hello_AAD),payload) in
-!>)dnl
     let CH(cr',nego(=TLS13,h_alg',a_alg',kex_ext',SNI(i_dom),ech_ext',psk_ext',extra_ext')) = i_client_hello in
       (i_client_hello,i_dom,true)
     else (o_client_hello,o_dom,false)
@@ -451,7 +447,7 @@ ifdef(<!ATTACK_HRR_HIJACK!>,<!dnl
           s_dom,g,h_alg,a_alg,kex_ext,zero,s_extra,
           x_client_hello)
     )
-    else out(io,handshake_failure)
+      else out(io,handshake_failure)
   )
   else out(io,unexpected_message)
 .

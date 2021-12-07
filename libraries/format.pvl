@@ -166,7 +166,8 @@ fun ech_config(
 ):echConfig [data].
 
 const
-  ech_accept_confirmation (* "ech accept confirmation" in Section 7.2 of ECH RFC *),
+  hrr_ech_accept_confirmation, (* "hrr ech accept confirmation" in Section 7.2.1 of ECH RFC *)
+  ech_accept_confirmation, (* "ech accept confirmation" in Section 7.2 of ECH RFC *)
   tls_ech_str (* "tls ech" in Section 6.1 of ECH RFC *)
   :label.
 
@@ -201,11 +202,11 @@ fun ECHClientHelloOuter(hash_alg,aead_alg,configId,element,bitstring): echExt [d
 (* The encrypted_client_hello extension that may be included in the server EncryptedExtensions
   message (see Section 5 of ECH RFC). It should normally contain retry_configs
   which is a list of Ech configurations but we only model one here. *)
-fun ECHConfigList(echConfig):echExt [data]
+fun ECHConfigList(echConfig):echExt [data].
 
 (* The encrypted_client_hello extension that is sent by the backend when sending
   the HelloRetryRequest (see Section 5 and 7.2.1 of ECH RFC). *)
-fun ECHHelloRetryRequest(bitstring):echExt [data]
+fun ECHHelloRetryRequest(bytes8):echExt [data].
 
 (***************************************
   TLS messages
@@ -221,18 +222,47 @@ type sniExt.
 fun SNI(domain): sniExt [data].
 const empty_sni_ext: sniExt [data].
 
+(* The early_data extension (4.2.10 of TLS RFC) *)
+type earlyDataExt.
+const empty_early_data_ext: earlyDataExt.
+
+const EarlyDataIndicationCH: earlyDataExt.
+const EarlyDataIndicationSH: earlyDataExt.
+const EarlyDataIndicationTicket: earlyDataExt. (* In TLS RFC, this extension contains an integer
+  max_early_data_size. We do not model it here. *)
+
+(* The post_handshake_auth extension *)
+type postHandshakeAuthExt.
+const empty_post_handshake_auth_ext: postHandshakeAuthExt.
+const PostHandshakeAuth: postHandshakeAuthExt.
+
 (* The parameters of the Client and Server Hello. The last argument can be used to
   add any other informations *)
 type params.
-fun nego(TLS_version,hash_alg,aead_alg,keyShareExt,sniExt,echExt,preSharedKeyExt,extraExt):params [data].
+fun nego(
+  TLS_version,
+  hash_alg,
+  aead_alg,
+  keyShareExt,
+  sniExt,
+  earlyDataExt,
+  postHandshakeAuthExt,
+  echExt,
+  extraExt,
+  preSharedKeyExt):params [data].
 
 type msg.
 fun m2b(msg):bitstring [typeConverter].
 fun CH(bytes32,params):msg [data].
 fun SH(bytes32,params):msg [data].
 
-(* Encrypted Extensions. Can contain zero or any additional extensions. *)
-fun EE(bitstring): msg [data].
+(* Some projection functions *)
+reduc
+  forall r:bytes32, mode:params; get_random(CH(r,mode)) = r;
+  forall r:bytes32, mode:params; get_random(SH(r,mode)) = r.
+
+(* Encrypted Extensions. *)
+fun EE(earlyDataExt,echExt,extraExt): msg [data].
 
 (* Certificate Request message. We only model the certificate_request_context
   but not the extensions, even though in the RFC, it is indicated that
@@ -255,7 +285,9 @@ fun FIN(bitstring):msg [data].
 (* The NewSessionTicket (Section 4.6.1 in TLS RFC) *)
 fun NST(
   bitstring, (* ticket_nonce *)
-  identityPsk (* ticket that as used as pre shared key identity *)
+  identityPsk, (* ticket that as used as pre shared key identity *)
+  earlyDataExt (* The extension that indicates if this PSK can be used for early
+    data *)
 ):msg [data].
 
 type error_signal.
@@ -263,8 +295,11 @@ const
   illegal_parameter,unsupported_certificate,decode_error,
   unexpected_message, handshake_failure,
   abort_error,bad_record_mac,
-  unrecognized_name, unsupported_extension
+  unrecognized_name, unsupported_extension,
+  missing_extension, decrypt_error
   :error_signal.
+
+fun error2b(error_signal):bitstring [typeConverter].
 
 (***************************************
   Session states
