@@ -1,0 +1,159 @@
+(*******************************)
+(*  Events used in the process *)
+(*******************************)
+
+(*** Event to defined security queries *)
+
+(* Selection of ciphersuite and group by the server *)
+event ServerChoosesAead(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  aead_alg        (* AEAD algorithm *)
+).
+
+event ServerChoosesHash(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  hash_alg        (* Hash algorithm *)
+).
+
+event ServerChoosesGroup(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  group           (* DH group *)
+).
+
+(* Offer of aead algorithm by the client *)
+event ClientOffersAead(
+  bytes32,        (* Client random *)
+  aead_alg        (* AEAD algorithm *)
+).
+
+(* Compromised keys *)
+event CompromisedLongTermKey(pubkey).
+event CompromisedPsk(preSharedKey).
+event CompromisedEchKey(element).
+
+(* Application Data - 0-RTT *)
+event ServerReceives0(
+  bytes32,        (* Client random *)
+  preSharedKey,   (* Pre shared key *)
+  bitstring,      (* Nonce given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientSends0(
+  bytes32,        (* Client random *)
+  preSharedKey,   (* Pre shared key *)
+  bitstring,      (* Nonce given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+(* Application Data - Post Handshake *)
+event ServerReceives(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ServerSends(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientReceives(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientSends(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+(* 1-RTT Authentication *)
+
+event ClientFinished(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  aead_key,       (* client_write_key for Application Data record *)
+  aead_key,       (* server_write_key for Application Data record *)
+  bitstring,      (* exporter_master_secret *)
+  bitstring       (* resumption_master_secret *)
+).
+
+event ServerFinished(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  aead_key,       (* client_write_key for Application Data record *)
+  aead_key,       (* server_write_key for Application Data record *)
+  bitstring,      (* exporter_master_secret *)
+  bitstring       (* resumption_master_secret *)
+).
+
+event PreServerFinished(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  aead_key,       (* client_write_key for Application Data record *)
+  aead_key,       (* server_write_key for Application Data record *)
+  bitstring       (* exporter_master_secret *)
+).
+
+(* Post Handshake Authentication *)
+
+event ServerRequestPH(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  bitstring       (* The random in request *)
+).
+
+event ClientFinishedPH(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  bitstring,      (* The random in request *)
+  pubkey          (* Certificate public key of the client *)
+).
+
+event ServerFinishedPH(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  bitstring,      (* The random in request *)
+  pubkey          (* Certificate public key of the client *)
+).
+
+(*** Events for proof helpers *)
+
+event PreciseMess(channel,idProc,bitstring,bitstring).

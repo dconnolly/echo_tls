@@ -1,4 +1,8 @@
-## Assumption on the Per-record nonce (Section 5.3 of TLS RFC).
+# Description of the protocol and assumptions
+
+## Assumptions
+
+#### Per-record nonce (Section 5.3 of TLS RFC).
 
 In the RFC, the nonce given to the AEAD encryption algorithm should be computed
 as follows:
@@ -9,167 +13,34 @@ as follows:
 2. The padded sequence number is XORed with either the static client_write_iv or
   server_write_iv (depending on the role).
 
-Main scenario
+As ProVerif does not handle XOR, we weakened the the protection of the sequence
+number by inputing only the sequence number. Hence the sequence number is not
+protection by the `client_write_iv`.
 
-On the server side (of domain s_dom)
-  1) When receiving a client hello from the public network, the server checks:
-      - It's a TLS 1.3 version (otherwise raise unexpected_message)
-      - The SNI corresponds to s_dom (otherwise raise handshake_failure)
-  2) If the server is a TLS Server of if it's a ECH Server but no ECH extension
-    is found in the client hello then the server acts as a TLS server (go to step 4)
-  3) Otherwise the server acts as a frontend with a single ECHConfig that he is willing
-    to accept. It proceeds as follows:
-      3.1) Verifies that ech_conf_serv.config_id = ECHClientHello.config_id
-        (otherwise go to step 4)
-      3.2) Verifies that ech_conf_serv.cipher_suite = ECHClientHello.cipher_suite
-        (otherwise go to step 4)
-      3.3) Generates a HPKE context from the private key corresponding to
-        ech_conf_serv.public_key and decrypts the payload by generating the client_hello_AAD.
-        (if fails go to step 4)
-      3.4) Retrieve the clientHelloInner (we don't model compression) and checks that
-        the ECH extension of the clientHelloInner is of type Inner and that the version
-        is 1.3 (otherwise raise illegal_parameter)
-      3.5) Forwards to the backend server with the domain corresponding to the SNI
-        of the ClientHelloInner. (go to step 6)
+We consider a sequence number for each different write key. Therefore, there is
+a distinct sequence number for `client_write_key` and `server_write_key`.
 
-  4) When the frontend server rejects the ECH, it should act as a TLS server with the
-    ClientHelloOuter but it must send during the connexion an ECH extension in its
-    EncryptedExtensions with a retry configuration. In the RFC, it is indicated that
-    the server MAY send an "encrypted_client_hello" with a payload of 8 random bytes.
-    We do not model that last part, as it is a MAY condition.
+For the sequence number related to 0-RTT and Handshake, we properly model the
+incrementation of the sequences. For Application Data post handshake, we let
+the attacker choose the value of the sequence number of we restrict ProVerif to
+(bi)traces where the sequence number is used only once. Hence, we consider strictly
+more behaviors than in reality as it allows messages to be sent with a non-increasing
+sequence order.
 
-  5) For a standard TLS connexion (or a frontend with rejected ECH), the server need
-    to check the key share.
-      5.1) If KeyShare extension of the client hello is invalid or does not corresponds
-        to the group accepted by the server, raise handshake_failure
-      5.2) If the KeyShare extension contains the group accepted by the server +
-        a key share then the server proceed with other verifications
-          (Go to step 7 - At that point the current transcript is CH1)
-      5.3) If the KeyShare extension only contains the group accepted by the server
-        then it must send an HRR.
-      5.4) When receiving the new client hello, the server verifies that the keyshare
-        extension contains the correct group + key share (otherwise raise handshake_failure)
-        (Go to step 7 - At that point the current transcript is CH1 - HRR - CH2)
+#### 0-RTT Early data
 
-  6) For an ECH connexion, i.e. a connexion where the frontend accepted the ECH
-    and forwarded the inner to the backend, the backend needs to chek the key share extension:
-      6.1) If KeyShare extension of the InnerCH is invalid or does not corresponds
-        to the group accepted by the backend, raise handshake_failure
-      6.2) If the KeyShare extnesion contains the group accepted by the server +
-        a key share then the server proceed with other verifications.
-          (Go to step 7 - At that point the current transcript is Inner1)
-      6.3) If the KeyShare extension only contains the group accepted by the server
-        then it sends an HRR with a special ECH extension (function generate_hello_retry_request
-        in ech_functions.pvl)
-      6.4) When the frontend receives the new client hello, it :
-        - Checks that the version of Outer2 if TLS 1.3 and the SNI corresponds to
-          its domain (otherwise raise unexpected_message)
-        - Checks that there is an ECH extension of type Outer (otherwise raise missing_extension)
-        - Checks that the ciphersuite and config_id of ECHOuter2 are the same as in
-          ECHOuter1, and that ECHOuter2.enc is empty (otherwise raise illegal_parameter)
-        - Decrypts the payload using the context that was generated at step 3.3
-          and by generating the client_hello_AAD (if it fails then raise decrypt_error)
-        - Forwards to the backend server
-          (Go to step 7 - At that point the current transcript for the backend is
-          Inner1 - HRR - Inner2)
+When the client select a PSK that allows early data, we only model one early
+message `(Application Data)` sent by the client instead of a flow of messages.
 
-  7) This step explains how the server analyse the client hello after the HRR verification.
-    When we mentio Client Hello in this step, it's the latest client hello received.
-    It should be for both standard TLS, or frontend with rejected ECH, or the backend server.
-      7.1) The server checks on the client hello that
-        - The version is TLS 1.3
-        - The ciphersuite matches
-        - The group matches
-        If any of these checks fails then raise handshake_failure
-      7.2) The server checks that:
-        - The domain in SNI corresponds to the server's domain
-        - [For Backend] Checks that the ECH extension is of type Inner
-        If any of these checks fails then raise illegal_parameter
-      7.3) The server generates the early_secret, retrieve the pre shared key from the
-        client hello and generates the PSK extension that will be send by the server
-        (function generate_early_secret_psk_extension in server.m4.pvl)
-      7.4) The servers generate the DH encapsulation from the key share in the client hello
-        and generate the handshake_secret.
-      7.5) The servers generates ServerHello
-        - [For Backend] The random must be generated by generate_accept_confirmation
-        - [For normal] The random is really a random.
-      7.6) After outputting the ServerHello, the server generates
-          - the master_secret,
-          - the (chk) client_write_key for handshake record,
-          - the (shk) server_write_key for handshake record,
-          - the (cfin) client_finished_key
-          - the (sfin) server_finished_key
-          (Function kdf_ms of key_schedule.pvl)
-      7.7) The servers output content of EncryptedExtension encrypted with (shk)
-      7.8) If no PSK was provided or the server did not accept the PSK
-        then
-          - A request for client certificate encrypted by (shk) is sent if requested by server
-          - The server's certificate is sent encrypted by (shk)
-          - The server's CertificateVerify is sent encrypted by (shk)
-      7.9) The server outputs its Finished message encrypted by (shk) that contains
-            a hmac of the transcript with the key (sfin)
-      7.10) If the server requested a client certificate at step 7.9
-        then it expects:
-          - A Certificate from the client encrypted by (chk)
-          - A CertificateVerify from the client encrypted by (chk)
-          - it verifies that the certificate received is a valid one that that the signature matches
-            the transcript.
-      7.11) The server expects a Finished message from the client encrypted with (chk)
-        and checks that the content of the Finished message is a hmac of the transcript
-        with the key (cfin)
+Moreover, we do not model the fact that the server could send data before receiving the client `Finished`.
 
+#### Offers of CipherSuite and DH groups
 
+The client will always only offer a single cipher suite and DH group to the server.
+The attacker will choose however which cipher suite and group the client offer.
 
-  - (Section 7) Upon receiving an initial client hello, the server checks the ECH extension:
-      -> If it's a OuterType then it acts as a frontend server
-      -> If it's an InnerType then it acts as a backend server
-      -> If it's a different type then raise error "illegal_parameter"
-      -> If there is no ECH extension then it acts as a TLS server.
+#### Generation of resumption ticket
 
-  - (Section 7.1) For a frontend server, we model for each session a single ECHConfig
-    that the frontend server is willing to accept (ech_conf_serv)
-    All the following checks are done before anything else (e.g. before sending HRR,
-    check groups, etc).
-      1) The server verifies that ech_conf_serv.config_id = ECHClientHello.config_id
-      2) The server verifies that ech_conf_serv.cipher_suite = ECHClientHello.cipher_suite
-      3) The server decrypts the payload using the private key corresponding
-          to ech_conf_serv.public_key
-      4) The server retrieves the ClientHelloInner (note that
-          we do not model EncodedClientHelloInner so in our case, EncodedClientHelloInner is
-          equal to ClientHelloInner)
-      5) The server verifies that the "encrypted_client_hello" of the ClientHelloInner
-        is of type Inner and that the version is TLS 1.3
-          QUESTION : Do we need to check the ciher suite ?
-      6) The server fowards to the Backend (In our model the same process plays
-        the role of the backend).
-
-    If Condition 1 to 4 succeed but 5 fails then raise error "illegal_parameter"
-
-    If Condition 1 to 4 fails then the server ignore the extension and proceed
-    with the OuterClient Hello.
-      -> If n HRR needs to be sent then the server may send an "encrypted_client_hello"
-      with a payload of 8 random bytes.
-      -> As we assume that a server accepting ECH has at least one ECHConfig,
-        the server must send an "encrypted_client_hello" in its EncryptedExtensions
-        with retry_configs.
-
-    (Section 7.1.1)
-    Upon receiving a new ClientHello from an HRR request, the frontend server must:
-      - if Step 1 to 5 suceeded (i.e. ECH accepted) then
-          7) the server verifies that the new "encrypted_client_hello" is there
-          8) the server verifies that it is of type Outer, that ECHClientHello.cipher_suite
-            and ECHClientHello.config_id are unchanged and that ECHClientHello.enc is empty
-          9) the server decrypts the payload
-          10) Retrieve the new ClientHelloInner then forwards it to the Backend
-
-          If step 7 fails then raise error "missing_extension"
-          If step 8 fails then raise error "illegal_parameter"
-          If step 9 fails then raise error "decrypt_error"
-      - if Step 1 to 5 failed (i.e. ECH not accepted) then it proceeds as usual
-        and ignore the ECH extension if there is one. The server must send an
-        "encrypted_client_hello" in its EncryptedExtensions with retry_configs.
-
-  - (Section 7.2) For a backend server,
-      - It must signal ECH acceptance by modifying the ServerHello.random
-      - If it needs to send an HRR, it must signal ECH acceptance by sending
-        an "encrypted_client_hello" with a special 8 bytes payload.
+The server will always send a `[NewSessionTicket]` message at the send of the
+handshake. We do not model multiple tickets. Clients will be able to use the
+pre shared keys derived from this ticket in later handshakes.

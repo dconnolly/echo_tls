@@ -1,0 +1,30 @@
+(*******************************)
+(*  Some TLS functionnalities  *)
+(*******************************)
+
+(* Retrieve early secret from pre shared key extension *)
+
+free ch_server_ES:channel [private].
+fun ArgsServerES(bitstring,preSharedKeyExt,preSharedKey,bool):bitstring [data].
+
+let process_generate_early_secret_psk_extension(id_server:idProc,use_psk:bool,s_dom:domain,client_hello:msg,cur_log:bitstring) =
+  (* The cipher suite should have already been verified *)
+  let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,psk_ext)) = client_hello in
+
+  let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
+    let (=s_dom,=h_alg) = (get_server_psk(id),get_hash_psk(id)) in (
+      let psk = get_psk(id) in
+      let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk,get_is_external_psk(id)) in
+      let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,trunc_client_psk_ext(id)) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      if binders = hmac(h_alg,kb,cur_log') then
+      out(ch_server_ES,(id_server,ArgsServerES(early_secret, server_psk_ext(1), psk, get_accept_early_data_psk(id))))
+    )
+    else
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
+      out(ch_server_ES,(id_server,ArgsServerES(es, empty_psk_ext, NoPsk, false)))
+  )
+  else
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
+    out(ch_server_ES,(id_server,ArgsServerES(es, empty_psk_ext, NoPsk, false)))
+.

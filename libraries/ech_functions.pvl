@@ -1,0 +1,105 @@
+(*******************************)
+(*  Some ECH functionnalities  *)
+(*******************************)
+
+(* Authenticating the ClientHelloOuter. (Section 5.2 of ECH RFC) *)
+
+letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
+  let CH(r,nego(v,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,psk_ext)) = client_hello_outer in
+  let ECHClientHelloOuter(h_alg_ech,a_alg_ech,config_id,enc,payload) = ech_ext in
+
+  (* The client_hello_outer with the payload is set of zero *)
+  let ech_ext' = ECHClientHelloOuter(h_alg_ech,a_alg_ech,config_id,enc,zero) in
+  CH(r,nego(v,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext',extra_ext,psk_ext)).
+
+
+(* Generation of enc and context *)
+letfun generate_enc_context_client(
+  ech_h:hash_alg,ech_g:group,
+  pkR:element, (* The public key of config *)
+  config:echConfig (* The ECH configuration *)
+  ) =
+  hpke_setup_base_S(ech_h,ech_g,pkR,(tls_ech_str,config))
+.
+
+(* Generation of the context for frontserver (Section 7.1 of ECH RFC) *)
+letfun generate_context_frontend_server(
+  ech_h:hash_alg,ech_g:group,
+  skR:bitstring, (* The private key associated to the public key of config *)
+  config:echConfig, (* The ECH configuration *)
+  enc:element (* ECHClientHelloOuter.enc found in the client hello. *)
+  ) =
+  hpke_setup_base_R(ech_h,ech_g,enc,skR,(tls_ech_str,config))
+.
+
+(* Generation of an "encrypted_client_hello" extension with retry configuration *)
+letfun generate_retry_ech_ext(config:echConfig) =
+  let ech_config(config_id,g,pkR,s_dom,h_alg,a_alg) = config in
+  let (skR':bitstring,pkR':element) = dh_keygen(g) in
+  new config_id'[]:configId;
+  ECHConfigList(ech_config(config_id',g,pkR',s_dom,h_alg,a_alg))
+.
+
+(* The "accept_confirmation" that is used by the backend server to signal acc.
+  See Section 7.2 of ECH RFC. *)
+
+letfun generate_accept_confirmation(
+  tls_h:hash_alg,
+  params_server_hello:params,
+  inner_client_hello:msg, (* The lastest ClientHelloInner *)
+  cur_log:bitstring (* From first ClientHelloInner up to and excluding the modified ServerHello *)
+  ) =
+  (* Generate a random first 24 bytes and create a modified Server Hello *)
+  new sr24[]:bytes24;
+  let sh_modified = SH(B32(sr24,zero8),params_server_hello) in
+  let cur_log_sh = (cur_log,sh_modified) in
+  let transcript_ech_conf = hash(tls_h,cur_log_sh) in
+  let sr8 =
+    crop_into_bytes8(hkdf_expand_label(
+      tls_h,
+      hkdf_extract(tls_h,zero,b32_2_b(get_random(inner_client_hello))),
+      ech_accept_confirmation,
+      cur_log_sh
+    ))
+  in
+  B32(sr24,sr8)
+.
+
+(* The "hrr_accept_confirmation" that is used in the HelloRetryRequest from
+  the backend server. See Section 7.2.1 of ECH RFC. *)
+
+(* In the RFC, the acceptation message is computed by applying HKDF-Expand-Label
+  with a length set to 8. We encode this by "cropping" to 8 bytes a standard
+  application of hpke_label_expand. This is not exactly the same but it does not
+  reduce capabilities of the attacker.
+*)
+letfun generate_hrr_accept_confirmation(
+  tls_g:group,tls_h:hash_alg,tls_a:aead_alg,
+  inner_client_hello:msg
+  ) =
+
+  (* Generate a standard HRR where the encrypted_client_hello extension has a payload
+  of 8 zero bytes. *)
+  let hrr_mode = nego(TLS13,tls_h,tls_a,hrr_kex_ext(tls_g),empty_sni_ext,empty_ed_ext,empty_pha_ext,ECHHelloRetryRequest(zero8),empty_extra_ext,empty_psk_ext) in
+  let hrr = SH(rand_HelloRetryRequest,hrr_mode) in
+
+  let cur_log = ((zero,inner_client_hello),hrr) in
+  let transcript_hrr_ech_conf = hash(tls_h,cur_log) in
+
+  crop_into_bytes8(hkdf_expand_label(
+    tls_h,
+    hkdf_extract(tls_h,zero,b32_2_b(get_random(inner_client_hello))),
+    hrr_ech_accept_confirmation,
+    cur_log
+  ))
+.
+
+(* The generation of the random the must be sent by the backend in its HRR *)
+letfun generate_hello_retry_request(
+  tls_g:group,tls_h:hash_alg,tls_a:aead_alg, (* Params of the backend *)
+  inner_client_hello:msg (* The inner client hello forwarded by the frontend *)
+  ) =
+  let hrr_accept_confirmation = generate_hrr_accept_confirmation(tls_g,tls_h,tls_a,inner_client_hello) in
+  let hrr_mode = nego(TLS13,tls_h,tls_a,hrr_kex_ext(tls_g),empty_sni_ext,empty_ed_ext,empty_pha_ext,ECHHelloRetryRequest(hrr_accept_confirmation),empty_extra_ext,empty_psk_ext) in
+  SH(rand_HelloRetryRequest,hrr_mode)
+.
