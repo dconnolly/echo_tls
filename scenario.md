@@ -1,3 +1,14 @@
+## Assumption on the Per-record nonce (Section 5.3 of TLS RFC).
+
+In the RFC, the nonce given to the AEAD encryption algorithm should be computed
+as follows:
+
+1. The 64-bit record sequence number is encoded in network byte order and padded
+  to the left with zeros to iv_length.
+
+2. The padded sequence number is XORed with either the static client_write_iv or
+  server_write_iv (depending on the role).
+
 Main scenario
 
 On the server side (of domain s_dom)
@@ -106,7 +117,7 @@ On the server side (of domain s_dom)
       7.11) The server expects a Finished message from the client encrypted with (chk)
         and checks that the content of the Finished message is a hmac of the transcript
         with the key (cfin)
-          
+
 
 
   - (Section 7) Upon receiving an initial client hello, the server checks the ECH extension:

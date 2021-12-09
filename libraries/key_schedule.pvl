@@ -78,6 +78,8 @@ letfun kdf_ms(h:hash_alg,handshake_secret:bitstring,log:bitstring) =
 (* Function to generate:
   - client_write_key for Application Data record
   - server_write_key for Application Data record
+  - client_finished_key for Application Data record
+  - server_finished_key for Application Data record
   - exporter_master_secret
   The log must contain ClientHello up to server Finished.
   *)
@@ -87,10 +89,14 @@ letfun kdf_k(h:hash_alg,master_secret:bitstring,log:bitstring) =
 
   let ems	= derive_secret(h,master_secret, tls13_exporter_master_secret, log) in
 
+  (* [sender]_write_key *)
   let client_wkad = hkdf_expand_label(h,client_ats,tls13_key,zero) in
   let server_wkad = hkdf_expand_label(h,server_ats,tls13_key,zero) in
 
-  (b2ae(client_wkad),b2ae(server_wkad),ems).
+  (* [sender]_finished_key *)
+  let client_fkad =  hkdf_expand_label(h,client_ats,tls13_finished,zero) in
+
+  (b2ae(client_wkad),b2ae(server_wkad),b2mk(client_fkad),ems).
 
 (* Function to generate resumption_master_secret. The log must contain:
   ClientHello up to client Finished. *)

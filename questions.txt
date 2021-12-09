@@ -42,3 +42,14 @@
   directly as a stream of message before receiving an answer from the server. If the server
   sends an HRR then it will ignores the data as you said. But what does he do with the
   end_of_early_data ? This one being part of the transcript normally, does it includes it or not ?
+    ANSWER :
+      If the server does not send an "early_data"
+     extension in EncryptedExtensions, then the client MUST NOT send an
+     EndOfEarlyData message.
+
+- What error should the server send if the client only offers cipher suite that the server
+  does not accept / recognize ?
+    ANSWER : handshake_failure
+
+- if the server refuses PSK and does not ask for a client certificate then even if
+  the handshake terminates, he does not really know with whom is he talking right ?

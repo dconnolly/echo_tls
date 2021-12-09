@@ -36,6 +36,8 @@ const WeakAE, StrongAE: aead_strengh [data].
 type aead_alg.
 fun id_aead(aead_strengh,nat):aead_alg [data].
 
+reduc forall i:nat; is_strong_aead(id_aead(StrongAE,i)) = true.
+
 type aead_key.
 fun b2ae(bitstring):aead_key [typeConverter].
 
@@ -62,6 +64,8 @@ const WeakDH, StrongDH: group_strengh [data].
 
 type group.
 fun id_g(group_strengh,nat):group [data].
+
+reduc forall i:nat; is_strong_group(id_g(StrongDH,i)) = true.
 
 type element.
 const guessable: element.
@@ -129,10 +133,12 @@ fun hash_ideal(nat,bitstring):bitstring.
 
 fun hash(hash_alg,bitstring): bitstring
 reduc forall i:nat, x:bitstring;
+  hash(id_hash(WeakHash,i),x) = collision
+otherwise forall i:nat, x:bitstring;
   hash(id_hash(StrongHash,i),x) = hash_ideal(i,x)
-otherwise forall id:hash_alg, x:bitstring;
-  hash(id,x) = collision
 .
+
+reduc forall i:nat; is_strong_hash(id_hash(StrongHash,i)) = true.
 
 (********************************************************)
 (* HMAC                                                 *)
@@ -145,9 +151,9 @@ fun hmac_ideal(nat,mac_key,bitstring): bitstring.
 
 fun hmac(hash_alg,mac_key,bitstring):bitstring
 reduc forall i:nat, k:mac_key, x:bitstring;
+  hmac(id_hash(WeakHash,i),k,x) = collision
+otherwise forall i:nat, k:mac_key, x:bitstring;
   hmac(id_hash(StrongHash,i),k, x) = hmac_ideal(i,k,x)
-otherwise forall id:hash_alg, x:bitstring, k:mac_key;
-  hmac(id,k,x) = collision
 .
 
 (********************************************************)

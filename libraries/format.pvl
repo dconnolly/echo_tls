@@ -11,6 +11,7 @@ fun id2b(idProc):bitstring [typeConverter].
   All terms of this type will be public. When we refer to a client or a server
   in our explanation, we always refer to their public domain. *)
 type domain.
+const empty_domain:domain.
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
@@ -73,18 +74,18 @@ fun b2idpsk(bitstring):identityPsk [typeConverter].
   By defining the function as private and its projections
   as private, we ensure that only the honest server can access its content.
   Note that it does not prevent the attacker to play the role of a server. *)
-fun mk_idpsk(domain,domain,hash_alg,preSharedKey,bool):identityPsk [private].
+fun mk_idpsk(domain,hash_alg,preSharedKey,bool,bool):identityPsk [private].
 
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
-  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = c_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
-  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = s_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
-  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = h_alg [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
-  get_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = psk [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external:bool;
-  get_is_external_psk(mk_idpsk(c_dom,s_dom,h_alg,psk,is_external)) = is_external [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
+  get_server_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = s_dom [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
+  get_hash_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = h_alg [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
+  get_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = psk [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
+  get_is_external_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = is_external [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
+  get_accept_early_data_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = accept_early_data [private].
 
 (* The extension itself *)
 type preSharedKeyExt.
@@ -115,24 +116,18 @@ type certificate.
 (* By being private, the function valid_cert represents a certificate that has
   been created by trusted authority. *)
 fun valid_cert(domain,pubkey):certificate [private].
-(* We give the attacker the ability to create his own certificate but they
-  would not be consider as trusted by the function verify_cert. *)
-fun cert(domain,pubkey):certificate.
 
 fun get_pkey(certificate):pubkey
 reduc
-  forall d:domain, pkey:pubkey; get_pkey(valid_cert(d,pkey)) = pkey
-  otherwise forall d:domain, pkey:pubkey; get_pkey(cert(d,pkey)) = pkey.
+  forall d:domain, pkey:pubkey; get_pkey(valid_cert(d,pkey)) = pkey.
 
 fun get_domain(certificate):domain
 reduc
-  forall d:domain, pkey:pubkey; get_domain(valid_cert(d,pkey)) = d
-  otherwise forall d:domain, pkey:pubkey; get_domain(cert(d,pkey)) = d.
+  forall d:domain, pkey:pubkey; get_domain(valid_cert(d,pkey)) = d.
 
 fun verify_cert(certificate):bool
 reduc
-  forall d:domain, p:pubkey; verify_cert(valid_cert(d,p)) = true
-  otherwise forall x:certificate; verify_cert(x) = false.
+  forall d:domain, p:pubkey; verify_cert(valid_cert(d,p)) = true.
 
 (* The global table storing the long term keys for both the server and client.
   The value of type idProc corresponds to the process identifier that generated
@@ -224,7 +219,7 @@ const empty_sni_ext: sniExt [data].
 
 (* The early_data extension (4.2.10 of TLS RFC) *)
 type earlyDataExt.
-const empty_early_data_ext: earlyDataExt.
+const empty_ed_ext: earlyDataExt.
 
 const EarlyDataIndicationCH: earlyDataExt.
 const EarlyDataIndicationSH: earlyDataExt.
@@ -233,7 +228,7 @@ const EarlyDataIndicationTicket: earlyDataExt. (* In TLS RFC, this extension con
 
 (* The post_handshake_auth extension *)
 type postHandshakeAuthExt.
-const empty_post_handshake_auth_ext: postHandshakeAuthExt.
+const empty_pha_ext: postHandshakeAuthExt.
 const PostHandshakeAuth: postHandshakeAuthExt.
 
 (* The parameters of the Client and Server Hello. The last argument can be used to
@@ -263,6 +258,9 @@ reduc
 
 (* Encrypted Extensions. *)
 fun EE(earlyDataExt,echExt,extraExt): msg [data].
+
+(* EndOfEarlyData *)
+const EOED: msg.
 
 (* Certificate Request message. We only model the certificate_request_context
   but not the extensions, even though in the RFC, it is indicated that
