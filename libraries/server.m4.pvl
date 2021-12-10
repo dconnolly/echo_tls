@@ -1,18 +1,12 @@
 (* changequote(<!,!>)dnl *)
 
 (* M4 variables in this file:
-  - SERVER_SELECT_CRT : For the selection of server certificate
+  - SERVER_SELECT_CRT : For the selection of server certificate.
 *)
 
 (********************
   Server processes
 *********************)
-
-(* Structure for early_data_management *)
-type early_data_result.
-fun EDAccepted(aead_key,bitstring):early_data_result [data].
-const EDRejected:early_data_result.
-
 
 (* The private channels used for passing arguments *)
 
@@ -23,7 +17,7 @@ const EDRejected:early_data_result.
   checking.
 *)
 
-(* The Post handshake messages *)
+(* The Post Handshake messages *)
 
 free ch_server_PHS:channel [private].
 fun ArgsServerPHS(
@@ -31,7 +25,7 @@ fun ArgsServerPHS(
   domain, pubkey,
   preSharedKey,bool,
   bool,bool,
-  aead_key,aead_key,mac_key, bitstring, bitstring,
+  aead_key,aead_key,mac_key, bitstring,
   bitstring
 ):bitstring [data].
 
@@ -42,7 +36,7 @@ let server_post_handshake =
     s_dom, s_pkey,
     psk,tck_ED,
     send_data, use_postHS,
-    cak,sak,cfkad,ems,rms,
+    cak,sak,cfkad,rms,
     cur_log
   )));
 
@@ -84,7 +78,7 @@ let server_post_handshake =
     (* Rounds of post handshake authentication *)
     if use_postHS then
     !
-    (* Selection of the ticket number *)
+    (* Selection of the sequence numbers *)
     in(io,(seq_srv:nat,seq_client:nat));
     if is_nat(seq_srv) && is_nat(seq_client) then
 
@@ -165,7 +159,7 @@ let receive_client_finished_message =
     s_dom, s_pkey,
     psk, tck_ED,
     send_data, use_postHS,
-    cak,sak,cfkad,ems,rms,
+    cak,sak,cfkad,rms,
     cur_log_CFIN
   )))
 .
@@ -195,6 +189,9 @@ let send_server_finished_message =
   let hash_msg = hmac(h_alg,sfin,cur_log) in
   let finished_msg = FIN(hash_msg) in
   let enc_finished = aead_enc(a_alg,shk,n2b(s_seq),zero,m2b(finished_msg)) in
+
+  event PreServerFinished(cr,sr,psk,s_pkey);
+
   out(io,enc_finished);
   let cur_log_FIN = (cur_log,finished_msg) in
 
@@ -225,7 +222,7 @@ let send_server_finished_message =
         cur_log_CV)))
   )
   else
-    let EDAccepted(wkc0:aead_key,esm0:bitstring) = ed_res in (
+    let EDAccepted(wkc0) = ed_res in (
       (* The client should send an EndOfEarlyData message *)
       in(io,enc_eoed_msg:bitstring);
       if m2b(EOED) = aead_dec(a_alg,wkc0,n2b(1),zero,enc_eoed_msg) then
@@ -337,113 +334,119 @@ let process_client_hello_noHRR =
   event PreciseMess(ch_server_SH,id_server,st,m2b(client_hello));
 
   let CH(cr,offer) = client_hello in
+  event ServerTest0(cr);
   (* Verify the cipher suite and group *)
   let nego(=TLS13,=tls_h,=tls_a,client_kex_ext(DHE_kex(=tls_g,gx)),sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,psk_ext) = offer in (
     if sni_ext = SNI(s_dom)
     then (
+
       (* Retrieve the early secret from the psk. *)
-      process_generate_early_secret_psk_extension(id_server,use_psk,s_dom,client_hello,cur_log) |
+      generate_early_secret_psk_extension(id_server,use_psk,s_dom,client_hello,cur_log) |
 
       (* The generation is done through parallel computation. *)
       in(ch_server_ES,(=id_server,ArgsServerES(early_secret,s_psk_ext,psk,allow_ed)));
-        let cur_log_CH = (cur_log,client_hello) in (
-          (* Checks if it needs to receive an early data message. If it does
-            then it tries to decrypt it and output on the private channel ch_early_data_SH
-            for continuation. *)
-          (
-            if ed_ext = EarlyDataIndicationCH && accept_early_data && allow_ed
-            then
-              in(io,enc_early_data:bitstring);
-              let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
-              let early_data:bitstring = aead_dec(tls_a,wkc0,zero,zero,enc_early_data) in (
-                event ServerReceives0(cr,psk,n2b(0),zero,early_data);
-                out(ch_server_ED,(id_server,ArgsServerED(EDAccepted(wkc0,ems0))))
-              )
-              else out(io,bad_record_mac)
-            else out(ch_server_ED,(id_server,ArgsServerED(EDRejected)))
-          ) | (
-            in(ch_server_ED,(=id_server,ArgsServerED(ed_res)));
+      event ServerTest1(cr,psk);
+      let cur_log_CH = (cur_log,client_hello) in (
+        (* Checks if it needs to receive an early data message. If it does
+          then it tries to decrypt it and output on the private channel ch_early_data_SH
+          for continuation. *)
+        (
+          if ed_ext = EarlyDataIndicationCH && accept_early_data && allow_ed
+          then (
+            in(io,enc_early_data:bitstring);
+            let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
+            let early_data:bitstring = aead_dec(tls_a,wkc0,n2b(0),zero,enc_early_data) in (
+              event ServerReceives0(cr,psk,early_data);
+              out(ch_server_ED,(id_server,ArgsServerED(EDAccepted(wkc0))))
+            )
+            else out(io,bad_record_mac)
+          )
+          else out(ch_server_ED,(id_server,ArgsServerED(EDRejected)))
+        ) | (
+          in(ch_server_ED,(=id_server,ArgsServerED(ed_res)));
+          event ServerTest2(cr,psk);
+          (* Generate key share and handshake secret *)
+          let (gxy:element,gy:element) = dh_encap(tls_g,gx,m2b(client_hello)) in
+          let handshake_secret = kdf_hs(tls_h,early_secret,gxy) in
 
-            (* Generate key share and handshake secret *)
-            let (gxy:element,gy:element) = dh_encap(tls_g,gx,m2b(client_hello)) in
-            let handshake_secret = kdf_hs(tls_h,early_secret,gxy) in
+          let s_offer = nego(TLS13,tls_h,tls_a,server_kex_ext(DHE_kex(tls_g,gy)),empty_sni_ext,empty_ed_ext,empty_pha_ext,empty_ech_ext,empty_extra_ext,s_psk_ext) in
 
-            let s_offer = nego(TLS13,tls_h,tls_a,server_kex_ext(DHE_kex(tls_g,gy)),empty_sni_ext,empty_ed_ext,empty_pha_ext,empty_ech_ext,empty_extra_ext,s_psk_ext) in
+          let sr =
+            if is_backend
+            then generate_accept_confirmation(tls_h,s_offer,client_hello,cur_log_CH)
+            else gen_B32_random ()
+          in
 
-            let sr =
-              if is_backend
-              then generate_accept_confirmation(tls_h,s_offer,client_hello,cur_log_CH)
-              else gen_B32_random ()
-            in
+          let server_hello = SH(sr,s_offer) in
 
-            let server_hello = SH(sr,s_offer) in
+          out(io,server_hello);
+          let cur_log_SH = (cur_log_CH,server_hello) in
+          event ServerTestSH(cr,sr,cur_log_SH);
 
-            out(io,server_hello);
-            let cur_log_SH = (cur_log_CH,server_hello) in
+          event ServerTest3(cr,sr,psk);
 
-            (* Generate the master keys *)
-            let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
-              kdf_ms(tls_h,handshake_secret,cur_log_SH)
-            in
+          (* Generate the master keys *)
+          let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
+            kdf_ms(tls_h,handshake_secret,cur_log_SH)
+          in
 
-            (* Sending the encrypted extension *)
-            let EE(ed_ee,ech_ee,extra_ee) = ee_msg in
-            let ee_msg' =
-              if ed_res = EDRejected
-              then EE(empty_ed_ext,ech_ee,extra_ee)
-              else EE(EarlyDataIndicationSH,ech_ee,extra_ee)
-            in
-            let enc_ee = aead_enc(tls_a,shk,n2b(0),zero,m2b(ee_msg')) in
-            out(io,enc_ee);
-            let cur_log_EE = (cur_log_SH,ee_msg') in
+          (* Sending the encrypted extension *)
+          let EE(ed_ee,ech_ee,extra_ee) = ee_msg in
+          let ee_msg' =
+            if ed_res = EDRejected
+            then EE(empty_ed_ext,ech_ee,extra_ee)
+            else EE(EarlyDataIndicationSH,ech_ee,extra_ee)
+          in
+          let enc_ee = aead_enc(tls_a,shk,n2b(0),zero,m2b(ee_msg')) in
+          out(io,enc_ee);
+          let cur_log_EE = (cur_log_SH,ee_msg') in
+          event ServerTest4(cr,sr,psk,cur_log_EE);
 
-            let doPHA = (pha_ext = PostHandshakeAuth) && use_postHS in
+          let doPHA = (pha_ext = PostHandshakeAuth) && use_postHS in
 
-            (* Sends either the finish message or the certificate messages *)
-            if psk = NoPsk
-            then
-              if req_cert
-              then (
-                (* The server requests a client certificate *)
-                let crtr_msg = CRTR(zero) in
-                let enc_crt = aead_enc(tls_a,shk,n2b(1),zero,m2b(crtr_msg)) in
-                out(io,enc_crt);
-                let cur_log_CRTR = (cur_log_EE,crtr_msg) in
+          (* Sends either the finish message or the certificate messages *)
+          if psk = NoPsk
+          then
+            if req_cert
+            then (
+              (* The server requests a client certificate *)
+              let crtr_msg = CRTR(zero) in
+              let enc_crt = aead_enc(tls_a,shk,n2b(1),zero,m2b(crtr_msg)) in
+              out(io,enc_crt);
+              let cur_log_CRTR = (cur_log_EE,crtr_msg) in
 
-                (* Sends the certificate *)
-                out(ch_server_CRT,(id_server,ArgsServerCRT(
-                  cr,sr,tls_h,tls_a,
-                  s_dom, req_cert,
-                  tck_ED,
-                  send_data, doPHA,
-                  master_secret,chk,0,shk,2,cfin,sfin,
-                  cur_log_CRTR)))
-              )
-              else
-                out(ch_server_CRT,(id_server,ArgsServerCRT(
-                  cr,sr,tls_h,tls_a,
-                  s_dom, req_cert,
-                  tck_ED,
-                  send_data, doPHA,
-                  master_secret,chk,0,shk,1,cfin,sfin,
-                  cur_log_EE)))
-            else
-              out(ch_server_FIN,(id_server,ArgsServerFIN(
+              (* Sends the certificate *)
+              out(ch_server_CRT,(id_server,ArgsServerCRT(
                 cr,sr,tls_h,tls_a,
-                s_dom, NoPubKey, false,
-                psk, tck_ED,
-                ed_res,send_data,doPHA,
+                s_dom, req_cert,
+                tck_ED,
+                send_data, doPHA,
+                master_secret,chk,0,shk,2,cfin,sfin,
+                cur_log_CRTR)))
+            )
+            else
+              out(ch_server_CRT,(id_server,ArgsServerCRT(
+                cr,sr,tls_h,tls_a,
+                s_dom, req_cert,
+                tck_ED,
+                send_data, doPHA,
                 master_secret,chk,0,shk,1,cfin,sfin,
                 cur_log_EE)))
-          )
+          else
+            out(ch_server_FIN,(id_server,ArgsServerFIN(
+              cr,sr,tls_h,tls_a,
+              s_dom, NoPubKey, false,
+              psk, tck_ED,
+              ed_res,send_data,doPHA,
+              master_secret,chk,0,shk,1,cfin,sfin,
+              cur_log_EE)))
         )
-
+      )
     )
     else out(io,illegal_parameter)
   )
   else out(io,handshake_failure)
 .
-
 
 (* Case of:
   - a normal TLS server
@@ -478,7 +481,7 @@ let standard_HRR_check(id_server:idProc,
         out(ch_server_SH,(id_server,ArgsServerSH(
           tls_g,tls_h,tls_a,
           s_dom, req_cert,
-          false,use_psk,tck_ED,accept_early_data,use_postHS,send_data,
+          false,use_psk,tck_ED,false,use_postHS,send_data,
           ee_msg,client_hello',cur_log_HRR
         )))
       else out(io,unexpected_message)
@@ -582,7 +585,7 @@ let ech_HRR_check(id_server:idProc,
 (* The main server *)
 
 let server(
-  use_ech,use_psk,req_cert,accept_early_data,use_postHS,send_data,tck_ED:bool,
+  use_ech,use_psk,req_cert,accept_ED,use_postHS,send_data,tck_ED:bool,
   s_dom:domain,
   tls_g:group,tls_h:hash_alg,tls_a:aead_alg, (* The group and cipher suite accepted by the standard TLS server or frontend *)
   backend_g:group,backend_h:hash_alg,backend_a:aead_alg, (* The group and cipher suite accepted by the backend server *)
@@ -610,7 +613,7 @@ let server(
       if use_ech <> true || ech_ext = empty_ech_ext
       then
         standard_HRR_check(id_server,
-          use_ech,use_psk,req_cert,accept_early_data,use_postHS,send_data,tck_ED,
+          use_ech,use_psk,req_cert,accept_ED,use_postHS,send_data,tck_ED,
           s_dom,
           tls_g,tls_h,tls_a,
           EE(empty_ed_ext,empty_ech_ext,ee_extra),
@@ -630,7 +633,7 @@ let server(
               let CH(cr',nego(=TLS13,c_h_alg',c_a_alg',kex_ext',SNI(i_dom),ed_ext',pha_ext',=ECHClientHelloInner,extra_ext',psk_ext')) = i_client_hello in (
                 (* All checks were successful, the front forwards to the backend. *)
                 ech_HRR_check(id_server,
-                  use_psk,req_cert,accept_early_data,use_postHS,send_data,tck_ED,
+                  use_psk,req_cert,accept_ED,use_postHS,send_data,tck_ED,
                   backend_g,backend_h,backend_a,
                   EE(empty_ed_ext,empty_ech_ext,ee_extra),context,ech_conf,
                   i_client_hello
@@ -641,7 +644,7 @@ let server(
             else
               (* The decryption does not work *)
               standard_HRR_check(id_server,
-                use_ech,use_psk,req_cert,accept_early_data,use_postHS,send_data,tck_ED,
+                use_ech,use_psk,req_cert,accept_ED,use_postHS,send_data,tck_ED,
                 s_dom,
                 tls_g,tls_h,tls_a,
                 EE(empty_ed_ext,retry_ech_ext,ee_extra),
@@ -653,7 +656,7 @@ let server(
               The frontend ignores the extension and proceed with the OuterClientHello.
               It must send a retry configuration. *)
             standard_HRR_check(id_server,
-              use_ech,use_psk,req_cert,accept_early_data,use_postHS,send_data,tck_ED,
+              use_ech,use_psk,req_cert,accept_ED,use_postHS,send_data,tck_ED,
               s_dom,
               tls_g,tls_h,tls_a,
               EE(empty_ed_ext,retry_ech_ext,ee_extra),

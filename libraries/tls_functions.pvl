@@ -2,12 +2,19 @@
 (*  Some TLS functionnalities  *)
 (*******************************)
 
+(* Structure for early_data_management *)
+type early_data_result.
+fun EDAccepted(aead_key):early_data_result [data].
+const EDRejected:early_data_result.
+
 (* Retrieve early secret from pre shared key extension *)
 
 free ch_server_ES:channel [private].
 fun ArgsServerES(bitstring,preSharedKeyExt,preSharedKey,bool):bitstring [data].
 
-let process_generate_early_secret_psk_extension(id_server:idProc,use_psk:bool,s_dom:domain,client_hello:msg,cur_log:bitstring) =
+(* Generate early secret and psk extension on the server side *)
+
+let generate_early_secret_psk_extension(id_server:idProc,use_psk:bool,s_dom:domain,client_hello:msg,cur_log:bitstring) =
   (* The cipher suite should have already been verified *)
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,psk_ext)) = client_hello in
 
@@ -28,3 +35,80 @@ let process_generate_early_secret_psk_extension(id_server:idProc,use_psk:bool,s_
     let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
     out(ch_server_ES,(id_server,ArgsServerES(es, empty_psk_ext, NoPsk, false)))
 .
+
+(* Generate the pre shared key extension on the client side *)
+
+letfun make_pre_shared_key_extension(
+  id_client:idProc,old_psk_data:bitstring,
+  use_psk:bool,ed_ext:earlyDataExt,pha_ext:postHandshakeAuthExt,
+  c_dom,s_dom:domain,cr:bytes32,
+  h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
+  extra:extraExt,cur_log:bitstring
+  ) =
+
+  if use_psk
+  then (
+    let (psk:preSharedKey,id:identityPsk,old_es:bitstring,is_safe:bool,is_external:bool,allow_ed:bool) = old_psk_data in (
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),empty_ed_ext,pha_ext,ech_ext,extra,trunc_client_psk_ext(id)) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk,is_external) in
+      let binders = hmac(h_alg,kb,cur_log') in
+      (client_psk_ext(id,binders), (psk,id,es,is_safe,is_external,allow_ed))
+    )
+    else (
+      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk,is_external,allows_ed,idP,is_safe) [precise] in
+      if ed_ext <> EarlyDataIndicationCH || allows_ed then
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ed_ext,pha_ext,ech_ext,extra,trunc_client_psk_ext(id)) in
+      let cur_log' = (cur_log,CH(cr,offer)) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk,is_external) in
+      let binders = hmac(h_alg,kb,cur_log') in
+      (client_psk_ext(id,binders), (psk,id,es,is_safe,is_external,allows_ed))
+    )
+  )
+  else
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
+    (empty_psk_ext,(NoPsk,b2idpsk(zero),es,false,true,false))
+.
+
+(* Generate the key share extension. *)
+
+letfun make_key_share_extension(g:group,send_key_share:bool) =
+  let (x:bitstring,gx:element) = dh_keygen(g) in
+  let kex =
+    if send_key_share
+    then DHE_kex(g,gx)
+    else DHE_group(g)
+  in
+  (client_kex_ext(kex), (x,g))
+.
+
+(* Generate the client hello message *)
+
+letfun generate_client_hello_message (
+  id_client:idProc,old_psk_data:bitstring,
+  use_psk,send_early_data,use_postHS:bool,
+  c_dom,s_dom:domain,
+  g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,
+  cur_log:bitstring
+  )
+  =
+
+  let cr = gen_B32_random() in
+
+  (* The key share extension *)
+  let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
+
+  (* The Post Handshake Authentication extension *)
+  let pha_ext = if use_postHS then PostHandshakeAuth else empty_pha_ext in
+
+  (* The early_data extension *)
+  let ed_ext = if send_early_data then EarlyDataIndicationCH else empty_ed_ext in
+
+  (* The pre shared key extension *)
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    make_pre_shared_key_extension(id_client,old_psk_data,use_psk,ed_ext,pha_ext,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,empty_extra_ext,cur_log)
+  in
+
+  (* The client hello *)
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),ed_ext,pha_ext,empty_ech_ext,empty_extra_ext,psk_ext) in
+  (CH(cr,offer),cr,kex_ext,kex_data,psk_data).

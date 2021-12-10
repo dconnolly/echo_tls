@@ -1,0 +1,631 @@
+(* changequote(<!,!>)dnl *)
+
+(* M4 variables in this file:
+  - CLIENT_SELECT_CRT : For the selection of client certificate.
+*)
+
+(********************
+  Client processes
+*********************)
+
+(* The Post Handshake messages *)
+
+free ch_client_PHS:channel [private].
+fun ArgsClientPHS(
+  bytes32,bytes32,hash_alg,aead_alg,
+  domain,domain,pubkey,
+  preSharedKey,bool,bool,
+  bool,bool,
+  aead_key,aead_key,mac_key, bitstring,
+  bitstring
+):bitstring [data].
+
+let client_post_handshake =
+  !
+  in(ch_client_PHS,(id_client:idProc,ArgsClientPHS(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,
+    psk,safe_psk,comp_psk,
+    send_data,use_postHS,
+    cak,sak,cfkad,rms,
+    cur_log
+  )));
+
+  (
+    (* Reception of the new ticket *)
+    in(io,enc_ticket_msg:bitstring);
+    let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(0),zero,enc_ticket_msg) in
+    event ClientReceives(cr,sr,psk,s_pkey,0,zero,m2b(ticket_msg));
+    let NST(ticket_nonce,ticket_id,ticket_ed_ext) = ticket_msg in
+
+    (* Determine if the new PSK should be safe of not. This is only a proof helper
+    property. The client does not use this value.
+    We will show that if should_be_sake is true then the PSK is actually
+    not deducible by the attacker. *)
+    let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
+    let psk_allows_ED = ticket_ed_ext = EarlyDataIndicationTicket in
+
+    0
+    (* if comp_psk
+    then
+      event CompromisedPsk(new_psk);
+      out(io,new_psk);
+      insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,false,psk_allows_ED,id_client,false)
+    else
+      if psk = NoPsk
+      then insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,false,psk_allows_ED,id_client,uncompromised_privkey(s_pkey))
+      else insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,false,psk_allows_ED,id_client,safe_psk) *)
+  ) | (
+    (* Sending date if requested *)
+    if send_data then
+    (
+      !
+      in(io,(seq_client:nat,ad:bitstring));
+      if is_nat(seq_client) then
+      new msgs[]:bitstring;
+      event ClientSends(cr,sr,psk,s_pkey,seq_client,ad,msgs);
+      out(io,aead_enc(a_alg,sak,n2b(seq_client),ad,msgs))
+    ) | (
+      !
+      in(io,(seq_srv:nat,ad:bitstring, enc_msg:bitstring));
+      if is_nat(seq_srv) then
+      let msgs = aead_dec(a_alg,cak,n2b(seq_srv),ad,enc_msg) in
+        event ClientReceives(cr,sr,psk,s_pkey,seq_srv,ad,msgs)
+      else out(io,bad_record_mac)
+    )
+  ) | (
+    (* Rounds of post handshake authentication *)
+    if use_postHS then
+    !
+    (* Selection of the sequence numbers *)
+    in(io,(seq_srv:nat,seq_client:nat));
+    if is_nat(seq_srv) && is_nat(seq_client) then
+
+    (* Reception of a certificate request *)
+    in(io,enc_msg:bitstring);
+    let m2b(CRTR(rand_crt)) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_msg) in
+    event ClientReceives(cr,sr,psk,s_pkey,seq_srv,zero,m2b(CRTR(rand_crt)));
+    let cur_log_CRTR = (cur_log,CRTR(rand_crt)) in
+
+    (* TO UNCOMMENT FOR FINAL VERSION *)
+  (* ifdef(<!CLIENT_SELECT_CRT!>,<!dnl
+    get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+    event Selected_lgt(c_dom',c_dom,idP);
+  !>,<!dnl
+    get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+  !>)dnl *)
+
+    (* TO REMOVE FOR FINAL VERSION *)
+    get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+
+    (* The Certificate message *)
+    let certificate_msg = CRT(rand_crt,crt) in
+    let encrypted_certificate_msg = aead_enc(a_alg,cak,n2b(seq_client),zero,m2b(certificate_msg)) in
+    event ClientSends(cr,sr,psk,s_pkey,seq_client,zero,m2b(certificate_msg));
+    out(io,encrypted_certificate_msg);
+    let cur_log_CRT = (cur_log_CRTR,certificate_msg) in
+
+    (* The CertificateVerify message *)
+    let signed_log = sign(sk,hash(h_alg,cur_log_CRT)) in
+    let certificate_verify_msg = CV(signed_log) in
+    let enc_verify_msg = aead_enc(a_alg,cak,n2b(seq_client+1),zero,m2b(certificate_verify_msg)) in
+    event ClientSends(cr,sr,psk,s_pkey,seq_client+1,zero,m2b(certificate_verify_msg));
+    out(io,enc_verify_msg);
+    let cur_log_CV = (cur_log_CRT,certificate_verify_msg) in
+
+    (* The finished message *)
+    let hash_msg = hmac(h_alg,cfkad,cur_log_CV) in
+    let enc_fin = aead_enc(a_alg,cak,n2b(seq_client+2),zero,m2b(FIN(hash_msg))) in
+    event ClientSends(cr,sr,psk,s_pkey,seq_client+2,zero,m2b(FIN(hash_msg)));
+    event ClientFinishedPH(cr,sr,psk,s_pkey,rand_crt,c_pkey);
+    out(io,enc_fin)
+  )
+.
+
+(* Finished *)
+
+free ch_client_CFIN:channel [private].
+fun ArgsClientCFIN(
+  bytes32,bytes32,hash_alg,aead_alg,
+  domain,domain,pubkey,
+  preSharedKey,bool,bool,
+  bool,bool,
+  bitstring, aead_key, nat, aead_key, nat, mac_key,mac_key,
+  bitstring
+):bitstring [data].
+
+let send_client_finished_message =
+  !
+  in(ch_client_CFIN,(id_client:idProc,ArgsClientCFIN(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,
+    psk,safe_psk,comp_psk,
+    send_data,use_postHS,
+    master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
+    cur_log
+  )));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_CFIN,id_client,st,(c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,cur_log));
+
+  let (cak:aead_key,sak:aead_key,cfkad:mac_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
+  let client_hash_msg = hmac(h_alg,cfin,cur_log) in
+  let client_finished_msg = FIN(client_hash_msg) in
+
+  let cur_log' = (cur_log,client_finished_msg) in
+
+  (* The resumption_master_secret in Key schedule *)
+  let rms = kdf_psk(h_alg,master_secret,cur_log') in
+
+  let enc_client_finished_msg = aead_enc(a_alg,chk,n2b(seq_client),zero,m2b(client_finished_msg)) in
+
+  event ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms);
+  out(io,enc_client_finished_msg);
+
+  (* End of the 1-RTT Handshake *)
+
+  out(ch_client_PHS,(id_client,ArgsClientPHS(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,
+    psk,safe_psk,comp_psk,
+    send_data,use_postHS,
+    cak,sak,cfkad,rms,
+    cur_log'
+  )))
+.
+
+(* Certificate and Certificate Verify *)
+
+let send_client_certificate_message(id_client:idProc,
+  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom,s_dom:domain,s_pkey:pubkey,
+  comp_psk:bool,
+  send_data,use_postHS:bool,
+  master_secret:bitstring, chk:aead_key, seq_client:nat,shk:aead_key, seq_srv:nat,cfin,sfin:mac_key,
+  cur_log:bitstring)
+  =
+
+  (* TO UNCOMMENT FOR FINAL VERSION *)
+  (* ifdef(<!CLIENT_SELECT_CRT!>,<!dnl
+  get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+  event Selected_lgt(c_dom',c_dom,idP);
+  !>,<!dnl
+  get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+  !>)dnl *)
+
+  (* TO REMOVE FOR FINAL VERSION *)
+  get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+
+  (* The Certificate message *)
+  let certificate_msg = CRT(zero,crt) in
+  let encrypted_certificate_msg = aead_enc(a_alg,chk,n2b(seq_client),zero,m2b(certificate_msg)) in
+  out(io,encrypted_certificate_msg);
+  let cur_log2 = (cur_log,certificate_msg) in
+
+  (* The CertificateVerify message *)
+  let signed_log = sign(sk,hash(h_alg,cur_log2)) in
+  let certificate_verify_msg = CV(signed_log) in
+  let encrypted_certificate_verify_msg = aead_enc(a_alg,chk,n2b(seq_client+1),zero,m2b(certificate_verify_msg)) in
+  out(io,encrypted_certificate_verify_msg);
+  let cur_log3 = (cur_log2,certificate_verify_msg) in
+
+  (* The finished message *)
+  out(ch_client_CFIN,(id_client,ArgsClientCFIN(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,
+    NoPsk,false,comp_psk,
+    send_data,use_postHS,
+    master_secret,chk,seq_client+2,shk,seq_srv,cfin,sfin,
+    cur_log3
+  )))
+.
+
+(* Receiving Finished message from Server *)
+
+free ch_client_FIN:channel [private].
+fun ArgsClientFIN(
+  bytes32,bytes32,hash_alg,aead_alg,
+  domain,domain,pubkey,bool,
+  preSharedKey,bool,bool,
+  early_data_result,bool,bool,
+  bitstring, aead_key, nat, aead_key, nat, mac_key,mac_key,
+  bitstring
+):bitstring [data].
+
+let receive_server_finished_message =
+  !
+  in(ch_client_FIN,(id_client:idProc,ArgsClientFIN(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,cert_req,
+    psk,safe_psk,comp_psk,
+    ed_res,send_data,use_postHS,
+    master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
+    cur_log
+  )));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_FIN,id_client,st,master_secret);
+
+  in(io,enc_finished_msg:bitstring);
+  let m2b(finished_msg) = aead_dec(a_alg,shk,n2b(seq_srv),zero,enc_finished_msg) in
+    let FIN(hash_msg) = finished_msg in (
+      if hash_msg = hmac(h_alg,sfin,cur_log) then
+      let cur_log2 = (cur_log,finished_msg) in
+
+      let EDAccepted(wkc0) = ed_res in (
+        (* The client should send an EndOfEarlyData message *)
+        let enc_eoed = aead_enc(a_alg,wkc0,n2b(1),zero,m2b(EOED)) in
+        let cur_log3 = (cur_log2,EOED) in
+
+        if cert_req
+        then
+          send_client_certificate_message(id_client,
+            cr,sr,h_alg,a_alg,
+            c_dom,s_dom,s_pkey,
+            comp_psk,
+            send_data,use_postHS,
+            master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+            cur_log3)
+        else
+          out(ch_client_CFIN,(id_client,ArgsClientCFIN(
+            cr,sr,h_alg,a_alg,
+            c_dom,s_dom,s_pkey,
+            psk,safe_psk,comp_psk,
+            send_data,use_postHS,
+            master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+            cur_log3
+          )))
+      )
+      else
+        if cert_req
+        then
+          send_client_certificate_message(id_client,
+            cr,sr,h_alg,a_alg,
+            c_dom,s_dom,s_pkey,
+            comp_psk,
+            send_data,use_postHS,
+            master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+            cur_log2)
+        else
+          out(ch_client_CFIN,(id_client,ArgsClientCFIN(
+            cr,sr,h_alg,a_alg,
+            c_dom,s_dom,s_pkey,
+            psk,safe_psk,comp_psk,
+            send_data,use_postHS,
+            master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+            cur_log2
+          )))
+    )
+    else out(io,unexpected_message)
+  else out(io,bad_record_mac)
+.
+
+(* Process the certificate message and receive the certificate verify *)
+
+free ch_client_CRT:channel [private].
+fun ArgsClientCRT(
+  bytes32,bytes32,hash_alg,aead_alg,
+  domain,domain,bool,msg,
+  bool,
+  early_data_result,bool,bool,
+  bitstring, aead_key, nat, aead_key, nat, mac_key,mac_key,
+  bitstring
+):bitstring [data].
+
+let process_server_certificate_message =
+  !
+  in(ch_client_CRT,(id_client:idProc,ArgsClientCRT(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,cert_req,certificate_msg,
+    comp_psk,
+    ed_res,send_data,use_postHS,
+    master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
+    cur_log
+  )));
+
+  (* Process the Certificate message *)
+  let CRT(=zero,crt) = certificate_msg in
+  let cur_log2 = (cur_log,certificate_msg) in
+
+  (* Receive the Certificate Verify message *)
+  in(io,enc_crt_verif_msg:bitstring);
+  let m2b(certificate_verify_msg) = aead_dec(a_alg,shk,n2b(seq_srv),zero,enc_crt_verif_msg) in
+  let CV(signed_log) = certificate_verify_msg in
+
+  if verify(get_pkey(crt),hash(h_alg,cur_log2),signed_log) && get_domain(crt) = s_dom && verify_cert(crt) then
+  let s_pkey = get_pkey(crt) in
+  let cur_log3 = (cur_log2,certificate_verify_msg) in
+
+  (* Process the Finished message *)
+  out(ch_client_FIN,(id_client,ArgsClientFIN(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,s_pkey,cert_req,
+    NoPsk,false,comp_psk,
+    ed_res,send_data,use_postHS,
+    master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+    cur_log3
+  )))
+.
+
+(* Receiving message after EncryptedExtensions *)
+
+free ch_client_after_EE:channel [private].
+fun ArgsClientAfterEE(
+  bytes32,bytes32,hash_alg,aead_alg,
+  domain,domain,
+  preSharedKey,bool,bool,
+  early_data_result,bool,bool,
+  bitstring, aead_key, nat, aead_key, nat, mac_key,mac_key,
+  bitstring
+):bitstring [data].
+
+let receive_after_encrypted_extension =
+  !
+  in(ch_client_after_EE,(id_client:idProc,ArgsClientAfterEE(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,
+    psk,safe_psk,comp_psk,
+    ed_res,send_data,use_postHS,
+    master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
+    cur_log
+  )));
+
+  new st[]:bitstring;
+  event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
+
+  if psk = NoPsk
+  then (
+    (* If no PSK then we expect a certificate from the server *)
+    in(io,enc_msg:bitstring);
+    let m2b(msg') = aead_dec(a_alg,shk,n2b(seq_srv),zero,enc_msg) in
+
+    let CRTR(=zero) = msg' in (
+      let cur_log2 = (cur_log,msg') in
+
+      in(io,enc_crt_msg:bitstring);
+      let m2b(certificate_msg) = aead_dec(a_alg,shk,n2b(seq_srv+1),zero,enc_crt_msg) in
+      out(ch_client_CRT,(id_client,ArgsClientCRT(
+        cr,sr,h_alg,a_alg,
+        c_dom,s_dom,true,certificate_msg,
+        comp_psk,
+        ed_res,send_data,use_postHS,
+        master_secret,chk,seq_client,shk,seq_srv+2,cfin,sfin,
+        cur_log2
+      )))
+    )
+    else let CRT(=zero,crt) = msg' in (
+      out(ch_client_CRT,(id_client,ArgsClientCRT(
+        cr,sr,h_alg,a_alg,
+        c_dom,s_dom,false,msg',
+        comp_psk,
+        ed_res,send_data,use_postHS,
+        master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
+        cur_log
+      )))
+    )
+    else out(io,unexpected_message)
+  )
+  else
+    (* If there is a PSK, no certificate shall be sent. Directly receive the finish message *)
+    out(ch_client_FIN,(id_client,ArgsClientFIN(
+      cr,sr,h_alg,a_alg,
+      c_dom,s_dom,NoPubKey,false,
+      psk,safe_psk,comp_psk,
+      ed_res,send_data,use_postHS,
+      master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
+      cur_log
+    )))
+.
+
+(* Receiving the encrypted extension message *)
+
+let receive_encrypted_extension_message (id_client:idProc,
+  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom,s_dom:domain,
+  psk:preSharedKey,safe_psk,comp_psk:bool,
+  ed_res:early_data_result,send_data,use_postHS:bool,
+  master_secret:bitstring, chk,shk:aead_key,cfin,sfin:mac_key,
+  cur_log:bitstring)
+  =
+  in(io,enc_ee_msg:bitstring);
+  let m2b(ee_msg) = aead_dec(a_alg,shk,n2b(0),zero,enc_ee_msg) in
+  let EE(ed_ee,ech_ee,extra_ee) = ee_msg in
+  let cur_log2 = (cur_log,ee_msg) in
+  event ClientTest4(cr,sr,psk,cur_log2);
+  let ed_res' =
+    if ed_ee <> EarlyDataIndicationSH
+    then EDRejected
+    else ed_res
+  in
+  out(ch_client_after_EE,(id_client,ArgsClientAfterEE(
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,
+    psk,safe_psk,comp_psk,
+    ed_res',send_data,use_postHS,
+    master_secret,chk,0,shk,1,cfin,sfin,
+    cur_log2
+  )))
+.
+
+(* Generate the keys after the Server Hello *)
+
+let generate_keys_after_server_hello (id_client:idProc,
+  cr,sr:bytes32, h_alg:hash_alg,a_alg:aead_alg,
+  c_dom,s_dom:domain,
+  psk:preSharedKey, safe_psk,comp_psk:bool,
+  ed_res:early_data_result,send_data,use_postHS:bool,
+  g:group,x:bitstring,gy:element,early_secret:bitstring,
+  cur_log:bitstring)
+  =
+
+  (* Compute the handshake secret *)
+  let gxy = dh_decap(g,gy,x) in
+  let handshake_secret = kdf_hs(h_alg,early_secret,gxy) in
+  let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
+    kdf_ms(h_alg,handshake_secret,cur_log)
+  in
+
+  receive_encrypted_extension_message(id_client,
+    cr,sr,h_alg,a_alg,
+    c_dom,s_dom,
+    psk,safe_psk,comp_psk,
+    ed_res,send_data,use_postHS,
+    master_secret,chk,shk,cfin,sfin,
+    cur_log)
+.
+
+(* Process a server hello message *)
+
+free ch_client_SH:channel [private].
+fun ArgsClientSH(
+  bytes32,
+  domain,domain,
+  bitstring,hash_alg,aead_alg,
+  bitstring,bool,
+  early_data_result,bool,bool,
+  bitstring,
+  msg
+):bitstring [data].
+
+let process_server_hello =
+  !
+  in(ch_client_SH,(id_client:idProc,ArgsClientSH(
+    cr,
+    c_dom,s_dom,
+    kex_data,h_alg,a_alg,
+    psk_data,comp_psk,
+    ed_res,send_data,use_postHS,
+    cur_log,
+    server_hello
+  )));
+
+  let SH(sr,mode) = server_hello in
+  let (x:bitstring,g:group) = kex_data in
+  let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy)),=empty_sni_ext,=empty_ed_ext,=empty_pha_ext,=empty_ech_ext,=empty_extra_ext,psk_ext) = mode in (
+    let cur_log2 = (cur_log,server_hello) in
+    event ClientTestSH(cr,sr,cur_log2);
+
+    if psk_ext = empty_psk_ext
+    then (
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
+      event ClientTest3(cr,sr,NoPsk);
+      generate_keys_after_server_hello(id_client,
+        cr,sr,h_alg,a_alg,
+        c_dom,s_dom,
+        NoPsk,false,comp_psk,
+        EDRejected,send_data,use_postHS,
+        g,x,gy,es,cur_log2)
+    )
+    else
+      let (psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool,is_external:bool,allow_ed_psk:bool) = psk_data in
+      if (server_psk_ext(1) = psk_ext) && psk <> NoPsk
+      then (
+        event ClientTest3(cr,sr,psk);
+        generate_keys_after_server_hello(id_client,
+          cr,sr,h_alg,a_alg,
+          c_dom,s_dom,
+          psk,is_safe,comp_psk,
+          ed_res,send_data,use_postHS,
+          g,x,gy,es,cur_log2)
+      )
+      else out(io,illegal_parameter)
+  )
+  else out(io,illegal_parameter)
+.
+
+(* The main standard client *)
+
+let standard_client(id_client:idProc,
+  use_psk,comp_psk,send_kex,send_early_data,send_data,use_postHS:bool,
+  c_dom,s_dom:domain,
+  g:group,h_alg:hash_alg,a_alg:aead_alg
+  ) =
+
+  let cur_log = zero in
+
+  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
+    generate_client_hello_message(id_client,zero,
+      use_psk,send_early_data,use_postHS,
+      c_dom,s_dom,
+      g,send_kex,h_alg,a_alg,
+      cur_log
+    )
+  in
+  out(io,client_hello);
+  let cur_log2 = (cur_log,client_hello) in
+  event ClientTest0(cr);
+  let (psk:preSharedKey,id:identityPsk,es:bitstring,safe_psk:bool,is_external:bool,allow_ed_psk:bool) = psk_data in
+
+  let (wkc0:aead_key,ems0:bitstring) = kdf_k0(h_alg,es,(zero,client_hello)) in
+
+  let ed_res = if send_early_data && allow_ed_psk then EDAccepted(wkc0) else EDRejected in
+  event ClientTest1(cr,psk);
+  (
+    (* Send the early data *)
+    if send_early_data && allow_ed_psk then
+    new msg_ed[]:bitstring;
+    let enc_ed = aead_enc(a_alg,wkc0,n2b(0),zero,msg_ed) in
+    event ClientSends0(cr,psk,msg_ed);
+    out(io,enc_ed)
+  ) | (
+    (* Retrieve Server Hello *)
+    in(io,server_hello:msg);
+    let SH(sr,mode) = server_hello in (
+    event ClientTest3(cr,sr,psk);
+
+      if sr = rand_HelloRetryRequest
+      then (
+        (* We received a HelloRetryRequest *)
+        if mode = nego(TLS13,h_alg,a_alg,hrr_kex_ext(g),empty_sni_ext,empty_ed_ext,empty_pha_ext,empty_ech_ext,empty_extra_ext,empty_psk_ext) && send_kex <> true
+        then (
+          let cur_log3 = (cur_log2,server_hello) in
+
+          let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) =
+            generate_client_hello_message(id_client,psk_data,
+              use_psk,false,use_postHS,
+              c_dom,s_dom,
+              g,true,h_alg,a_alg,
+              cur_log3
+            )
+          in
+
+          out(io,client_hello');
+          let cur_log4 = (cur_log3,client_hello') in
+
+          (* Message from server *)
+          in(io,server_hello':msg);
+          let SH(sr',mode') = server_hello' in
+            if sr' = rand_HelloRetryRequest
+            then out(io,unexpected_message)
+            else
+              out(ch_client_SH,(id_client,ArgsClientSH(
+                cr',
+                c_dom,s_dom,
+                kex_data',h_alg,a_alg,
+                psk_data',comp_psk,
+                EDRejected,send_data,use_postHS,
+                cur_log4,
+                server_hello'
+              )))
+          else out(io,unexpected_message)
+        )
+        else out(io,illegal_parameter)
+      )
+      else
+        if send_kex
+        then
+          (* This is a normal server hello message *)
+          out(ch_client_SH,(id_client,ArgsClientSH(
+            cr,
+            c_dom,s_dom,
+            kex_data,h_alg,a_alg,
+            psk_data,comp_psk,
+            ed_res,send_data,use_postHS,
+            cur_log2,
+            server_hello
+          )))
+        else out(io,illegal_parameter)
+    )
+    else out(io,unexpected_message)
+  )
+.

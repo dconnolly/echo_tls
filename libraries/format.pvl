@@ -54,6 +54,11 @@ type preSharedKey.
   writing some proof helpers (see proof_helper.m4.pvl) and lemmas, axioms and
   restrictions. *)
 fun uc_psk(seed):preSharedKey [private].
+letfun gen_honest_psk() =
+  new s:seed;
+  uc_psk(s)
+.
+
 const NoPsk: preSharedKey.
 
 fun b2psk(bitstring):preSharedKey [typeConverter].
@@ -103,6 +108,7 @@ table pre_shared_keys(
   identityPsk, (* The identify of the pre shared key generated *)
   preSharedKey, (* The pre shared key itself *)
   bool, (* Indicate if it is an external PSK or a resumption PSK *)
+  bool, (* Indicates if it allows early data *)
   idProc, (* The process identifier that generated the pre shared key *)
   bool (* Value determining if the key was considered uncompromised (true) or
     not (false).*)

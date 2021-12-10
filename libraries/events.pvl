@@ -38,16 +38,12 @@ event CompromisedEchKey(element).
 event ServerReceives0(
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
-  bitstring,      (* Nonce given as input to Aead *)
-  bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ClientSends0(
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
-  bitstring,      (* Nonce given as input to Aead *)
-  bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
@@ -120,10 +116,7 @@ event PreServerFinished(
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
-  pubkey,         (* Certificate public key of the server *)
-  aead_key,       (* client_write_key for Application Data record *)
-  aead_key,       (* server_write_key for Application Data record *)
-  bitstring       (* exporter_master_secret *)
+  pubkey          (* Certificate public key of the server *)
 ).
 
 (* Post Handshake Authentication *)
@@ -157,3 +150,20 @@ event ServerFinishedPH(
 (*** Events for proof helpers *)
 
 event PreciseMess(channel,idProc,bitstring,bitstring).
+event Same(bitstring).
+
+event ClientTest0(bytes32).
+event ServerTest0(bytes32).
+event ClientTest1(bytes32,preSharedKey).
+event ServerTest1(bytes32,preSharedKey).
+event ClientTest2(bytes32,preSharedKey).
+event ServerTest2(bytes32,preSharedKey).
+event ClientTest3(bytes32,bytes32,preSharedKey).
+event ServerTest3(bytes32,bytes32,preSharedKey).
+
+
+event ClientTest4(bytes32,bytes32,preSharedKey,bitstring).
+event ServerTest4(bytes32,bytes32,preSharedKey,bitstring).
+
+event ClientTestSH(bytes32,bytes32,bitstring).
+event ServerTestSH(bytes32,bytes32,bitstring).

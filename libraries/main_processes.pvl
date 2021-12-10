@@ -1,0 +1,69 @@
+(********************
+   Main processes
+*********************)
+
+(* We define the processes that will be called for all security proofs. It includes
+  the generation of honest keys. *)
+
+(* Generation of keys *)
+
+let gen_honest_long_term_keys =
+  !
+  new lgt_id:idProc;
+  in(io,a:domain);
+  event Same(d2b(a));
+  (* The honest secret key must be created with gen_honest_privkey as it allows
+    us to refer to it in proof_helper. *)
+  let sk_h = gen_honest_privkey() in
+  let crt = valid_cert(a,pk(sk_h)) in
+  insert long_term_keys(a,sk_h,pk(sk_h),crt,lgt_id);
+  (* The certificate is given to the attacker. *)
+  out(io,crt)
+.
+
+let gen_honest_pre_shared_keys =
+  !
+  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg,allows_ed:bool));
+  new psk_id:idProc;
+  event Same((c_dom,s_dom,h_alg,allows_ed));
+  let psk = gen_honest_psk() in
+  let id = mk_idpsk(s_dom,h_alg,psk,true,allows_ed) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,true,allows_ed,psk_id,true)
+.
+
+let gen_honest_ech_config =
+  !
+  in(io,(s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg));
+  event Same((s_dom,g,h_alg,a_alg));
+  new id:configId;
+  let (skR:bitstring,pkR:element) = dh_keygen(g) in
+  let config = ech_config(id,g,pkR,s_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR);
+  (* The configuration is given to the attacker. *)
+  out(io,config)
+.
+
+let gen_honest_key =
+    gen_honest_long_term_keys
+  | gen_honest_pre_shared_keys
+  | gen_honest_ech_config
+.
+
+(* The main process *)
+
+let main_process =
+  (* On the server side *)
+    server_post_handshake
+  | receive_client_finished_message
+  | send_server_finished_message
+  | send_server_certificate_message
+  | process_client_hello_noHRR
+  (* On the TLS client side *)
+  | client_post_handshake
+  | send_client_finished_message
+  | receive_server_finished_message
+  | process_server_certificate_message
+  | receive_after_encrypted_extension
+  | process_server_hello
+  (* On the ECH client side *)
+.
