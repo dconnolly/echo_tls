@@ -23,17 +23,21 @@ let gen_honest_long_term_keys =
 
 let gen_honest_pre_shared_keys =
   !
-  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg,allows_ed:bool));
+  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
+  if is_strong_hash(h_alg) then
   new psk_id:idProc;
-  event Same((c_dom,s_dom,h_alg,allows_ed));
+  event Same((c_dom,s_dom,h_alg));
   let psk = gen_honest_psk() in
-  let id = mk_idpsk(s_dom,h_alg,psk,true,allows_ed) in
-  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,true,allows_ed,psk_id,true)
+  let id = mk_idpsk(s_dom,h_alg,psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,psk_id,true)
 .
 
 let gen_honest_ech_config =
   !
   in(io,(s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg));
+  if is_strong_hash(h_alg) then
+  if is_strong_aead(a_alg) then
+  if is_strong_group(g) then
   event Same((s_dom,g,h_alg,a_alg));
   new id:configId;
   let (skR:bitstring,pkR:element) = dh_keygen(g) in
@@ -64,6 +68,5 @@ let main_process =
   | receive_server_finished_message
   | process_server_certificate_message
   | receive_after_encrypted_extension
-  | process_server_hello
   (* On the ECH client side *)
 .

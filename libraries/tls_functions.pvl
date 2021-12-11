@@ -2,45 +2,37 @@
 (*  Some TLS functionnalities  *)
 (*******************************)
 
-(* Structure for early_data_management *)
-type early_data_result.
-fun EDAccepted(aead_key):early_data_result [data].
-const EDRejected:early_data_result.
-
-(* Retrieve early secret from pre shared key extension *)
-
-free ch_server_ES:channel [private].
-fun ArgsServerES(bitstring,preSharedKeyExt,preSharedKey,bool):bitstring [data].
-
 (* Generate early secret and psk extension on the server side *)
 
-let generate_early_secret_psk_extension(id_server:idProc,use_psk:bool,s_dom:domain,client_hello:msg,cur_log:bitstring) =
+letfun generate_early_secret_psk_extension(use_psk:bool,s_dom:domain,client_hello:msg,cur_log:bitstring) =
   (* The cipher suite should have already been verified *)
-  let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,psk_ext)) = client_hello in
+  let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,extra_ext,psk_ext)) = client_hello in
 
-  let (client_psk_ext(id,binders),=true) = (psk_ext,use_psk) in (
-    let (=s_dom,=h_alg) = (get_server_psk(id),get_hash_psk(id)) in (
+  let (=true,client_psk_ext(id,binders)) = (use_psk,psk_ext) in (
+    if (s_dom,h_alg) = (get_server_psk(id),get_hash_psk(id))
+    then (
       let psk = get_psk(id) in
-      let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk,get_is_external_psk(id)) in
-      let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ed_ext,pha_ext,ech_ext,extra_ext,trunc_client_psk_ext(id)) in
+      let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
+      let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,extra_ext,trunc_client_psk_ext(id)) in
       let cur_log' = (cur_log,CH(cr,offer)) in
       if binders = hmac(h_alg,kb,cur_log') then
-      out(ch_server_ES,(id_server,ArgsServerES(early_secret, server_psk_ext(1), psk, get_accept_early_data_psk(id))))
+      (early_secret, server_psk_ext(1), psk)
     )
     else
-      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
-      out(ch_server_ES,(id_server,ArgsServerES(es, empty_psk_ext, NoPsk, false)))
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+      (es, empty_psk_ext, NoPsk)
   )
   else
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
-    out(ch_server_ES,(id_server,ArgsServerES(es, empty_psk_ext, NoPsk, false)))
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+    (es, empty_psk_ext, NoPsk)
 .
 
 (* Generate the pre shared key extension on the client side *)
 
 letfun make_pre_shared_key_extension(
-  id_client:idProc,old_psk_data:bitstring,
-  use_psk:bool,ed_ext:earlyDataExt,pha_ext:postHandshakeAuthExt,
+  id_client:idProc,
+  old_psk_data:bitstring,
+  use_psk:bool,
   c_dom,s_dom:domain,cr:bytes32,
   h_alg:hash_alg,a_alg:aead_alg,kex:keyShareExt,ech_ext:echExt,
   extra:extraExt,cur_log:bitstring
@@ -48,26 +40,25 @@ letfun make_pre_shared_key_extension(
 
   if use_psk
   then (
-    let (psk:preSharedKey,id:identityPsk,old_es:bitstring,is_safe:bool,is_external:bool,allow_ed:bool) = old_psk_data in (
-      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),empty_ed_ext,pha_ext,ech_ext,extra,trunc_client_psk_ext(id)) in
+    let (psk:preSharedKey,id:identityPsk,old_es:bitstring,is_safe:bool) = old_psk_data in (
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,extra,trunc_client_psk_ext(id)) in
       let cur_log' = (cur_log,CH(cr,offer)) in
-      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk,is_external) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
       let binders = hmac(h_alg,kb,cur_log') in
-      (client_psk_ext(id,binders), (psk,id,es,is_safe,is_external,allow_ed))
+      (client_psk_ext(id,binders), (psk,id,es,is_safe))
     )
     else (
-      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk,is_external,allows_ed,idP,is_safe) [precise] in
-      if ed_ext <> EarlyDataIndicationCH || allows_ed then
-      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ed_ext,pha_ext,ech_ext,extra,trunc_client_psk_ext(id)) in
+      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
+      let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,extra,trunc_client_psk_ext(id)) in
       let cur_log' = (cur_log,CH(cr,offer)) in
-      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk,is_external) in
+      let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
       let binders = hmac(h_alg,kb,cur_log') in
-      (client_psk_ext(id,binders), (psk,id,es,is_safe,is_external,allows_ed))
+      (client_psk_ext(id,binders), (psk,id,es,is_safe))
     )
   )
   else
-    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk,true) in
-    (empty_psk_ext,(NoPsk,b2idpsk(zero),es,false,true,false))
+    let (es:bitstring,kb:mac_key) = kdf_es(h_alg,NoPsk) in
+    (empty_psk_ext,(NoPsk,b2idpsk(zero),es,false))
 .
 
 (* Generate the key share extension. *)
@@ -85,8 +76,9 @@ letfun make_key_share_extension(g:group,send_key_share:bool) =
 (* Generate the client hello message *)
 
 letfun generate_client_hello_message (
-  id_client:idProc,old_psk_data:bitstring,
-  use_psk,send_early_data,use_postHS:bool,
+  id_client:idProc,
+  old_psk_data:bitstring,
+  use_psk:bool,
   c_dom,s_dom:domain,
   g:group,send_kex:bool,h_alg:hash_alg,a_alg:aead_alg,
   cur_log:bitstring
@@ -98,17 +90,17 @@ letfun generate_client_hello_message (
   (* The key share extension *)
   let (kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(g,send_kex) in
 
-  (* The Post Handshake Authentication extension *)
-  let pha_ext = if use_postHS then PostHandshakeAuth else empty_pha_ext in
-
-  (* The early_data extension *)
-  let ed_ext = if send_early_data then EarlyDataIndicationCH else empty_ed_ext in
-
   (* The pre shared key extension *)
   let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
-    make_pre_shared_key_extension(id_client,old_psk_data,use_psk,ed_ext,pha_ext,c_dom,s_dom,cr,h_alg,a_alg,kex_ext,empty_ech_ext,empty_extra_ext,cur_log)
+    make_pre_shared_key_extension(
+      id_client,
+      old_psk_data,
+      use_psk,
+      c_dom,s_dom,cr,
+      h_alg,a_alg,kex_ext,empty_ech_ext,empty_extra_ext,cur_log)
   in
+  let (psk:preSharedKey,id:identityPsk,es:bitstring,safe_psk:bool) = psk_data in
 
   (* The client hello *)
-  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),ed_ext,pha_ext,empty_ech_ext,empty_extra_ext,psk_ext) in
+  let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,empty_extra_ext,psk_ext) in
   (CH(cr,offer),cr,kex_ext,kex_data,psk_data).

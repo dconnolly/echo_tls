@@ -29,15 +29,24 @@ sequence order.
 
 #### 0-RTT Early data
 
-When the client select a PSK that allows early data, we only model one early
-message `(Application Data)` sent by the client instead of a flow of messages.
+We model the fact that clients and servers can send 0-RTT Early data. We do however
+simplify the management of early data with the Client Hello. In particular, we do not
+include in the client hello an `early_data` extension. Similarly, the client never sends
+an EndOfEarlyData message to the server: It would corresponds to a server and client
+that can always sends early data, even after the end of the Handshake.
+We do this simplification to reduce the complexity of our model (in size and verification
+time) and thus to allow ProVerif to finish in "reasonable" time.
 
-Moreover, we do not model the fact that the server could send data before receiving the client `Finished`.
+#### Post Handshake Authentication
+
+For the same reasons as 0-RTT Early Data, we do not include the Post Handshake Authentication
+extension in the Client Hello. When the option is activated, the client is always
+willing to do Post Handshake Authentication.
 
 #### Offers of CipherSuite and DH groups
 
 The client will always only offer a single cipher suite and DH group to the server.
-The attacker will choose however which cipher suite and group the client offer.
+The attacker will choose however which cipher suite and group the client offers.
 
 #### Generation of resumption ticket
 
@@ -51,7 +60,28 @@ In the RFC, it is indicated that, in the case of a rejected ECH,  the frontend m
 send an "encrypted_client_hello" with a payload of 8 random bytes in its HRR
 message. We do not model that last part, as it is a MAY condition.
 
+#### Pre Shared Key options
+
+We also simplify lightly the options for each pre shared key: We consider that
+all pre shared keys allow for early data. Moreover, we do not assign a different
+category for external and resumption pre shared key. As such, we consider a single
+label when computing the early_secret for all pre shared keys.
+
 ## Description of the protocol
+
+### Generic options
+
+Despite some of simplifications, the model is still sometimes too large for ProVerif to
+handle in reasonable times. So we defined generic configurations in `config.m4.pvl` that
+define some global constant to restrict the scenarios we consider:
+- `allow_HRR`: When `false`, an honest client will always send its key share with the group. Moreover, an honest server will never send a HRR request.
+- `allow_early_data`: When `false`, honest clients and servers will never send or try to receive
+early data.
+- `allow_PH_data`: When `false`, honest clients and servers will never send or try to receive Post Handshake Application Data.
+- `allow_PH_authentication`: When `false`, honest servers will request post handshake authentication and honest clients will never wait for one.
+- `allows_compromised_ticket`: When `false`, the client never leak the pre shared keys derived from the tickets. Otherwise, when `true`, the attacker decides when to compromise or not a key.
+
+To speed up the verification time, it important to deactivate options on both client and server, even if it is always the same role that initiates the communication. For exemple, in the case of HRR, we force client to always send their key share but by also deactivating the fact that a server will not send an HRR request, we avoid scenarios where it's the attacker that triggers an HRR response from the server.
 
 ### The server
 

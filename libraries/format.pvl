@@ -79,18 +79,14 @@ fun b2idpsk(bitstring):identityPsk [typeConverter].
   By defining the function as private and its projections
   as private, we ensure that only the honest server can access its content.
   Note that it does not prevent the attacker to play the role of a server. *)
-fun mk_idpsk(domain,hash_alg,preSharedKey,bool,bool):identityPsk [private].
+fun mk_idpsk(domain,hash_alg,preSharedKey):identityPsk [private].
 
-reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
-  get_server_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = s_dom [private].
-reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
-  get_hash_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = h_alg [private].
-reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
-  get_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = psk [private].
-reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
-  get_is_external_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = is_external [private].
-reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey,is_external,accept_early_data:bool;
-  get_accept_early_data_psk(mk_idpsk(s_dom,h_alg,psk,is_external,accept_early_data)) = accept_early_data [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_server_psk(mk_idpsk(s_dom,h_alg,psk)) = s_dom [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_hash_psk(mk_idpsk(s_dom,h_alg,psk)) = h_alg [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_psk(mk_idpsk(s_dom,h_alg,psk)) = psk [private].
 
 (* The extension itself *)
 type preSharedKeyExt.
@@ -107,8 +103,6 @@ table pre_shared_keys(
   hash_alg, (* The hash algorithm used in the handshake *)
   identityPsk, (* The identify of the pre shared key generated *)
   preSharedKey, (* The pre shared key itself *)
-  bool, (* Indicate if it is an external PSK or a resumption PSK *)
-  bool, (* Indicates if it allows early data *)
   idProc, (* The process identifier that generated the pre shared key *)
   bool (* Value determining if the key was considered uncompromised (true) or
     not (false).*)
@@ -223,20 +217,6 @@ type sniExt.
 fun SNI(domain): sniExt [data].
 const empty_sni_ext: sniExt [data].
 
-(* The early_data extension (4.2.10 of TLS RFC) *)
-type earlyDataExt.
-const empty_ed_ext: earlyDataExt.
-
-const EarlyDataIndicationCH: earlyDataExt.
-const EarlyDataIndicationSH: earlyDataExt.
-const EarlyDataIndicationTicket: earlyDataExt. (* In TLS RFC, this extension contains an integer
-  max_early_data_size. We do not model it here. *)
-
-(* The post_handshake_auth extension *)
-type postHandshakeAuthExt.
-const empty_pha_ext: postHandshakeAuthExt.
-const PostHandshakeAuth: postHandshakeAuthExt.
-
 (* The parameters of the Client and Server Hello. The last argument can be used to
   add any other informations *)
 type params.
@@ -246,8 +226,6 @@ fun nego(
   aead_alg,
   keyShareExt,
   sniExt,
-  earlyDataExt,
-  postHandshakeAuthExt,
   echExt,
   extraExt,
   preSharedKeyExt):params [data].
@@ -263,10 +241,7 @@ reduc
   forall r:bytes32, mode:params; get_random(SH(r,mode)) = r.
 
 (* Encrypted Extensions. *)
-fun EE(earlyDataExt,echExt,extraExt): msg [data].
-
-(* EndOfEarlyData *)
-const EOED: msg.
+fun EE(echExt,extraExt): msg [data].
 
 (* Certificate Request message. We only model the certificate_request_context
   but not the extensions, even though in the RFC, it is indicated that
@@ -289,9 +264,7 @@ fun FIN(bitstring):msg [data].
 (* The NewSessionTicket (Section 4.6.1 in TLS RFC) *)
 fun NST(
   bitstring, (* ticket_nonce *)
-  identityPsk, (* ticket that as used as pre shared key identity *)
-  earlyDataExt (* The extension that indicates if this PSK can be used for early
-    data *)
+  identityPsk (* ticket that as used as pre shared key identity *)
 ):msg [data].
 
 type error_signal.
@@ -304,17 +277,3 @@ const
   :error_signal.
 
 fun error2b(error_signal):bitstring [typeConverter].
-
-(***************************************
-  Session states
-****************************************)
-
-table clientSession(
-  aead_alg,bytes32,bytes32,
-  preSharedKey,pubkey,
-  aead_key,aead_key,bitstring,bitstring).
-
-table serverSession(
-  aead_alg,bytes32,bytes32,
-  preSharedKey,pubkey,
-  aead_key,aead_key,bitstring,bitstring).

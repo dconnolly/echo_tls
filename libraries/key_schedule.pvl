@@ -14,8 +14,7 @@ const
   tls13_exporter_master_secret, (* "exp master" of Section 7.1 TLS RFC *)
   tls13_resumption, (* "resumption" of Section 4.6.1 TLS RFC *)
   tls13_resumption_master_secret, (* "res master" of Section 7.1 TLS RFC *)
-  tls13_ext_binder, (* "ext binder" of Section 7.1 TLS RFC *)
-  tls13_res_binder, (* "res binder" of Section 7.1 TLS RFC *)
+  tls13_ext_res_binder, (* "ext binder" and "res binder" of Section 7.1 TLS RFC *)
   tls13_finished, (* "finished" of Section 4.4.4 of TLS RFC *)
   tls13_derived (* "derived" of Section 7.1 TLS RFC *)
   : label.
@@ -26,10 +25,9 @@ letfun derive_secret(h:hash_alg,k:bitstring,l:label,m:bitstring) =
   hkdf_expand_label(h,k,l,hash(h,m)).
 
 (* Function to generate "Early Secret" + binder_key *)
-letfun kdf_es(h:hash_alg,psk:preSharedKey,is_external:bool) =
+letfun kdf_es(h:hash_alg,psk:preSharedKey) =
   let early_secret = hkdf_extract(h,zero,psk2b(psk)) in
-  let lbl = if is_external then tls13_ext_binder else tls13_res_binder in
-  let binder_key = derive_secret(h,early_secret,lbl,zero) in
+  let binder_key = derive_secret(h,early_secret,tls13_ext_res_binder,zero) in
   (early_secret,b2mk(binder_key)).
 
 (* Function to generate

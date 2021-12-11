@@ -1,0 +1,203 @@
+event CompLGTK(pubkey).
+event CompPSK(preSharedKey).
+
+(* set verboseRedundant = true. *)
+(* set redundancyElim = no. *)
+set removeEventsForLemma = true.
+
+let gen_dishonest_long_term_keys =
+  !
+  new idP:idProc;
+  in(io,a:domain);
+  new sk_d:privkey;
+  event CompLGTK(pk(sk_d));
+  let crt = valid_cert(a,pk(sk_d)) in
+  insert long_term_keys(a,sk_d,pk(sk_d),crt,idP);
+  out(io,(sk_d,crt))
+.
+
+let gen_dishonest_pre_shared_keys =
+  !
+  new idP:idProc;
+  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
+  if is_strong_hash(h_alg) then
+  new psk_d:preSharedKey;
+  event CompPSK(psk_d);
+  let id = mk_idpsk(s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  out(io,psk_d)
+.
+
+(* let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
+  !
+  in(io,o_dom:domain);
+  new id: configId;
+  new skR_d:bitstring;
+  let pkR_d = dh_pub(g,skR_d) in
+  event CompECHK(pkR_d);
+  let config = ech_config(id,g,pkR_d,o_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR_d);
+  out(io,(config,skR_d))
+. *)
+
+(* Security properties *)
+
+(* 1-RTT handshake secrecy query *)
+
+query cr,sr:bytes32,psk:preSharedKey,pk_srv:pubkey,cak,sak:aead_key,ems,rms:bitstring,i:nat;
+  (* 1-RTT handshake secrecy query: every disjunct is required *)
+  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
+    (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk))))
+.
+
+(* 1-RTT handshake authentication query *)
+
+(* query
+  (* Should fail *)
+  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+  inj-event(PreServerFinished(cr,sr,psk,pk_srv,cak,sak,ems));
+
+  (* Should fail *)
+  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+  inj-event(PreServerFinished(cr,sr,psk,pk_srv,cak,sak,ems)) ||
+  event(ServerChoosesKEX(cr,sr,id_g(WeakDH,i))) ||
+  event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i)));
+
+  (* Should fail *)
+  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+  inj-event(PreServerFinished(cr,sr,psk,pk_srv,cak,sak,ems)) ||
+  (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk)))) ||
+  event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i)));
+
+  (* Should fail *)
+  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+  inj-event(PreServerFinished(cr,sr,psk,pk_srv,cak,sak,ems)) ||
+  (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk)))) ||
+  event(ServerChoosesKEX(cr,sr,id_g(WeakDH,i)));
+
+  (* Should succeed. Every disjunct is required. *)
+  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+  inj-event(PreServerFinished(cr,sr,psk,pk_srv,cak,sak,ems)) ||
+  (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk)))) ||
+  event(ServerChoosesKEX(cr,sr,id_g(WeakDH,i))) ||
+  event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i)))
+. *)
+
+(* Main appData secrecy query: every disjunct is required *)
+(* query cr:random, sr:random, psk:preSharedKeyExt, p:pubkey, e:element,  ms:bitstring, aek:ae_key, cb:bitstring, cr':random, sr':random, v:version;
+  event(DataSent(cr,sr,psk,pk_srv,n,ad,msg)) && attacker(msg) ==>
+    (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk)))) ||
+    event(ServerChoosesKEX(cr,sr,id_g(WeakDH,i))) ||
+    event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i))) ||
+    event(ServerChoosesAE(cr,sr,id_aead(WeakAE,i)));
+
+  event(DataSent0(cr,psk)) && attacker(msg) ==>
+    (psk = NoPsk || event(CompPSK(psk))) ||
+    event(ClientOffersAE(cr,id_aead(WeakAE,i))). *)
+
+(* Main appData authentication query: every disjunct is required; commenting any of them results in "false" *)
+(* Replay prevention relies on the recipient not accepting 2 messages with the same (n,ad);
+   it is not explicitly proved in ProVerif. *)
+
+(* query cr:random, sr:random, cr':random, sr':random, psk:preSharedKeyExt, e:element,
+      p:pubkey, n:bitstring, ad:bitstring, m:bitstring;
+  event(ClientReceives(TLS13,cr,sr,psk,p,n,ad,m)) ==>
+      event(ServerSends(TLS13,cr,sr,psk,p,n,ad,m)) ||
+      (event(WeakOrCompromisedKey(p)) && (psk = NoPsk || event(CompromisedPreSharedKey(psk)))) ||
+      event(ServerChoosesAE(cr,sr,p,TLS13,WeakAE)) ||
+      event(ServerChoosesKEX(cr,sr,p,TLS13,DHE_13(WeakDH,e))) ||
+      event(ServerChoosesHash(cr',sr',p,TLS13,WeakHash)).
+
+query cr:random, sr:random, cr':random, sr':random, psk:preSharedKeyExt, e:element,
+      p:pubkey, n:bitstring, ad:bitstring, m:bitstring;
+      event(ServerReceives(TLS13,cr,sr,psk,p,n,ad,m)) ==>
+      event(ClientSends(TLS13,cr,sr,psk,p,n,ad,m)) ||
+      ((psk = NoPsk || event(CompromisedPreSharedKey(psk)))) ||
+      event(ServerChoosesAE(cr,sr,p,TLS13,WeakAE)) ||
+      event(ServerChoosesKEX(cr,sr,p,TLS13,DHE_13(WeakDH,e))) ||
+      event(ServerChoosesHash(cr',sr',p,TLS13,WeakHash)).
+
+query cr:random, sr:random, cr':random, sr':random, psk:preSharedKeyExt, e:element,
+      p:pubkey, n:bitstring, ad:bitstring, m:bitstring;
+      event(ServerReceives0(TLS13,cr,psk,n,ad,m)) ==>
+      event(ClientSends0(TLS13,cr,psk,n,ad,m)) ||
+      ((psk = NoPsk || event(CompromisedPreSharedKey(psk))) ||
+        event(ClientOffersAE(cr,WeakAE))). *)
+
+(* Main channel-binding query: fails if cb = ms, succeeds if cb = m1 *)
+
+(* query
+  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
+    cr = cr' && sr = sr' && pk_srv = pk_srv';
+
+
+  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
+    cr = cr' && sr = sr' && pk_srv = pk_srv';
+
+  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
+    cr = cr' && sr = sr' && pk_srv = pk_srv'
+. *)
+
+process
+let tls_h = id_hash(StrongHash,1) in
+let tls_a = id_aead(StrongAE,1) in
+let tls_g = id_g(StrongDH,1) in
+let ech_h = id_hash(StrongHash,2) in
+let ech_a = id_aead(StrongAE,2) in
+let ech_g = id_g(StrongDH,2) in
+  (
+    (* Generates the keys *)
+      gen_dishonest_long_term_keys
+    | gen_dishonest_pre_shared_keys
+    | gen_honest_key
+    | main_process
+  ) | (
+    (* TLS client *)
+    !
+    in(io,s_dom:domain);
+    in(io,c_dom:domain);
+    (* in(io,tls_h:hash_alg);
+    if is_strong_hash(tls_h) then
+    in(io,tls_a:aead_alg);
+    if is_strong_aead(tls_a) then
+    in(io,tls_g:group);
+    if is_strong_group(tls_g) then *)
+    new id_client[]:idProc;
+
+    in(io,use_psk:bool);
+    in(io,send_kex:bool);
+
+
+    let comp_psk = false in
+
+    standard_client(id_client,
+      use_psk,comp_psk,send_kex,
+      c_dom,s_dom,tls_g,tls_h,tls_a
+    )
+  ) | (
+    !
+    (* Server *)
+    (* in(io,use_ech:bool); *)
+    in(io,s_dom:domain);
+    (* in(io,tls_h:hash_alg);
+    if is_strong_hash(tls_h) then
+    in(io,tls_a:aead_alg);
+    if is_strong_aead(tls_a) then
+    in(io,tls_g:group);
+    if is_strong_group(tls_g) then *)
+
+    in(io,use_ech:bool);
+    in(io,use_psk:bool);
+    in(io,req_cert:bool);
+
+
+    server(use_ech,use_psk,req_cert,
+      s_dom,
+      tls_g,tls_h,tls_a,
+      tls_g,tls_h,tls_a,
+      empty_extra_ext
+    )
+  )

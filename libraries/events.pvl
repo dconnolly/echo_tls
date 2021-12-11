@@ -38,12 +38,16 @@ event CompromisedEchKey(element).
 event ServerReceives0(
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ClientSends0(
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
@@ -149,7 +153,9 @@ event ServerFinishedPH(
 
 (*** Events for proof helpers *)
 
-event PreciseMess(channel,idProc,bitstring,bitstring).
+type stamp.
+
+event PreciseMess(channel,idProc,stamp,bitstring).
 event Same(bitstring).
 
 event ClientTest0(bytes32).

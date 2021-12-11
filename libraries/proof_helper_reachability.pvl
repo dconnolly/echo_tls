@@ -5,7 +5,6 @@ nounif x:bitstring; mess(ch_client_CFIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_FIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_CRT,*x) / -300000.
 nounif x:bitstring; mess(ch_client_after_EE,*x) / -300000.
-nounif x:bitstring; mess(ch_client_SH,*x) / -300000.
 
 nounif x:bitstring; mess(ch_server_PHS,*x) / -300000.
 nounif x:bitstring; mess(ch_server_CFIN,*x) / -300000.
@@ -13,19 +12,28 @@ nounif x:bitstring; mess(ch_server_FIN,*x) / -300000.
 nounif x:bitstring; mess(ch_server_CRT,*x) / -300000.
 nounif x:bitstring; mess(ch_server_SH,*x) / -300000.
 
-nounif x:bitstring; mess(ch_server_ES,*x) / -200000.
-nounif x:bitstring; mess(ch_server_ED,*x) / -100000.
 
-nounif c_dom:domain,sk_d:privkey,pkr:pubkey,crt:certificate, idP:idProc;
-  table(long_term_keys( *c_dom, *sk_d, *pkr, *crt, *idP)) / -400000
+nounif c_dom':domain,sk_d:privkey,pkr:pubkey,crt:certificate, idP:idProc;
+  table(long_term_keys( *c_dom', *sk_d, *pkr, *crt, *idP)) / -400000
 .
 
 nounif config:echConfig,skR:bitstring;
   table(ech_configurations( *config, *skR)) / -400000
 .
 
-nounif config:echConfig,skR:bitstring;
-  table(ech_configurations( *config, *skR)) / -400000
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) / -400000
+.
+
+(* Axioms on Precise *)
+
+axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':stamp, x1,x1',x2,x2':bitstring;
+  event(PreciseMess(ch,id,st1,x1)) &&
+  event(PreciseMess(ch,id,st1',x1'))
+  ==> st1 = st1' && x1 = x1';
+  event(PreciseMess(ch,id1,st,x1)) &&
+  event(PreciseMess(ch,id1',st,x1'))
+  ==> id1 = id1' && x1 = x1'
 .
 
 (* Secrecy assumotion *)
@@ -35,15 +43,12 @@ not attacker(ch_client_CFIN).
 not attacker(ch_client_FIN).
 not attacker(ch_client_CRT).
 not attacker(ch_client_after_EE).
-not attacker(ch_client_SH).
 
 not attacker(ch_server_PHS).
 not attacker(ch_server_CFIN).
 not attacker(ch_server_FIN).
 not attacker(ch_server_CRT).
 not attacker(ch_server_SH).
-not attacker(ch_server_ES).
-not attacker(ch_server_ED).
 
 (* Honest keys *)
 
@@ -107,14 +112,7 @@ not i:nat,s:seed;
 not i:nat,s:seed;
   let psk = uc_psk(s) in
   let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
-  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_ext_binder,hash_ideal(i,zero))) in
-  attacker(binder_key)
-.
-
-not i:nat,s:seed;
-  let psk = uc_psk(s) in
-  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
-  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_res_binder,hash_ideal(i,zero))) in
+  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_ext_res_binder,hash_ideal(i,zero))) in
   attacker(binder_key)
 .
 
@@ -123,10 +121,10 @@ not i:nat,s:seed;
 not s:seed; attacker(dh_f(s)).
 
 not i:nat,s_x, s_xy:seed,r:bytes32, v:TLS_version, h:hash_alg, a:aead_alg,
-  sn:sniExt, ech:echExt, ps:preSharedKeyExt, ex:extraExt,ed:earlyDataExt,pha:postHandshakeAuthExt;
+  sn:sniExt, ech:echExt, ps:preSharedKeyExt, ex:extraExt;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
-  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ed,pha,ech,ex,ps)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ech,ex,ps)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
   attacker(gxy)
 .
@@ -239,14 +237,14 @@ not i:nat,e:element,s:seed,log:bitstring, x,y,z:bitstring,a:aead_alg,extra_es:bi
 
 (* Client hello coming from an honest client *)
 not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
-  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, pha,pha':postHandshakeAuthExt,ed,ed':earlyDataExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt,  ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
-  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ed,pha,e,ex,p)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,ex,p)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
   let gy = dh_encap_fun(g,gx,gxy) in
   let log1 = (log,client_hello) in
-  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',ed',pha',e',ex',p'))) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',ex',p'))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
@@ -255,14 +253,14 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 .
 
 not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
-  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, pha,pha':postHandshakeAuthExt,ed,ed':earlyDataExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
-  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ed,pha,e,ex,p)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,ex,p)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
   let gy = dh_encap_fun(g,gx,gxy) in
   let log1 = (log,client_hello) in
-  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',ed',pha',e',ex',p'))) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',ex',p'))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
 
   let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log2))) in
@@ -271,14 +269,14 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 .
 
 not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
-  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, pha,pha':postHandshakeAuthExt,ed,ed':earlyDataExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
-  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ed,pha,e,ex,p)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,ex,p)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
   let gy = dh_encap_fun(g,gx,gxy) in
   let log1 = (log,client_hello) in
-  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',ed',pha',e',ex',p'))) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',ex',p'))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in
@@ -287,14 +285,14 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 .
 
 not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aead_alg,
-  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, pha,pha':postHandshakeAuthExt,ed,ed':earlyDataExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
+  sn,sn':sniExt, e,e':echExt, p,p':preSharedKeyExt, ex,ex':extraExt, extra_es:bitstring,e_key:element,log:bitstring;
   let g = id_g(StrongDH,i) in
   let gx = dh_pub(g,dh_k(s_x)) in
-  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,ed,pha,e,ex,p)) in
+  let client_hello = CH(r,nego(v,h,a,client_kex_ext(DHE_kex(g,gx)),sn,e,ex,p)) in
   let gxy = dh_xy(s_xy,m2b(client_hello)) in
   let gy = dh_encap_fun(g,gx,gxy) in
   let log1 = (log,client_hello) in
-  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',ed',pha',e',ex',p'))) in
+  let log2 = (log1,SH(r',nego(v',h',a',server_kex_ext(DHE_kex(g,gy)),sn',e',ex',p'))) in
   let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(gxy)) in
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log2))) in

@@ -1,0 +1,138 @@
+(************************
+  Sanity check queries
+*************************)
+
+set preciseActions = true.
+set redundancyElim = no.
+(* set verboseRules = true. *)
+
+(* The queries in this file ensures that all valid scenarios are possible.
+  We consider a single session of a client and a server with uncompromised
+  keys. *)
+
+(* Addtional events used for sanaity checks *)
+
+event ClientUsePsk(bool).
+event ClientCompPsk(bool).
+event ClientSendKex(bool).
+
+event ServerUseEch(bool).
+event ServerUsePsk(bool).
+event ServerReqCert(bool).
+
+(* The queries *)
+
+query cr,sr:bytes32,psk:preSharedKey,c_pkey,s_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,msg_ed:bitstring,i:nat,ad:bitstring,rand_req:bitstring;
+
+  (* Early Data *)
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(true)) &&
+  event(ClientSends0(cr,psk,i,ad,msg_ed)) &&
+  event(ServerReceives0(cr,psk,i,ad,msg_ed));
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(false)) &&
+  event(ClientSends0(cr,psk,i,ad,msg_ed)) &&
+  event(ServerReceives0(cr,psk,i,ad,msg_ed));
+
+  (* Post Handshake Authentication *)
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(true)) &&
+  event(ServerRequestPH(cr,sr,psk,s_pkey,rand_req)) &&
+  event(ClientFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
+  event(ServerFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey));
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(false)) &&
+  event(ServerRequestPH(cr,sr,psk,s_pkey,rand_req)) &&
+  event(ClientFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
+  event(ServerFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey));
+
+  (* Post Handshake Application Data*)
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(true)) &&
+  event(ClientSends(cr,sr,psk,s_pkey,i,ad,msg_ed)) &&
+  event(ServerReceives(cr,sr,psk,s_pkey,i,ad,msg_ed));
+
+  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerUseEch(false)) &&
+  event(ClientSends(cr,sr,psk,s_pkey,i,ad,msg_ed)) &&
+  event(ServerReceives(cr,sr,psk,s_pkey,i,ad,msg_ed))
+.
+
+(* The process *)
+
+free c_dom,s_dom:domain.
+
+let gen_honest_long_term_key_sanity(a:domain) =
+  new lgt_id:idProc;
+  let sk_h = gen_honest_privkey() in
+  let crt = valid_cert(a,pk(sk_h)) in
+  insert long_term_keys(a,sk_h,pk(sk_h),crt,lgt_id);
+  out(io,crt)
+.
+
+let gen_honest_pre_shared_keys_sanity(c_dom:domain,s_dom:domain,h_alg:hash_alg) =
+  new psk_id:idProc;
+  let psk = gen_honest_psk() in
+  let id = mk_idpsk(s_dom,h_alg,psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,psk_id,true)
+.
+
+let gen_honest_ech_config_sanity(s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg) =
+  new id:configId;
+  let (skR:bitstring,pkR:element) = dh_keygen(g) in
+  let config = ech_config(id,g,pkR,s_dom,h_alg,a_alg) in
+  insert ech_configurations(config,skR);
+  out(io,config)
+.
+
+process
+  let tls_h = id_hash(StrongHash,1) in
+  let tls_a = id_aead(StrongAE,1) in
+  let tls_g = id_g(StrongDH,1) in
+  let ech_h = id_hash(StrongHash,2) in
+  let ech_a = id_aead(StrongAE,2) in
+  let ech_g = id_g(StrongDH,2) in
+
+  (* Generates honest key *)
+
+  (
+    (* Generates the honest keys *)
+      gen_honest_long_term_key_sanity(c_dom)
+    | gen_honest_long_term_key_sanity(s_dom)
+    | gen_honest_pre_shared_keys_sanity(c_dom,s_dom,tls_h)
+    | gen_honest_ech_config_sanity(s_dom,ech_g,ech_h,ech_a)
+    | main_process
+  ) | (
+    (* TLS client *)
+    new id_client:idProc;
+    let use_psk = true in
+    let comp_psk = false in
+    let send_kex = true in
+    standard_client(id_client,
+      use_psk,comp_psk,send_kex,
+      c_dom,s_dom,tls_g,tls_h,tls_a
+    )
+  ) | (
+    (* Server *)
+    in(io,use_ech:bool);
+    event ServerUseEch(use_ech);
+    let use_psk = true in
+    let req_cert = false in
+    server(use_ech,use_psk,req_cert,
+      s_dom,
+      tls_g,tls_h,tls_a,
+      tls_g,tls_h,tls_a,
+      empty_extra_ext
+    )
+  )
