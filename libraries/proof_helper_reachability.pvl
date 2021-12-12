@@ -19,10 +19,6 @@ nounif config:echConfig,skR:bitstring;
   table(ech_configurations( *config, *skR)) / -400000
 .
 
-nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
-  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) / -400000
-.
-
 (* Axioms on Precise *)
 
 axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':stamp, x1,x1',x2,x2':bitstring;

@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = false.
+letfun allow_HRR = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -16,12 +16,12 @@ letfun allow_PH_new_session_ticket = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   Post Handshake Application Data. *)
-letfun allow_PH_data = false.
+letfun allow_PH_data = true.
 
 (* When `false`, honest servers will request post handshake authentication
   and honest clients will never wait for one. *)
-letfun allow_PH_authentication = false.
+letfun allow_PH_authentication = true.
 
 (* When `false`, the client never leak the pre shared keys derived from the tickets.
   Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
-letfun allow_compromised_ticket = false.
+letfun allow_compromised_ticket = true.

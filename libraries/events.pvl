@@ -2,6 +2,8 @@
 (*  Events used in the process *)
 (*******************************)
 
+type stamp.
+
 (*** Event to defined security queries *)
 
 (* Selection of ciphersuite and group by the server *)
@@ -46,16 +48,21 @@ event CompromisedEchKey(element).
 
 (* Application Data - 0-RTT *)
 event ServerReceives0(
+  idProc,         (* Process identity *)
+  domain,         (* Server domain *)
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ClientSends0(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -63,40 +70,48 @@ event ClientSends0(
 
 (* Application Data - Post Handshake *)
 event ServerReceives(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ServerSends(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ClientReceives(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
 ).
 
 event ClientSends(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
+  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -161,9 +176,13 @@ event ServerFinishedPH(
   pubkey          (* Certificate public key of the client *)
 ).
 
-(*** Events for proof helpers *)
+event ServerNewTicket(
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  preSharedKey   (* Pre shared key used in the session *)
+).
 
-type stamp.
+(*** Events for proof helpers *)
 
 event PreciseMess(channel,idProc,stamp,bitstring).
 event Same(bitstring).

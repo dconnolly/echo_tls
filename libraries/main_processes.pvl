@@ -23,8 +23,8 @@ let gen_honest_long_term_keys =
 
 let gen_honest_pre_shared_keys =
   !
-  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
-  (* let h_alg = id_hash(StrongHash,1) in *)
+  in(io,(c_dom:domain,s_dom:domain));
+  let h_alg = id_hash(StrongHash,1) in
   (* if is_strong_hash(h_alg) then *)
   new psk_id:idProc;
   event Same((c_dom,s_dom,h_alg));
