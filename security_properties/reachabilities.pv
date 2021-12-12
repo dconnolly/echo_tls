@@ -280,8 +280,8 @@ process
     new id_client[]:idProc;
 
     in(io,use_psk:bool)[precise];
-    let send_kex = true in
-    (* in(io,send_kex:bool); *)
+    (* let send_kex = true in *)
+    in(io,send_kex:bool) [precise];
 
     in(io,comp_psk:bool) [precise];
 
@@ -300,8 +300,8 @@ process
     let use_ech=false in
     (* in(io,use_ech:bool); *)
     in(io,use_psk:bool) [precise];
-    let req_cert = false in
-    (* in(io,req_cert:bool); *)
+    (* let req_cert = false in *)
+    in(io,req_cert:bool) [precise];
 
 
     server(use_ech,use_psk,req_cert,
