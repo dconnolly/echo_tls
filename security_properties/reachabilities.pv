@@ -1,9 +1,12 @@
 event CompLGTK(pubkey).
 event CompPSK(preSharedKey).
 
+(* set verboseRules=true. *)
 (* set verboseRedundant = true. *)
 (* set redundancyElim = no. *)
 set removeEventsForLemma = true.
+
+nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
 
 let gen_dishonest_long_term_keys =
   !
@@ -19,6 +22,7 @@ let gen_dishonest_long_term_keys =
 let gen_dishonest_pre_shared_keys =
   !
   new idP:idProc;
+  (* let h_alg = id_hash(StrongHash,1) in *)
   in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
   if is_strong_hash(h_alg) then
   new psk_d:preSharedKey;
@@ -47,7 +51,8 @@ let gen_dishonest_pre_shared_keys =
 query cr,sr:bytes32,psk:preSharedKey,pk_srv:pubkey,cak,sak:aead_key,ems,rms:bitstring,i:nat;
   (* 1-RTT handshake secrecy query: every disjunct is required *)
   event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
-    (event(CompLGTK(pk_srv)) && (psk = NoPsk || event(CompPSK(psk))))
+    event(CompLGTK(pk_srv)) || event(CompPSK(psk)) ||
+    event(ClientOffersHash(cr,id_hash(WeakHash,i)))
 .
 
 (* 1-RTT handshake authentication query *)
@@ -142,12 +147,12 @@ query cr:random, sr:random, cr':random, sr':random, psk:preSharedKeyExt, e:eleme
 . *)
 
 process
-let tls_h = id_hash(StrongHash,1) in
+(* let tls_h = id_hash(StrongHash,1) in
 let tls_a = id_aead(StrongAE,1) in
 let tls_g = id_g(StrongDH,1) in
 let ech_h = id_hash(StrongHash,2) in
 let ech_a = id_aead(StrongAE,2) in
-let ech_g = id_g(StrongDH,2) in
+let ech_g = id_g(StrongDH,2) in *)
   (
     (* Generates the keys *)
       gen_dishonest_long_term_keys
@@ -157,17 +162,18 @@ let ech_g = id_g(StrongDH,2) in
   ) | (
     (* TLS client *)
     !
-    in(io,s_dom:domain);
-    in(io,c_dom:domain);
-    (* in(io,tls_h:hash_alg);
-    if is_strong_hash(tls_h) then
-    in(io,tls_a:aead_alg);
+    in(io,s_dom:domain) [precise];
+    in(io,c_dom:domain) [precise];
+    in(io,tls_h:hash_alg) [precise];
+    (* if is_strong_hash(tls_h) then *)
+    in(io,tls_a:aead_alg) [precise];
     if is_strong_aead(tls_a) then
-    in(io,tls_g:group);
-    if is_strong_group(tls_g) then *)
+    in(io,tls_g:group)[precise];
+    if is_strong_group(tls_g) then
     new id_client[]:idProc;
 
-    in(io,use_psk:bool);
+    in(io,use_psk:bool)[precise];
+    (* let send_kex = true in *)
     in(io,send_kex:bool);
 
 
@@ -181,17 +187,18 @@ let ech_g = id_g(StrongDH,2) in
     !
     (* Server *)
     (* in(io,use_ech:bool); *)
-    in(io,s_dom:domain);
-    (* in(io,tls_h:hash_alg);
+    in(io,s_dom:domain)[precise];
+    in(io,tls_h:hash_alg)[precise];
     if is_strong_hash(tls_h) then
-    in(io,tls_a:aead_alg);
+    in(io,tls_a:aead_alg)[precise];
     if is_strong_aead(tls_a) then
-    in(io,tls_g:group);
-    if is_strong_group(tls_g) then *)
-
-    in(io,use_ech:bool);
-    in(io,use_psk:bool);
-    in(io,req_cert:bool);
+    in(io,tls_g:group)[precise];
+    if is_strong_group(tls_g) then
+    let use_ech=false in
+    (* in(io,use_ech:bool); *)
+    in(io,use_psk:bool) [precise];
+    let req_cert = false in
+    (* in(io,req_cert:bool); *)
 
 
     server(use_ech,use_psk,req_cert,

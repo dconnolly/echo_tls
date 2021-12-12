@@ -10,29 +10,18 @@
 
 (* The Post Handshake messages *)
 
-free ch_client_PHS:channel [private].
-fun ArgsClientPHS(
-  bytes32,bytes32,hash_alg,aead_alg,
-  domain,domain,pubkey,
-  preSharedKey,bool,bool,
-  aead_key,aead_key,mac_key, bitstring,
-  bitstring
-):bitstring [data].
-
-let client_post_handshake =
-  !
-  in(ch_client_PHS,(id_client:idProc,ArgsClientPHS(
-    cr,sr,h_alg,a_alg,
-    c_dom,s_dom,s_pkey,
-    psk,safe_psk,comp_psk,
-    cak,sak,cfkad,rms,
-    cur_log
-  )));
-
-  new st[]:stamp;
-  event PreciseMess(ch_client_PHS,id_client,st,());
+let client_post_handshake(id_client:idProc,
+    cr,sr:bytes32,h_alg:hash_alg,a_alg:aead_alg,
+    c_dom,s_dom:domain,s_pkey:pubkey,
+    psk:preSharedKey,safe_psk,comp_psk:bool,
+    cak,sak:aead_key,cfkad:mac_key,rms:bitstring,
+    cur_log:bitstring
+  ) =
 
   (
+    (* New Session Ticket *)
+    if allow_PH_new_session_ticket then
+
     (* Reception of the new ticket *)
     in(io,enc_ticket_msg:bitstring);
     let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(0),zero,enc_ticket_msg) in
@@ -44,6 +33,7 @@ let client_post_handshake =
     We will show that if should_be_sake is true then the PSK is actually
     not deducible by the attacker. *)
     let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
+
     0
     (* if allow_compromised_ticket && comp_psk
     then
@@ -161,13 +151,13 @@ let send_client_finished_message =
 
   (* End of the 1-RTT Handshake *)
 
-  out(ch_client_PHS,(id_client,ArgsClientPHS(
+  client_post_handshake(id_client,
     cr,sr,h_alg,a_alg,
     c_dom,s_dom,s_pkey,
     psk,safe_psk,comp_psk,
     cak,sak,cfkad,rms,
     cur_log'
-  )))
+  )
 .
 
 (* Certificate and Certificate Verify *)
@@ -433,7 +423,7 @@ let process_server_hello(id_client:idProc,
   c_dom,s_dom:domain,
   kex_data:bitstring,h_alg:hash_alg,a_alg:aead_alg,
   psk_data:bitstring,comp_psk:bool,
-  cur_log:bitstring,
+  cur_log:bitstring, (* Last Server Hello excluded *)
   server_hello:msg)
   =
 
@@ -486,15 +476,21 @@ let standard_client(id_client:idProc,
       cur_log
     )
   in
+
+  event ClientOffersAead(cr,a_alg);
+  event ClientOffersHash(cr,h_alg);
+  event ClientOffersGroup(cr,g);
+
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
+
   event ClientTest0(cr);
   let (psk:preSharedKey,id:identityPsk,es:bitstring,safe_psk:bool) = psk_data in
 
   event ClientTest1(cr,psk);
   (
     (* Send the early data *)
-    if allow_early_data then
+    if allow_early_data && psk <> NoPsk then
     let (wkc0:aead_key,ems0:bitstring) = kdf_k0(h_alg,es,(zero,client_hello)) in
     !
     in(io,(i:nat,ad:bitstring));
@@ -524,6 +520,10 @@ let standard_client(id_client:idProc,
               cur_log3
             )
           in
+
+          event ClientOffersAead(cr',a_alg);
+          event ClientOffersHash(cr',h_alg);
+          event ClientOffersGroup(cr',g);
 
           out(io,client_hello');
           let cur_log4 = (cur_log3,client_hello') in

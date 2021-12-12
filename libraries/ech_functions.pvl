@@ -12,7 +12,6 @@ letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
   let ech_ext' = ECHClientHelloOuter(h_alg_ech,a_alg_ech,config_id,enc,zero) in
   CH(r,nego(v,h_alg,a_alg,kex_ext,sni_ext,ech_ext',extra_ext,psk_ext)).
 
-
 (* Generation of enc and context *)
 letfun generate_enc_context_client(
   ech_h:hash_alg,ech_g:group,
@@ -44,13 +43,13 @@ letfun generate_retry_ech_ext(config:echConfig) =
   See Section 7.2 of ECH RFC. *)
 
 letfun generate_accept_confirmation(
+  sr24:bytes24,
   tls_h:hash_alg,
   params_server_hello:params,
   inner_client_hello:msg, (* The lastest ClientHelloInner *)
   cur_log:bitstring (* From first ClientHelloInner up to and excluding the modified ServerHello *)
   ) =
   (* Generate a random first 24 bytes and create a modified Server Hello *)
-  new sr24[]:bytes24;
   let sh_modified = SH(B32(sr24,zero8),params_server_hello) in
   let cur_log_sh = (cur_log,sh_modified) in
   let transcript_ech_conf = hash(tls_h,cur_log_sh) in
@@ -103,3 +102,16 @@ letfun generate_hello_retry_request(
   let hrr_mode = nego(TLS13,tls_h,tls_a,hrr_kex_ext(tls_g),empty_sni_ext,ECHHelloRetryRequest(hrr_accept_confirmation),empty_extra_ext,empty_psk_ext) in
   SH(rand_HelloRetryRequest,hrr_mode)
 .
+
+(* Generate the key share extension for ECH. *)
+(* letfun make_key_share_extension_ech(tls_g,backend_g:group,send_key_share:bool) =
+  let (i_x:bitstring,i_gx:element) = dh_keygen(tls_g) in
+  let (o_x:bitstring,o_gx:element) = dh_keygen(backend_g) in
+
+  let (i_kex:kex_alg,o_kex:kex_alg) =
+    if send_key_share
+    then (DHE_kex(tls_g,i_gx),DHE_kex(backend_g,o_gx))
+    else (DHE_group(tls_g),DHE_group(backend_g))
+  in
+
+  (client_kex_ext(i_kex),client_kex_ext(o_kex),(i_x,o_x)) *)

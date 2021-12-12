@@ -4,11 +4,15 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = true.
+letfun allow_HRR = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
-letfun allow_early_data = false.
+letfun allow_early_data = true.
+
+(* When `false`, honest clients and servers are not expecting and sending a new
+  session ticket respectively. *)
+letfun allow_PH_new_session_ticket = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   Post Handshake Application Data. *)

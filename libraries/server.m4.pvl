@@ -19,31 +19,20 @@
 
 (* The Post Handshake messages *)
 
-free ch_server_PHS:channel [private].
-fun ArgsServerPHS(
-  bytes32,bytes32,hash_alg,aead_alg,
-  domain, pubkey,
-  preSharedKey,
-  aead_key,aead_key,mac_key, bitstring,
-  bitstring
-):bitstring [data].
-
-let server_post_handshake =
-  !
-  in(ch_server_PHS,(id_server:idProc,ArgsServerPHS(
-    cr,sr,h_alg,a_alg,
-    s_dom, s_pkey,
-    psk,
-    cak,sak,cfkad,rms,
-    cur_log
-  )));
-
-  (* new st[]:stamp;
-  event PreciseMess(ch_server_PHS,id_server,st,()); *)
+let server_post_handshake(
+    cr,sr:bytes32,h_alg:hash_alg,a_alg:aead_alg,
+    s_dom:domain, s_pkey:pubkey,
+    psk:preSharedKey,
+    cak,sak:aead_key,cfkad:mac_key,rms:bitstring,
+    cur_log:bitstring
+  )=
 
   (
+    (* New Session Ticket *)
+    if allow_PH_new_session_ticket then
+
     (* Generate of a new ticket for the client *)
-    new ticket_nonce[]:bitstring;
+    new ticket_nonce[rms]:bitstring;
     let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
     let ticket_id = mk_idpsk(s_dom,h_alg,new_psk) in
 
@@ -58,7 +47,7 @@ let server_post_handshake =
       !
       in(io,(seq_srv:nat,ad:bitstring));
       if is_nat(seq_srv) then
-      new msgs[]:bitstring;
+      new msgs[seq_srv,ad]:bitstring;
       event ServerSends(cr,sr,psk,s_pkey,seq_srv,ad,msgs);
       out(io,aead_enc(a_alg,sak,n2b(seq_srv),ad,msgs))
     ) | (
@@ -134,8 +123,8 @@ let receive_client_finished_message =
     master_secret,chk,c_seq,cfin,
     cur_log)));
 
-  (* new st[]:stamp;
-  event PreciseMess(ch_server_CFIN,id_server,st,()); *)
+  new st[]:stamp;
+  event PreciseMess(ch_server_CFIN,id_server,st,(master_secret));
 
   in(io,enc_fin:bitstring);
   let m2b(fin_msg) = aead_dec(a_alg,chk,n2b(c_seq),zero,enc_fin) in
@@ -150,13 +139,13 @@ let receive_client_finished_message =
 
   event ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms);
 
-  out(ch_server_PHS,(id_server,ArgsServerPHS(
+  server_post_handshake(
     cr,sr,h_alg,a_alg,
     s_dom, s_pkey,
     psk,
     cak,sak,cfkad,rms,
     cur_log_CFIN
-  )))
+  )
 .
 
 (* Sends the server finish message *)
@@ -179,8 +168,8 @@ let send_server_finished_message =
     master_secret, chk, c_seq, shk, s_seq, cfin,sfin,
     cur_log)));
 
-  (* new st[]:stamp;
-  event PreciseMess(ch_server_FIN,id_server,st,()); *)
+  new st[]:stamp;
+  event PreciseMess(ch_server_FIN,id_server,st,(master_secret));
 
   let hash_msg = hmac(h_alg,sfin,cur_log) in
   let finished_msg = FIN(hash_msg) in
@@ -320,7 +309,7 @@ let process_client_hello_noHRR =
           then it tries to decrypt it and output on the private channel ch_early_data_SH
           for continuation. *)
         (
-          if allow_early_data && no_HRR then
+          if allow_early_data && no_HRR && psk <> NoPsk then
           !
           in(io,(i:nat,ad:bitstring,enc_early_data:bitstring));
           let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
@@ -338,7 +327,9 @@ let process_client_hello_noHRR =
 
           let sr =
             if is_backend
-            then generate_accept_confirmation(tls_h,s_offer,client_hello,cur_log_CH)
+            then
+              new sr24[]:bytes24;
+              generate_accept_confirmation(sr24,tls_h,s_offer,client_hello,cur_log_CH)
             else gen_B32_random ()
           in
 

@@ -24,7 +24,8 @@ let gen_honest_long_term_keys =
 let gen_honest_pre_shared_keys =
   !
   in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
-  if is_strong_hash(h_alg) then
+  (* let h_alg = id_hash(StrongHash,1) in *)
+  (* if is_strong_hash(h_alg) then *)
   new psk_id:idProc;
   event Same((c_dom,s_dom,h_alg));
   let psk = gen_honest_psk() in
@@ -57,13 +58,11 @@ let gen_honest_key =
 
 let main_process =
   (* On the server side *)
-    server_post_handshake
-  | receive_client_finished_message
+    receive_client_finished_message
   | send_server_finished_message
   | send_server_certificate_message
   | process_client_hello_noHRR
   (* On the TLS client side *)
-  | client_post_handshake
   | send_client_finished_message
   | receive_server_finished_message
   | process_server_certificate_message

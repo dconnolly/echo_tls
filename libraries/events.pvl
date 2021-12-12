@@ -29,6 +29,16 @@ event ClientOffersAead(
   aead_alg        (* AEAD algorithm *)
 ).
 
+event ClientOffersHash(
+  bytes32,        (* Client random *)
+  hash_alg        (* Hash algorithm *)
+).
+
+event ClientOffersGroup(
+  bytes32,        (* Client random *)
+  group           (* DH group *)
+).
+
 (* Compromised keys *)
 event CompromisedLongTermKey(pubkey).
 event CompromisedPsk(preSharedKey).

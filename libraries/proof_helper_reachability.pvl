@@ -1,12 +1,10 @@
 (* Force selection of channels *)
 
-nounif x:bitstring; mess(ch_client_PHS,*x) / -300000.
 nounif x:bitstring; mess(ch_client_CFIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_FIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_CRT,*x) / -300000.
 nounif x:bitstring; mess(ch_client_after_EE,*x) / -300000.
 
-nounif x:bitstring; mess(ch_server_PHS,*x) / -300000.
 nounif x:bitstring; mess(ch_server_CFIN,*x) / -300000.
 nounif x:bitstring; mess(ch_server_FIN,*x) / -300000.
 nounif x:bitstring; mess(ch_server_CRT,*x) / -300000.
@@ -38,13 +36,11 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':stamp, x1,x1',
 
 (* Secrecy assumotion *)
 
-not attacker(ch_client_PHS).
 not attacker(ch_client_CFIN).
 not attacker(ch_client_FIN).
 not attacker(ch_client_CRT).
 not attacker(ch_client_after_EE).
 
-not attacker(ch_server_PHS).
 not attacker(ch_server_CFIN).
 not attacker(ch_server_FIN).
 not attacker(ch_server_CRT).
