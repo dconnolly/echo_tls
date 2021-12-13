@@ -85,9 +85,9 @@ let gen_dishonest_long_term_keys =
 let gen_dishonest_pre_shared_keys =
   !
   new idP:idProc;
-  let h_alg = id_hash(StrongHash,1) in
-  in(io,(c_dom:domain,s_dom:domain));
+  in(io,h_alg:hash_alg);
   if is_strong_hash(h_alg) then
+  in(io,(c_dom:domain,s_dom:domain));
   new psk_d:preSharedKey;
   event CompromisedPsk(psk_d);
   let id = mk_idpsk(s_dom,h_alg,psk_d) in
@@ -109,18 +109,9 @@ let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
 
 (* Security properties *)
 
-query psk,new_psk,old_psk:preSharedKey, s_pkey,s_pkey':pubkey,s_dom:domain,h:hash_alg,i,j:time;
-  event(ServerNewTicket(psk,s_pkey,new_psk))@i && attacker(new_psk) ==>
-    event(CompromisedLongTermKey(s_pkey)) ||
-    event(CompromisedPsk(new_psk)) ||
-    event(CompromisedPsk(psk)) ||
-    psk = NoPsk ||
-    (event(ServerNewTicket(old_psk,s_pkey',psk))@j && attacker(psk) && i > j)
-.
-
 (* 1-RTT handshake : secrecy and authentication queries *)
 
-query cr,cr',sr,sr':bytes32,old_psk,psk,psk':preSharedKey,s_pkey,pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat;
+query cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
   (* Secrecy *)
   event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
     event(CompromisedLongTermKey(pk_srv)) ||
@@ -162,7 +153,14 @@ query cr,cr',sr,sr':bytes32,old_psk,psk,psk':preSharedKey,s_pkey,pk_srv,pk_srv':
 
   event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
   event(ServerFinished(cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv'
+    cr = cr' && sr = sr' && pk_srv = pk_srv';
+
+  event(ServerNewTicket(psk,s_pkey,new_psk))@j && attacker(new_psk) ==>
+    event(CompromisedLongTermKey(s_pkey)) ||
+    event(CompromisedPsk(new_psk)) ||
+    event(CompromisedPsk(psk)) ||
+    psk = NoPsk ||
+    (event(ServerNewTicket(old_psk,s_pkey',psk))@j' && attacker(psk) && j > j')
 .
 
 (* Post Handshake Application Data: Secrecy and Authentication *)
