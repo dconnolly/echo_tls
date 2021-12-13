@@ -95,17 +95,17 @@ let gen_dishonest_pre_shared_keys =
   out(io,psk_d)
 .
 
-(* let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
+let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
   !
   in(io,o_dom:domain);
   new id: configId;
   new skR_d:bitstring;
   let pkR_d = dh_pub(g,skR_d) in
-  event CompECHK(pkR_d);
+  event CompromisedEchKey(pkR_d);
   let config = ech_config(id,g,pkR_d,o_dom,h_alg,a_alg) in
   insert ech_configurations(config,skR_d);
   out(io,(config,skR_d))
-. *)
+.
 
 (* Security properties *)
 
@@ -254,12 +254,6 @@ query idP,idP':idProc,cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sa
 .
 
 process
-  let tls_h = id_hash(StrongHash,1) in
-  let tls_a = id_aead(StrongAE,1) in
-  let tls_g = id_g(StrongDH,1) in
-  let ech_h = id_hash(StrongHash,2) in
-  let ech_a = id_aead(StrongAE,2) in
-  let ech_g = id_g(StrongDH,2) in
   (
     (* Generates the keys *)
       gen_dishonest_long_term_keys
@@ -269,40 +263,41 @@ process
   ) | (
     (* TLS client *)
     !
+    new id_client:idProc;
+
+    (* Domains *)
     in(io,s_dom:domain) [precise];
     in(io,c_dom:domain) [precise];
-    (* in(io,tls_h:hash_alg) [precise];
-    (* if is_strong_hash(tls_h) then *)
+
+    (* Ciphersuite and group *)
     in(io,tls_a:aead_alg) [precise];
-    if is_strong_aead(tls_a) then
-    in(io,tls_g:group)[precise];
-    if is_strong_group(tls_g) then *)
-    new id_client[]:idProc;
+    in(io,tls_g:group) [precise];
+    in(io,tls_h:hash_alg) [precise];
+    if is_strong_aead(tls_a) && is_strong_group(tls_g) && is_strong_hash(tls_h) then
 
+    (* Parameters *)
     in(io,use_psk:bool)[precise];
-    (* let send_kex = true in *)
     in(io,send_kex:bool) [precise];
-
     in(io,comp_psk:bool) [precise];
 
     standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
   ) | (
     !
     (* Server *)
-    (* in(io,use_ech:bool); *)
-    in(io,s_dom:domain)[precise];
-    (* in(io,tls_h:hash_alg)[precise];
-    if is_strong_hash(tls_h) then
-    in(io,tls_a:aead_alg)[precise];
-    if is_strong_aead(tls_a) then
-    in(io,tls_g:group)[precise];
-    if is_strong_group(tls_g) then *)
-    let use_ech=false in
-    (* in(io,use_ech:bool); *)
-    in(io,use_psk:bool) [precise];
-    (* let req_cert = false in *)
-    in(io,req_cert:bool) [precise];
 
+    (* Domain *)
+    in(io,s_dom:domain)[precise];
+
+    (* Ciphersuite and group *)
+    in(io,tls_a:aead_alg) [precise];
+    in(io,tls_g:group) [precise];
+    in(io,tls_h:hash_alg) [precise];
+    if is_strong_aead(tls_a) && is_strong_group(tls_g) && is_strong_hash(tls_h) then
+
+    (* Parameters *)
+    let use_ech = false in
+    in(io,use_psk:bool) [precise];
+    in(io,req_cert:bool) [precise];
 
     server(use_ech,use_psk,req_cert,
       s_dom,
