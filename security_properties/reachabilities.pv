@@ -70,13 +70,12 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   [induction,fullSat]
 .
 
-
 let gen_dishonest_long_term_keys =
   !
   new idP:idProc;
   in(io,a:domain);
   new sk_d:privkey;
-  event CompromisedLongTermKey(pk(sk_d));
+  event CompromisedLtk(pk(sk_d));
   let crt = valid_cert(a,pk(sk_d)) in
   insert long_term_keys(a,sk_d,pk(sk_d),crt,idP);
   out(io,(sk_d,crt))
@@ -95,37 +94,25 @@ let gen_dishonest_pre_shared_keys =
   out(io,psk_d)
 .
 
-let gen_dishonest_ech_config(g:group,h_alg:hash_alg,a_alg:aead_alg) =
-  !
-  in(io,o_dom:domain);
-  new id: configId;
-  new skR_d:bitstring;
-  let pkR_d = dh_pub(g,skR_d) in
-  event CompromisedEchKey(pkR_d);
-  let config = ech_config(id,g,pkR_d,o_dom,h_alg,a_alg) in
-  insert ech_configurations(config,skR_d);
-  out(io,(config,skR_d))
-.
-
 (* Security properties *)
 
 (* 1-RTT handshake : secrecy and authentication queries *)
 
-query cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
+query id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
   (* Secrecy *)
-  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
-    event(CompromisedLongTermKey(pk_srv)) ||
+  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     event(ClientOffersHash(cr,id_hash(WeakHash,i))) ||
     event(ClientOffersGroup(cr,id_g(WeakDH,i)));
 
-  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(psk) ==>
+  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(psk) ==>
     psk = NoPsk || event(CompromisedPsk(psk));
 
   (* Authentication *)
-  inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
-    inj-event(PreServerFinished(cr,sr,psk,pk_srv)) ||
-    event(CompromisedLongTermKey(pk_srv)) ||
+  inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+    inj-event(PreServerFinished(id_s,cr,sr,psk,pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     event(ClientOffersHash(cr,id_hash(WeakHash,i))) ||
     event(ClientOffersGroup(cr,id_g(WeakDH,i)));
@@ -133,30 +120,30 @@ query cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey'
   (* As an honest server can talk with a dishonest client, the ClientFinished
     is triggered only when the server uses an uncompromised PSK or
     request a client certificate. *)
-  inj-event(ServerFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
-    inj-event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) ||
-    event(CompromisedLongTermKey(pk_srv)) ||
+  inj-event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+    inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk)) ||
     psk = NoPsk ||
     event(ClientOffersHash(cr,id_hash(WeakHash,i))) ||
     event(ClientOffersGroup(cr,id_g(WeakDH,i)));
 
-  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
+  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
     cr = cr' && sr = sr' && pk_srv = pk_srv';
 
 
-  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
+  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
     cr = cr' && sr = sr' && pk_srv = pk_srv';
 
-  event(ClientFinished(cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
+  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
     cr = cr' && sr = sr' && pk_srv = pk_srv';
 
   event(ServerNewTicket(psk,s_pkey,new_psk))@j && attacker(new_psk) ==>
-    event(CompromisedLongTermKey(s_pkey)) ||
+    event(CompromisedLtk(s_pkey)) ||
     event(CompromisedPsk(new_psk)) ||
     event(CompromisedPsk(psk)) ||
     psk = NoPsk ||
@@ -179,7 +166,7 @@ restriction idP,idP':idProc,s_dom:domain,cr,cr',sr,sr':bytes32,psk,psk':preShare
 
 query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey,pk_srv:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg:bitstring,st,st':stamp;
   event(ClientSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && attacker(msg) ==>
-    event(CompromisedLongTermKey(pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     event(ClientOffersHash(cr,id_hash(WeakHash,i))) ||
     event(ClientOffersGroup(cr,id_g(WeakDH,i))) ||
@@ -188,7 +175,7 @@ query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey
   (* As an honest server can talk with a dishonest client, the message is not deducible
     the server uses an uncompromised PSK or request a client certificate. *)
   event(ServerSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && attacker(msg) ==>
-    event(CompromisedLongTermKey(pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk)) ||
     psk = NoPsk ||
@@ -197,7 +184,7 @@ query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey
     event(ServerChoosesAead(cr,sr,id_aead(WeakAE,i)));
 
   event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && attacker(msg) ==>
-    event(CompromisedLongTermKey(pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i))) ||
     event(ServerChoosesGroup(cr,sr,id_g(WeakDH,i))) ||
@@ -209,7 +196,7 @@ query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey
 
   inj-event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) ==>
     inj-event(ServerSends(idP',cr,sr,psk,pk_srv,st',n,ad,msg)) ||
-    event(CompromisedLongTermKey(pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i))) ||
     event(ServerChoosesGroup(cr,sr,id_g(WeakDH,i))) ||
@@ -217,7 +204,7 @@ query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey
 
   inj-event(ServerReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) ==>
     inj-event(ClientSends(idP',cr,sr,psk,pk_srv,st',n,ad,msg)) ||
-    event(CompromisedLongTermKey(pk_srv)) ||
+    event(CompromisedLtk(pk_srv)) ||
     event(CompromisedPsk(psk)) ||
     (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk)) ||
     psk = NoPsk ||
@@ -235,7 +222,7 @@ query idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey
 query idP,idP':idProc,cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg':bitstring,req_rand:bitstring,st,st':stamp;
   inj-event(ClientFinishedPH(cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
     inj-event(ServerRequestPH(cr,sr,psk,s_pkey,req_rand)) ||
-    event(CompromisedLongTermKey(s_pkey)) ||
+    event(CompromisedLtk(s_pkey)) ||
     event(CompromisedPsk(psk)) ||
     event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i))) ||
     event(ServerChoosesGroup(cr,sr,id_g(WeakDH,i))) ||
@@ -243,8 +230,8 @@ query idP,idP':idProc,cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sa
 
   inj-event(ServerFinishedPH(cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
     inj-event(ClientFinishedPH(cr,sr,psk,s_pkey,req_rand,c_pkey)) ||
-    event(CompromisedLongTermKey(s_pkey)) ||
-    event(CompromisedLongTermKey(c_pkey)) ||
+    event(CompromisedLtk(s_pkey)) ||
+    event(CompromisedLtk(c_pkey)) ||
     event(CompromisedPsk(psk)) ||
     event(ServerChoosesHash(cr,sr,id_hash(WeakHash,i))) ||
     event(ServerChoosesGroup(cr,sr,id_g(WeakDH,i))) ||
@@ -254,10 +241,9 @@ query idP,idP':idProc,cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sa
 process
   (
     (* Generates the keys *)
-      gen_dishonest_long_term_keys
-    | gen_dishonest_pre_shared_keys
-    | gen_honest_key
-    | main_process
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
   ) | (
     (* TLS client *)
     !

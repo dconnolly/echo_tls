@@ -145,7 +145,7 @@ let receive_client_finished_message =
 
   (* End of the 1-RTT Handshake *)
 
-  event ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms);
+  event ServerFinished(id_server,cr,sr,psk,s_pkey,cak,sak,ems,rms);
 
   server_post_handshake(id_server,
     cr,sr,h_alg,a_alg,
@@ -183,7 +183,7 @@ let send_server_finished_message =
   let finished_msg = FIN(hash_msg) in
   let enc_finished = aead_enc(a_alg,shk,n2b(s_seq),zero,m2b(finished_msg)) in
 
-  event PreServerFinished(cr,sr,psk,s_pkey);
+  event PreServerFinished(id_server,cr,sr,psk,s_pkey);
 
   out(io,enc_finished);
   let cur_log_FIN = (cur_log,finished_msg) in
@@ -245,16 +245,17 @@ let send_server_certificate_message =
   new st[]:stamp;
   event PreciseMess(ch_server_CRT,id_server,st,master_secret);
 
-  (* TO UNCOMMENT FOR FINAL VERSION *)
-(* ifdef(<!SERVER_SELECT_CRT!>,<!dnl
-  get long_term_keys(s_dom',sk,s_pkey,crt,idP) [precise] in
-  event Selected_lgt(s_dom',s_dom,idP);
-!>,<!dnl
-  get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
-!>)dnl *)
-
-  (* TO REMOVE FOR FINAL VERSION *)
-  get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
+  let (sk:privkey,s_pkey:pubkey,crt:certificate) =
+    if select_server_certificate_by_restriction
+    then (
+      get long_term_keys(s_dom',sk,s_pkey,crt,idP) [precise] in
+      event Selected_ltk(s_dom,s_dom',idP);
+      (sk,s_pkey,crt)
+    )
+    else
+      get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
+      (sk,s_pkey,crt)
+  in
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -302,7 +303,7 @@ let process_client_hello_noHRR =
   event PreciseMess(ch_server_SH,id_server,st,m2b(client_hello));
 
   let CH(cr,offer) = client_hello in
-  event ServerTest0(cr);
+
   (* Verify the cipher suite and group *)
   let nego(=TLS13,=tls_h,=tls_a,client_kex_ext(DHE_kex(=tls_g,gx)),sni_ext,ech_ext,extra_ext,psk_ext) = offer in (
     if sni_ext = SNI(s_dom)
@@ -311,7 +312,6 @@ let process_client_hello_noHRR =
       (* Retrieve the early secret from the psk. *)
       let (early_secret:bitstring,s_psk_ext:preSharedKeyExt,psk:preSharedKey) = generate_early_secret_psk_extension(use_psk,s_dom,client_hello,cur_log) in
 
-      event ServerTest1(cr,psk);
       let cur_log_CH = (cur_log,client_hello) in (
         (* Checks if it needs to receive an early data message. If it does
           then it tries to decrypt it and output on the private channel ch_early_data_SH
@@ -322,12 +322,11 @@ let process_client_hello_noHRR =
           in(io,(i:nat,ad:bitstring,enc_early_data:bitstring))[precise];
           let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
           let early_data:bitstring = aead_dec(tls_a,wkc0,n2b(i),ad,enc_early_data) in (
-            new st[]:stamp;
-            event ServerReceives0(id_server,s_dom,cr,psk,st,i,ad,early_data)
+            new st1[]:stamp;
+            event ServerReceives0(id_server,s_dom,cr,psk,st1,i,ad,early_data)
           )
           else out(io,bad_record_mac)
         ) | (
-          event ServerTest2(cr,psk);
           (* Generate key share and handshake secret *)
           let (gxy:element,gy:element) = dh_encap(tls_g,gx,m2b(client_hello)) in
           let handshake_secret = kdf_hs(tls_h,early_secret,gxy) in
@@ -350,9 +349,6 @@ let process_client_hello_noHRR =
 
           out(io,server_hello);
           let cur_log_SH = (cur_log_CH,server_hello) in
-          event ServerTestSH(cr,sr,cur_log_SH);
-
-          event ServerTest3(cr,sr,psk);
 
           (* Generate the master keys *)
           let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
@@ -363,7 +359,6 @@ let process_client_hello_noHRR =
           let enc_ee = aead_enc(tls_a,shk,n2b(0),zero,m2b(ee_msg)) in
           out(io,enc_ee);
           let cur_log_EE = (cur_log_SH,ee_msg) in
-          event ServerTest4(cr,sr,psk,cur_log_EE);
 
           (* Sends either the finish message or the certificate messages *)
           if psk = NoPsk
@@ -502,7 +497,6 @@ let ech_HRR_check(id_server:idProc,
             let m2b(i_client_hello') = hpke_open(ech_a,context,2,m2b(client_hello_AAD),payload) in (
               (* The decryption worked. The new inner client hello was retrieved
                 and is forwarded to the backend server. *)
-
               (*** Backend server part *)
               let CH(i_cr,nego(=TLS13,i_h_alg,i_a_alg,i_kex_ext,SNI(=i_dom),=ECHClientHelloInner,i_extra_ext,i_psk_ext)) = i_client_hello' in (
                 out(ch_server_SH,(id_server,ArgsServerSH(
@@ -564,10 +558,14 @@ let server(
         on. Does not impact the verification but make the verification more efficient. *)
       get ech_configurations(ech_config(config_id,ech_g,pkR,=s_dom,ech_h,ech_a),skR) in
       let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h,ech_a) in
+
+      event ServerChoosesEchConfig(id_server,ech_conf);
+
       let retry_ech_ext = generate_retry_ech_ext(ech_conf) in
 
       if use_ech <> true || ech_ext = empty_ech_ext
       then
+        event ServerEchAcceptance(id_server,false);
         standard_HRR_check(id_server,
           use_ech,use_psk,req_cert,
           s_dom,
@@ -588,6 +586,7 @@ let server(
                 is of type Inner and that the version is TLS 1.3*)
               let CH(cr',nego(=TLS13,c_h_alg',c_a_alg',kex_ext',SNI(i_dom),=ECHClientHelloInner,extra_ext',psk_ext')) = i_client_hello in (
                 (* All checks were successful, the front forwards to the backend. *)
+                event ServerEchAcceptance(id_server,true);
                 ech_HRR_check(id_server,
                   use_psk,req_cert,
                   backend_g,backend_h,backend_a,
@@ -599,6 +598,7 @@ let server(
             )
             else
               (* The decryption does not work *)
+              event ServerEchAcceptance(id_server,false);
               standard_HRR_check(id_server,
                 use_ech,use_psk,req_cert,
                 s_dom,
@@ -611,6 +611,7 @@ let server(
             (* ECH not accepted.
               The frontend ignores the extension and proceed with the OuterClientHello.
               It must send a retry configuration. *)
+            event ServerEchAcceptance(id_server,false);
             standard_HRR_check(id_server,
               use_ech,use_psk,req_cert,
               s_dom,

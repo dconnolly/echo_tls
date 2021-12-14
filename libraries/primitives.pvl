@@ -3,6 +3,7 @@ const zero:bitstring [data].
 type seed.
 
 fun n2b(nat):bitstring [typeConverter].
+fun bool2b(bool):bitstring [typeConverter].
 
 (********************************************************)
 (* Generation of random                                 *)
@@ -37,6 +38,7 @@ const WeakAE, StrongAE: aead_strengh [data].
 
 type aead_alg.
 fun id_aead(aead_strengh,nat):aead_alg [data].
+fun a2b(aead_alg):bitstring [typeConverter].
 
 reduc forall i:nat; is_strong_aead(id_aead(StrongAE,i)) = true.
 
@@ -66,6 +68,7 @@ const WeakDH, StrongDH: group_strengh [data].
 
 type group.
 fun id_g(group_strengh,nat):group [data].
+fun g2b(group):bitstring [typeConverter].
 
 reduc forall i:nat; is_strong_group(id_g(StrongDH,i)) = true.
 
@@ -129,6 +132,7 @@ const StrongHash, WeakHash:hash_strengh [data].
 
 type hash_alg.
 fun id_hash(hash_strengh,nat):hash_alg [data].
+fun h2b(hash_alg):bitstring [typeConverter].
 
 const collision:bitstring [data].
 fun hash_ideal(nat,bitstring):bitstring.

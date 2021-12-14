@@ -9,8 +9,7 @@ letfun generate_early_secret_psk_extension(use_psk:bool,s_dom:domain,client_hell
   let CH(cr,nego(=TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,extra_ext,psk_ext)) = client_hello in
 
   let (=true,client_psk_ext(id,binders)) = (use_psk,psk_ext) in (
-    if (s_dom,h_alg) = (get_server_psk(id),get_hash_psk(id))
-    then (
+    let (=s_dom,=h_alg) = (get_server_psk(id),get_hash_psk(id)) in (
       let psk = get_psk(id) in
       let (early_secret:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
       let offer = nego(TLS13,h_alg,a_alg,kex_ext,sni_ext,ech_ext,extra_ext,trunc_client_psk_ext(id)) in
@@ -48,7 +47,26 @@ letfun make_pre_shared_key_extension(
       (client_psk_ext(id,binders), (psk,id,es,is_safe))
     )
     else (
-      get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
+      let (id:identityPsk,psk:preSharedKey,is_safe:bool) =
+        if select_client_pre_shared_key_by_restriction
+        then (
+          get pre_shared_keys(c_dom',=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
+          event Selected_psk(c_dom,c_dom',idP,is_safe);
+          event Selected_one_time_used_psk(id_client,psk,is_safe);
+          (id,psk,is_safe)
+        )
+        else if select_server_pre_shared_key_by_restriction
+        then (
+          get pre_shared_keys(=c_dom,s_dom',=h_alg,id,psk,idP,is_safe) [precise] in
+          event Selected_psk(s_dom,s_dom',idP,is_safe);
+          (id,psk,is_safe)
+        )
+        else (
+          get pre_shared_keys(=c_dom,=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
+          (id,psk,is_safe)
+        )
+      in
+
       let offer = nego(TLS13,h_alg,a_alg,kex,SNI(s_dom),ech_ext,extra,trunc_client_psk_ext(id)) in
       let cur_log' = (cur_log,CH(cr,offer)) in
       let (es:bitstring,kb:mac_key) = kdf_es(h_alg,psk) in
@@ -99,8 +117,7 @@ letfun generate_client_hello_message (
       c_dom,s_dom,cr,
       h_alg,a_alg,kex_ext,empty_ech_ext,empty_extra_ext,cur_log)
   in
-  let (psk:preSharedKey,id:identityPsk,es:bitstring,safe_psk:bool) = psk_data in
 
   (* The client hello *)
   let offer = nego(TLS13,h_alg,a_alg,kex_ext,SNI(s_dom),empty_ech_ext,empty_extra_ext,psk_ext) in
-  (CH(cr,offer),cr,kex_ext,kex_data,psk_data).
+  (CH(cr,offer),cr,kex_data,psk_data).

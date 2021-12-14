@@ -210,7 +210,10 @@ fun ECHHelloRetryRequest(bytes8):echExt [data].
 type TLS_version.
 const TLS13: TLS_version.
 
-const rand_HelloRetryRequest:bytes32. (* "HelloRetryRequest" in Section 4.1.3 of TLS RFC *)
+(* "HelloRetryRequest" in Section 4.1.3 of TLS RFC *)
+const HRR8:bytes8.
+const HRR24:bytes24.
+letfun rand_HelloRetryRequest = B32(HRR24,HRR8).
 
 (* The SNI extension *)
 type sniExt.

@@ -5,7 +5,7 @@
 (* We define the processes that will be called for all security proofs. It includes
   the generation of honest keys. *)
 
-(* Generation of keys *)
+(* Generation of honest keys *)
 
 let gen_honest_long_term_keys =
   !
@@ -25,9 +25,23 @@ let gen_honest_pre_shared_keys =
   !
   in(io,(c_dom:domain,s_dom:domain));
   in(io,h_alg:hash_alg);
-  if is_strong_hash(h_alg) then
+  if allow_weak_ciphersuite_and_group || is_strong_hash(h_alg) then
   new psk_id:idProc;
-  event Same((c_dom,s_dom,h_alg));
+  event Same(d2b(c_dom));
+  event Same(d2b(s_dom));
+  event Same(h2b(h_alg));
+  let psk = gen_honest_psk() in
+  let id = mk_idpsk(s_dom,h_alg,psk) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,psk_id,true)
+.
+
+let gen_honest_pre_shared_keys_fixed =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  let h_alg = id_hash(StrongHash,1) in
+  new psk_id:idProc;
+  event Same(d2b(c_dom));
+  event Same(d2b(s_dom));
   let psk = gen_honest_psk() in
   let id = mk_idpsk(s_dom,h_alg,psk) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk,psk_id,true)
@@ -36,10 +50,13 @@ let gen_honest_pre_shared_keys =
 let gen_honest_ech_config =
   !
   in(io,(s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg));
-  if is_strong_hash(h_alg) then
-  if is_strong_aead(a_alg) then
-  if is_strong_group(g) then
-  event Same((s_dom,g,h_alg,a_alg));
+  if allow_weak_ciphersuite_and_group || is_strong_hash(h_alg) then
+  if allow_weak_ciphersuite_and_group || is_strong_aead(a_alg) then
+  if allow_weak_ciphersuite_and_group || is_strong_group(g) then
+  event Same(d2b(s_dom));
+  event Same(g2b(g));
+  event Same(h2b(h_alg));
+  event Same(a2b(a_alg));
   new id:configId;
   let (skR:bitstring,pkR:element) = dh_keygen(g) in
   let config = ech_config(id,g,pkR,s_dom,h_alg,a_alg) in
@@ -48,15 +65,136 @@ let gen_honest_ech_config =
   out(io,config)
 .
 
-let gen_honest_key =
-    gen_honest_long_term_keys
-  | gen_honest_pre_shared_keys
-  | gen_honest_ech_config
+let gen_honest_ech_config_fixed =
+  !
+  in(io,s_dom:domain);
+  let ech_h = id_hash(StrongHash,2) in
+  let ech_a = id_aead(StrongAE,2) in
+  let ech_g = id_g(StrongDH,2) in
+  event Same(d2b(s_dom));
+  new id:configId;
+  let (skR:bitstring,pkR:element) = dh_keygen(ech_g) in
+  let config = ech_config(id,ech_g,pkR,s_dom,ech_h,ech_a) in
+  insert ech_configurations(config,skR);
+  (* The configuration is given to the attacker. *)
+  out(io,config)
 .
 
-(* The main process *)
+let gen_honest_key =
+    gen_honest_long_term_keys
+  |
+    if allow_multiple_ciphersuite_and_group
+    then (
+        gen_honest_pre_shared_keys
+      | gen_honest_ech_config
+    )
+    else (
+        gen_honest_pre_shared_keys_fixed
+      | gen_honest_ech_config_fixed
+    )
+.
 
-let main_process =
+(* Generation of dishonest keys *)
+
+let gen_dishonest_long_term_keys =
+  !
+  new idP:idProc;
+  in(io,a:domain);
+  new sk_d:privkey;
+  event Same(d2b(a));
+  event CompromisedLtk(pk(sk_d));
+  let crt = valid_cert(a,pk(sk_d)) in
+  insert long_term_keys(a,sk_d,pk(sk_d),crt,idP);
+  out(io,(sk_d,crt))
+.
+
+let gen_dishonest_pre_shared_keys =
+  !
+  in(io,(c_dom:domain,s_dom:domain,h_alg:hash_alg));
+  if allow_weak_ciphersuite_and_group || is_strong_hash(h_alg) then
+  new idP:idProc;
+  event Same(d2b(c_dom));
+  event Same(d2b(s_dom));
+  event Same(h2b(h_alg));
+  new psk_d:preSharedKey;
+  event CompromisedPsk(psk_d);
+  let id = mk_idpsk(s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  out(io,psk_d)
+.
+
+let gen_dishonest_pre_shared_keys_fixed =
+  !
+  in(io,(c_dom:domain,s_dom:domain));
+  let h_alg = id_hash(StrongHash,1) in
+  new idP:idProc;
+  event Same(d2b(c_dom));
+  event Same(d2b(s_dom));
+  new psk_d:preSharedKey;
+  event CompromisedPsk(psk_d);
+  let id = mk_idpsk(s_dom,h_alg,psk_d) in
+  insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  out(io,psk_d)
+.
+
+let gen_dishonest_ech_config =
+  !
+  in(io,(s_dom:domain,g:group,h_alg:hash_alg,a_alg:aead_alg));
+  if allow_weak_ciphersuite_and_group || is_strong_hash(h_alg) then
+  if allow_weak_ciphersuite_and_group || is_strong_aead(a_alg) then
+  if allow_weak_ciphersuite_and_group || is_strong_group(g) then
+  event Same(d2b(s_dom));
+  event Same(g2b(g));
+  event Same(h2b(h_alg));
+  event Same(a2b(a_alg));
+  new id:configId;
+  new skR_d:bitstring;
+  let pkR_d = dh_pub(g,skR_d) in
+  let config = ech_config(id,g,pkR_d,s_dom,h_alg,a_alg) in
+  event CompromisedEchKey(config);
+  insert ech_configurations(config,skR_d);
+  (* The configuration and private keys are given to the attacker. *)
+  out(io,(config,skR_d))
+.
+
+let gen_dishonest_ech_config_fixed =
+  !
+  in(io,s_dom:domain);
+  let ech_h = id_hash(StrongHash,2) in
+  let ech_a = id_aead(StrongAE,2) in
+  let ech_g = id_g(StrongDH,2) in
+  event Same(d2b(s_dom));
+  new id:configId;
+  new skR_d:bitstring;
+  let pkR_d = dh_pub(ech_g,skR_d) in
+  let config = ech_config(id,ech_g,pkR_d,s_dom,ech_h,ech_a) in
+  event CompromisedEchKey(config);
+  insert ech_configurations(config,skR_d);
+  (* The configuration and private keys are given to the attacker. *)
+  out(io,(config,skR_d))
+.
+
+let gen_dishonest_key =
+    gen_dishonest_long_term_keys
+  |
+    if allow_multiple_ciphersuite_and_group
+    then (
+        gen_dishonest_pre_shared_keys
+      |
+        if allow_compromised_Ech_keys
+        then gen_dishonest_ech_config
+    )
+    else (
+        gen_dishonest_pre_shared_keys_fixed
+      |
+        if allow_compromised_Ech_keys
+        then gen_dishonest_ech_config_fixed
+    )
+.
+
+(* The internal processes *)
+
+let all_internal_processes =
   (* On the server side *)
     receive_client_finished_message
   | send_server_finished_message
@@ -68,4 +206,224 @@ let main_process =
   | process_server_certificate_message
   | receive_after_encrypted_extension
   (* On the ECH client side *)
+.
+
+(* Generic Standard Client *)
+
+let run_standard_client_comp_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk,send_kex:bool) =
+  if set_comp_psk
+  then (
+    let comp_psk = default_comp_psk in
+    standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
+  )
+  else
+    in(io,comp_psk:bool);
+    event Same(bool2b(comp_psk));
+    standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
+.
+
+let run_standard_client_send_kex(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk:bool) =
+  if set_send_kex
+  then (
+    let send_kex = default_send_kex in
+    run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
+  ) else
+    in(io,send_kex:bool);
+    event Same(bool2b(send_kex));
+    run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
+.
+
+let run_standard_client_use_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg) =
+  if set_use_psk
+  then (
+    let use_psk = default_use_psk in
+    run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
+  ) else
+    in(io,use_psk:bool);
+    event Same(bool2b(use_psk));
+    run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
+.
+
+let run_standard_client(id_client:idProc,c_dom,s_dom:domain) =
+  if allow_multiple_ciphersuite_and_group
+  then (
+    in(io,(tls_g:group,tls_h:hash_alg,tls_a:aead_alg));
+    if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
+    if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
+    if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
+    event Same(g2b(tls_g));
+    event Same(h2b(tls_h));
+    event Same(a2b(tls_a));
+    run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
+  ) else
+    let tls_h = id_hash(StrongHash,1) in
+    let tls_a = id_aead(StrongAE,1) in
+    let tls_g = id_g(StrongDH,1) in
+    run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
+.
+
+(* Generic Server  *)
+
+let run_server_req_cert(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech,use_psk:bool) =
+  if set_req_cert
+  then (
+    let req_cert = default_req_cert in
+    server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
+  )
+  else
+    in(io,req_cert:bool) [precise];
+    event Same(bool2b(req_cert));
+    server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
+.
+
+let run_server_use_psk(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech:bool) =
+  if set_use_psk
+  then (
+    let use_psk = default_use_psk in
+    run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
+  )
+  else
+    in(io,use_psk:bool) [precise];
+    event Same(bool2b(use_psk));
+    run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
+.
+
+let run_server_use_ech(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
+  if set_use_ech
+  then (
+    let use_ech = default_use_ech in
+    run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
+  )
+  else
+    in(io,use_ech:bool) [precise];
+    event Same(bool2b(use_ech));
+    run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
+.
+
+let run_server(s_dom:domain,extra_ext:extraExt) =
+  if allow_multiple_ciphersuite_and_group
+  then (
+    in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg)) [precise];
+    if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
+    if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
+    if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
+    if allow_weak_ciphersuite_and_group || is_strong_hash(backend_h) then
+    if allow_weak_ciphersuite_and_group || is_strong_aead(backend_a) then
+    if allow_weak_ciphersuite_and_group || is_strong_group(backend_g) then
+    event Same(g2b(tls_g));
+    event Same(h2b(tls_h));
+    event Same(a2b(tls_a));
+    event Same(g2b(backend_g));
+    event Same(h2b(backend_h));
+    event Same(a2b(backend_a));
+    run_server_use_ech(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+  ) else
+    let tls_h = id_hash(StrongHash,1) in
+    let tls_a = id_aead(StrongAE,1) in
+    let tls_g = id_g(StrongDH,1) in
+    let backend_h = id_hash(StrongHash,1) in
+    let backend_a = id_aead(StrongAE,1) in
+    let backend_g = id_g(StrongDH,1) in
+    run_server_use_ech(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+.
+
+(* Generic ECH client *)
+
+letfun precise_input(do_precise:bool,x:bitstring) =
+  if do_precise
+  then
+    new st[]:stamp;
+    event PreciseInput(st,x);
+    ()
+  else ()
+.
+
+let run_ech_client_use_grease(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk,send_kex:bool) =
+  if set_use_grease
+  then (
+    let use_grease =
+      if force_nogrease
+      then false
+      else default_use_grease
+    in
+    ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
+  )
+  else
+    if force_nogrease
+    then (
+      let use_grease = false in
+      ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
+    ) else (
+      in(io,use_grease:bool);
+      let () = precise_input(do_precise,bool2b(use_grease)) in
+      event Same(bool2b(use_grease));
+      ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
+    )
+.
+
+let run_ech_client_send_kex(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk:bool) =
+  if set_send_kex
+  then (
+    let send_kex = default_send_kex in
+    run_ech_client_use_grease(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
+  )
+  else
+    in(io,send_kex:bool);
+    let () = precise_input(do_precise,bool2b(send_kex)) in
+    event Same(bool2b(send_kex));
+    run_ech_client_use_grease(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
+.
+
+let run_ech_client_comp_psk(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk:bool) =
+  if set_comp_psk
+  then (
+    let comp_psk = default_comp_psk in
+    run_ech_client_send_kex(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
+  )
+  else
+    in(io,comp_psk:bool);
+    let () = precise_input(do_precise,bool2b(comp_psk)) in
+    event Same(bool2b(comp_psk));
+    run_ech_client_send_kex(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
+.
+
+let run_ech_client_use_psk(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
+  if set_use_psk
+  then (
+    let use_psk = default_use_psk in
+    run_ech_client_comp_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
+  )
+  else
+    in(io,use_psk:bool);
+    let () = precise_input(do_precise,bool2b(use_psk)) in
+    event Same(bool2b(use_psk));
+    run_ech_client_comp_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
+.
+
+let run_ech_client(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig) =
+  if allow_multiple_ciphersuite_and_group
+  then (
+    in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg));
+    let () = precise_input(do_precise,(tls_g,backend_g,tls_h,backend_g,tls_a,backend_a)) in
+    if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
+    if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
+    if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
+    if allow_weak_ciphersuite_and_group || is_strong_hash(backend_h) then
+    if allow_weak_ciphersuite_and_group || is_strong_aead(backend_a) then
+    if allow_weak_ciphersuite_and_group || is_strong_group(backend_g) then
+    event Same(g2b(tls_g));
+    event Same(h2b(tls_h));
+    event Same(a2b(tls_a));
+    event Same(g2b(backend_g));
+    event Same(h2b(backend_h));
+    event Same(a2b(backend_a));
+    run_ech_client_use_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+  ) else
+    let tls_h = id_hash(StrongHash,1) in
+    let tls_a = id_aead(StrongAE,1) in
+    let tls_g = id_g(StrongDH,1) in
+    let backend_h = id_hash(StrongHash,1) in
+    let backend_a = id_aead(StrongAE,1) in
+    let backend_g = id_g(StrongDH,1) in
+    run_ech_client_use_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
 .

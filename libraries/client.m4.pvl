@@ -1,4 +1,3 @@
-(* changequote(<!,!>)dnl *)
 
 (* M4 variables in this file:
   - CLIENT_SELECT_CRT : For the selection of client certificate.
@@ -91,16 +90,17 @@ let client_post_handshake(id_client:idProc,
     event ClientReceives(id_client,cr,sr,psk,s_pkey,st,seq_srv,zero,m2b(CRTR(rand_crt)));
     let cur_log_CRTR = (cur_log,CRTR(rand_crt)) in
 
-    (* TO UNCOMMENT FOR FINAL VERSION *)
-  (* ifdef(<!CLIENT_SELECT_CRT!>,<!dnl
-    get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
-    event Selected_lgt(c_dom',c_dom,idP);
-  !>,<!dnl
-    get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
-  !>)dnl *)
-
-    (* TO REMOVE FOR FINAL VERSION *)
-    get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+    let (sk:privkey,c_pkey:pubkey,crt:certificate) =
+      if select_client_certificate_by_restriction
+      then (
+        get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+        event Selected_ltk(c_dom,c_dom',idP);
+        (sk,c_pkey,crt)
+      )
+      else
+        get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+        (sk,c_pkey,crt)
+    in
 
     (* The Certificate message *)
     let certificate_msg = CRT(rand_crt,crt) in
@@ -164,7 +164,7 @@ let send_client_finished_message =
 
   let enc_client_finished_msg = aead_enc(a_alg,chk,n2b(seq_client),zero,m2b(client_finished_msg)) in
 
-  event ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms);
+  event ClientFinished(id_client,cr,sr,psk,s_pkey,cak,sak,ems,rms);
   out(io,enc_client_finished_msg);
 
   (* End of the 1-RTT Handshake *)
@@ -188,16 +188,17 @@ let send_client_certificate_message(id_client:idProc,
   cur_log:bitstring)
   =
 
-  (* TO UNCOMMENT FOR FINAL VERSION *)
-  (* ifdef(<!CLIENT_SELECT_CRT!>,<!dnl
-  get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
-  event Selected_lgt(c_dom',c_dom,idP);
-  !>,<!dnl
-  get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
-  !>)dnl *)
-
-  (* TO REMOVE FOR FINAL VERSION *)
-  get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+  let (sk:privkey,c_pkey:pubkey,crt:certificate) =
+    if select_client_certificate_by_restriction
+    then (
+      get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+      event Selected_ltk(c_dom,c_dom',idP);
+      (sk,c_pkey,crt)
+    )
+    else
+      get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+      (sk,c_pkey,crt)
+  in
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -398,7 +399,6 @@ let receive_encrypted_extension_message (id_client:idProc,
   let m2b(ee_msg) = aead_dec(a_alg,shk,n2b(0),zero,enc_ee_msg) in
   let EE(ech_ee,extra_ee) = ee_msg in
   let cur_log2 = (cur_log,ee_msg) in
-  event ClientTest4(cr,sr,psk,cur_log2);
 
   out(ch_client_after_EE,(id_client,ArgsClientAfterEE(
     cr,sr,h_alg,a_alg,
@@ -449,7 +449,6 @@ let process_server_hello(id_client:idProc,
   let (x:bitstring,g:group) = kex_data in
   let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy)),=empty_sni_ext,=empty_ech_ext,=empty_extra_ext,psk_ext) = mode in (
     let cur_log2 = (cur_log,server_hello) in
-    event ClientTestSH(cr,sr,cur_log2);
 
     (* We retrieve the pre shared key if there is one. *)
     let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
@@ -460,7 +459,7 @@ let process_server_hello(id_client:idProc,
       )
       else
         let (psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in
-        (psk,es,((server_psk_ext(1) = psk_ext) && psk <> NoPsk),is_safe)
+        (psk,es,(psk <> NoPsk && (server_psk_ext(1) = psk_ext)),is_safe)
     in
 
     if valid
@@ -486,7 +485,7 @@ let standard_client(id_client:idProc,
   let send_kex = not(allow_HRR) || send_kex_c in
   let cur_log = zero in
 
-  let (client_hello:msg,cr:bytes32,kex_ext:keyShareExt,kex_data:bitstring,psk_data:bitstring) =
+  let (client_hello:msg,cr:bytes32,kex_data:bitstring,psk_data:bitstring) =
     generate_client_hello_message(id_client,zero,
       use_psk,
       c_dom,s_dom,
@@ -502,10 +501,8 @@ let standard_client(id_client:idProc,
   out(io,client_hello);
   let cur_log2 = (cur_log,client_hello) in
 
-  event ClientTest0(cr);
   let (psk:preSharedKey,id:identityPsk,es:bitstring,safe_psk:bool) = psk_data in
 
-  event ClientTest1(cr,psk);
   (
     (* Send the early data *)
     if allow_early_data && psk <> NoPsk then
@@ -522,7 +519,6 @@ let standard_client(id_client:idProc,
     (* Retrieve Server Hello *)
     in(io,server_hello:msg);
     let SH(sr,mode) = server_hello in (
-    event ClientTest3(cr,sr,psk);
 
       if allow_HRR && sr = rand_HelloRetryRequest
       then (
@@ -531,7 +527,7 @@ let standard_client(id_client:idProc,
         then (
           let cur_log3 = (cur_log2,server_hello) in
 
-          let (client_hello':msg,cr':bytes32,kex_ext':keyShareExt,kex_data':bitstring,psk_data':bitstring) =
+          let (client_hello':msg,cr':bytes32,kex_data':bitstring,psk_data':bitstring) =
             generate_client_hello_message(id_client,psk_data,
               use_psk,
               c_dom,s_dom,
@@ -578,6 +574,183 @@ let standard_client(id_client:idProc,
             server_hello
           )
         else out(io,illegal_parameter)
+    )
+    else out(io,unexpected_message)
+  )
+.
+
+(* The main ECH client *)
+
+let ech_client(id_client:idProc,
+  use_psk,comp_psk,send_kex_c,use_grease:bool,
+  c_dom,i_dom:domain,
+  tls_g,backend_g:group, tls_h,backend_h:hash_alg, tls_a,backend_a:aead_alg,
+  ech_conf:echConfig,
+  i_extra:extraExt
+  ) =
+
+  let send_kex = not(allow_HRR) || send_kex_c in
+
+  (* Generating the HPKE Context (Section 6.1 in RFC)*)
+  let ech_config(config_id,ech_g,pkR,o_dom,ech_h,ech_a) = ech_conf in
+  event ClientOffersEchConfig(id_client,ech_conf);
+  let (enc:element,context:hpkeContext) = generate_enc_context_client(ech_h,ech_g,pkR,ech_conf) in
+
+  (* Generate the client hello *)
+
+  let (o_client_hello:msg,i_client_hello:msg,o_cr:bytes32,i_cr:bytes32,o_kex_data:bitstring,i_kex_data:bitstring,o_psk_ext:preSharedKeyExt,psk_data:bitstring,o_ech_ext:echExt) =
+    generate_initial_client_hello_ech(id_client,
+      use_grease,use_psk,send_kex,c_dom,i_dom,
+      tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,
+      ech_conf,enc,context,
+      i_extra
+    )
+  in
+
+  out(io,o_client_hello);
+
+  (* Corresponds to the inner or (outer when grease) *)
+  let (psk:preSharedKey,id:identityPsk,es:bitstring,safe:bool) = psk_data in
+
+  (
+    (* The early data can only be send for the backend Send the early data *)
+    if allow_early_data && not(use_grease) && psk <> NoPsk then
+    let (wkc0:aead_key,ems0:bitstring) = kdf_k0(backend_h,es,(zero,i_client_hello)) in
+    !
+    in(io,(i:nat,ad:bitstring));
+    if is_nat(i) then
+    new msg_ed[]:bitstring;
+    let enc_ed = aead_enc(backend_a,wkc0,n2b(i),ad,msg_ed) in
+    new st:stamp;
+    event ClientSends0(id_client,i_cr,psk,st,i,ad,msg_ed);
+    out(io,enc_ed)
+  ) | (
+    (* Retrieve Server Hello *)
+    in(io,server_hello:msg);
+
+    let SH(B32(sr24,sr8),mode) = server_hello in (
+
+      if allow_HRR && B32(sr24,sr8) = rand_HelloRetryRequest
+      then (
+        (* We received a HelloRetryRequest *)
+        if send_kex <> true then
+        let nego(=TLS13,h_alg,a_alg,hrr_kex_ext(g),=empty_sni_ext,ech_ext,=empty_extra_ext,=empty_psk_ext) =  mode in
+
+        let is_ech_accepted =
+          if ech_ext = empty_ech_ext
+          then false
+          else
+            if ech_ext = ECHHelloRetryRequest(generate_hrr_accept_confirmation(backend_g,backend_h,backend_a,i_client_hello))
+            then true
+            else false
+        in
+
+        event ClientEchAcceptance(id_client,is_ech_accepted);
+
+        if is_ech_accepted
+        then (
+
+          let cur_log_IN1_HRR = ((zero,i_client_hello),server_hello) in
+
+          (* If ECH was accepted then we know that the HRR came from the backend *)
+          let (o_client_hello':msg,i_client_hello':msg,i_cr':bytes32,i_kex_data':bitstring,psk_data':bitstring) =
+            generate_second_client_hello_for_backend(
+              id_client,psk_data,
+              use_psk,c_dom,i_dom,
+              tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,
+              ech_conf,context,
+              i_extra,
+              cur_log_IN1_HRR
+            )
+          in
+          out(io,o_client_hello');
+          (* Message from the Backend *)
+          in(io,server_hello':msg);
+          let SH(B32(sr24',sr8'),params') = server_hello' in
+
+          let cur_log_IN1_HRR_IN2 = (cur_log_IN1_HRR,i_client_hello') in
+
+          (* We check acceptance again *)
+          if B32(sr24',sr8') = generate_accept_confirmation(sr24',backend_h,params',i_client_hello',cur_log_IN1_HRR_IN2) then
+
+          process_server_hello(id_client,
+            i_cr',
+            c_dom,i_dom,
+            i_kex_data',backend_h,backend_a,
+            psk_data',comp_psk,
+            cur_log_IN1_HRR_IN2,
+            server_hello'
+          )
+        )
+        else (
+          (* If ECH was rejected then we know that the HRR came from the frontend.
+            We rely to the HRR with a standard client hello.*)
+          let cur_log_OU1_HRR = ((zero,o_client_hello),server_hello) in
+          let (client_hello':msg,cr':bytes32,kex_data':bitstring,psk_data':bitstring) =
+            generate_second_client_hello_for_frontend(
+              id_client, psk_data, o_psk_ext, o_ech_ext,
+              use_grease,use_psk,c_dom,
+              tls_g,tls_h,tls_a,
+              ech_conf,
+              cur_log_OU1_HRR
+            )
+          in
+          out(io,client_hello');
+          let cur_log_OU1_HRR_OU2 = (cur_log_OU1_HRR,client_hello') in
+
+          (* Message from the server *)
+          in(io,server_hello':msg);
+          let SH(sr',mode') = server_hello' in
+            if sr' = rand_HelloRetryRequest
+            then out(io,unexpected_message)
+            else
+              process_server_hello(id_client,
+                cr',
+                c_dom,o_dom,
+                kex_data',tls_h,tls_a,
+                psk_data',comp_psk,
+                cur_log_OU1_HRR_OU2,
+                server_hello'
+              )
+          else out(io,unexpected_message)
+        )
+      )
+      else (
+        (* We check if ECH was accepted: *)
+        if B32(sr24,sr8) = generate_accept_confirmation(sr24,backend_h,mode,i_client_hello,(zero,i_client_hello))
+        then
+          (* Accepted *)
+          event ClientEchAcceptance(id_client,true);
+          process_server_hello(id_client,
+            i_cr,
+            c_dom,i_dom,
+            i_kex_data,backend_h,backend_a,
+            psk_data,comp_psk,
+            (zero,i_client_hello),
+            server_hello
+          )
+        else
+          (* Rejected:
+            Depending on whether grease was used or not, we may need to update the
+            psk data.
+          *)
+          event ClientEchAcceptance(id_client,false);
+          let psk_data' =
+            if use_grease
+            then psk_data
+            else
+              let (es':bitstring,kb:mac_key) = kdf_es(tls_h,NoPsk) in
+              (NoPsk,b2idpsk(zero),es',false)
+          in
+          process_server_hello(id_client,
+            o_cr,
+            c_dom,o_dom,
+            o_kex_data,tls_h,tls_a,
+            psk_data',comp_psk,
+            (zero,o_client_hello),
+            server_hello
+          )
+      )
     )
     else out(io,unexpected_message)
   )

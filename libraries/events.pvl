@@ -42,9 +42,9 @@ event ClientOffersGroup(
 ).
 
 (* Compromised keys *)
-event CompromisedLongTermKey(pubkey).
+event CompromisedLtk(pubkey).
 event CompromisedPsk(preSharedKey).
-event CompromisedEchKey(element).
+event CompromisedEchKey(echConfig).
 
 (* Application Data - 0-RTT *)
 event ServerReceives0(
@@ -120,6 +120,7 @@ event ClientSends(
 (* 1-RTT Authentication *)
 
 event ClientFinished(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
@@ -131,6 +132,7 @@ event ClientFinished(
 ).
 
 event ServerFinished(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
@@ -142,6 +144,7 @@ event ServerFinished(
 ).
 
 event PreServerFinished(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
@@ -182,23 +185,55 @@ event ServerNewTicket(
   preSharedKey   (* Pre shared key used in the session *)
 ).
 
+(* Ech events *)
+
+event ClientOffersEchConfig(
+  idProc,         (* Process identity of the client *)
+  echConfig       (* The ECH config of the frontend server *)
+).
+
+event ServerChoosesEchConfig(
+  idProc,         (* Process identity of the server *)
+  echConfig       (* The ECH config that the frontend server accepts *)
+).
+
+event ClientEchAcceptance(
+  idProc,         (* Process identity of the client *)
+  bool            (* True when the client considers that ECH was accepted *)
+).
+
+event ServerEchAcceptance(
+  idProc,         (* Process identity of the server *)
+  bool            (* True when the server accepts ECH. *)
+).
+
+(* Equivalence properties *)
+
+event Selected_psk(
+  domain,         (* The domain given as argument *)
+  domain,         (* The domain of the table entry *)
+  idProc,         (* The identity of the process that generated the psk *)
+  bool            (* Safety of the pre shared key. *)
+).
+
+event Selected_one_time_used_psk(
+  idProc,         (* The identity of the process using the psk *)
+  preSharedKey,   (* The pre shared key *)
+  bool            (* Safety of the pre shared key. *)
+).
+
+event Selected_ltk(
+  domain,         (* The domain given as argument *)
+  domain,         (* The domain of the table entry *)
+  idProc          (* The identity of the process that generated the long term key. *)
+).
+
+event Selected_ech_config_private_key(
+  element         (* The private key of the Ech Config *)
+).
+
 (*** Events for proof helpers *)
 
+event PreciseInput(stamp,bitstring).
 event PreciseMess(channel,idProc,stamp,bitstring).
 event Same(bitstring).
-
-event ClientTest0(bytes32).
-event ServerTest0(bytes32).
-event ClientTest1(bytes32,preSharedKey).
-event ServerTest1(bytes32,preSharedKey).
-event ClientTest2(bytes32,preSharedKey).
-event ServerTest2(bytes32,preSharedKey).
-event ClientTest3(bytes32,bytes32,preSharedKey).
-event ServerTest3(bytes32,bytes32,preSharedKey).
-
-
-event ClientTest4(bytes32,bytes32,preSharedKey,bitstring).
-event ServerTest4(bytes32,bytes32,preSharedKey,bitstring).
-
-event ClientTestSH(bytes32,bytes32,bitstring).
-event ServerTestSH(bytes32,bytes32,bitstring).

@@ -30,6 +30,9 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':stamp, x1,x1',
   ==> id1 = id1' && x1 = x1'
 .
 
+axiom st:stamp,x,x':bitstring;
+  event(PreciseInput(st,x)) && event(PreciseInput(st,x')) ==> x = x'.
+
 (* Secrecy assumotion *)
 
 not attacker(ch_client_CFIN).

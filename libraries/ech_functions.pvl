@@ -103,15 +103,171 @@ letfun generate_hello_retry_request(
   SH(rand_HelloRetryRequest,hrr_mode)
 .
 
-(* Generate the key share extension for ECH. *)
-(* letfun make_key_share_extension_ech(tls_g,backend_g:group,send_key_share:bool) =
-  let (i_x:bitstring,i_gx:element) = dh_keygen(tls_g) in
-  let (o_x:bitstring,o_gx:element) = dh_keygen(backend_g) in
 
-  let (i_kex:kex_alg,o_kex:kex_alg) =
-    if send_key_share
-    then (DHE_kex(tls_g,i_gx),DHE_kex(backend_g,o_gx))
-    else (DHE_group(tls_g),DHE_group(backend_g))
+(* Generate the initial client hello *)
+letfun generate_initial_client_hello_ech(
+  id_client:idProc,
+  use_grease,use_psk,send_kex:bool,c_dom,i_dom:domain,
+  tls_g,backend_g:group,tls_h,backend_h:hash_alg,tls_a,backend_a:aead_alg,
+  ech_conf:echConfig,enc:element,context:hpkeContext, (* For ech *)
+  i_extra:extraExt
+  ) =
+
+  let ech_config(config_id,ech_g,pkR,o_dom,ech_h,ech_a) = ech_conf in
+
+  (* The key share extension *)
+  let (i_kex_ext:keyShareExt,i_kex_data:bitstring) = make_key_share_extension(backend_g,send_kex) in
+  let (o_kex_ext:keyShareExt,o_kex_data:bitstring) = make_key_share_extension(tls_g,send_kex) in
+
+  (* Generate the random for the inner and outer client hello *)
+  let i_cr = gen_B32_random () in
+  let o_cr = gen_B32_random () in
+
+  (* Generate the ech_extension for the inner when grease <> true and outer when grease = true *)
+  let ech_inner_or_grease =
+    if use_grease
+    then (
+      new payload[]:bitstring;
+      new configid[]:configId;
+      let (x_grease:bitstring,gx_grease:element) = dh_keygen(ech_g) in
+      let (secret_grease:element,enc_grease:element) = hpke_encap(ech_g,gx_grease) in
+      ECHClientHelloOuter(ech_h,ech_a,configid,enc_grease,payload)
+    ) else ECHClientHelloInner
   in
 
-  (client_kex_ext(i_kex),client_kex_ext(o_kex),(i_x,o_x)) *)
+  (* The pre shared key extension for the inner when grease <> true and outer when grease = true *)
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    let (dom_psk:domain,cr_psk:bytes32,kex_ext_psk:keyShareExt,extra_psk:extraExt,h_psk:hash_alg,a_psk:aead_alg) =
+      if use_grease
+      then (o_dom,o_cr,o_kex_ext,empty_extra_ext,tls_h,tls_a)
+      else (i_dom,i_cr,i_kex_ext,i_extra,backend_h,backend_a)
+    in
+    make_pre_shared_key_extension(id_client,zero,use_psk,c_dom,dom_psk,cr_psk,h_psk,a_psk,kex_ext_psk,ech_inner_or_grease,extra_psk,zero)
+  in
+
+  (* The innner client hello *)
+  let i_offer = nego(TLS13,backend_h,backend_a,i_kex_ext,SNI(i_dom),ECHClientHelloInner,i_extra,psk_ext) in
+  let i_client_hello = CH(i_cr,i_offer) in
+
+  if use_grease
+  then (
+    let o_offer = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),ech_inner_or_grease,empty_extra_ext,psk_ext) in
+    (CH(o_cr,o_offer),CH(o_cr,o_offer),o_cr,o_cr,o_kex_data,o_kex_data,psk_ext,psk_data,ech_inner_or_grease)
+  )
+  else (
+    let o_psk_ext =
+      if use_psk
+      then
+        new fake_id[]:identityPsk;
+        new fake_binder[]:bitstring;
+        client_psk_ext(fake_id,fake_binder)
+      else empty_psk_ext
+    in
+
+    (* Direct generation of ADD *)
+    let o_ech_ext_ADD = ECHClientHelloOuter(ech_h,ech_a,config_id,enc,zero) in
+    let o_offer_ADD = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),o_ech_ext_ADD,empty_extra_ext,o_psk_ext) in
+    let o_client_hello_ADD = CH(o_cr,o_offer_ADD) in
+
+    let payload = kpke_seal(ech_a,context,1,m2b(o_client_hello_ADD),m2b(i_client_hello)) in
+    let o_ech_ext = ECHClientHelloOuter(ech_h,ech_a,config_id,enc,payload) in
+    let o_offer = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),o_ech_ext,empty_extra_ext,o_psk_ext) in
+
+    (CH(o_cr,o_offer),i_client_hello,o_cr,i_cr,o_kex_data,i_kex_data,o_psk_ext,psk_data,o_ech_ext)
+  )
+.
+
+(* Generate the second client hello for the backend *)
+letfun generate_second_client_hello_for_backend(
+  id_client:idProc,old_psk_data:bitstring,
+  use_psk:bool,c_dom,i_dom:domain,
+  tls_g,backend_g:group,tls_h,backend_h:hash_alg,tls_a,backend_a:aead_alg,
+  ech_conf:echConfig,context:hpkeContext, (* For ech *)
+  i_extra:extraExt,
+  cur_log:bitstring (* Should be ((zero,Inner1),HRR) *)
+  ) =
+
+  let ech_config(config_id,ech_g,pkR,o_dom,ech_h,ech_a) = ech_conf in
+
+  (* The key share extension *)
+  let (i_kex_ext:keyShareExt,i_kex_data:bitstring) = make_key_share_extension(backend_g,true) in
+  let (o_kex_ext:keyShareExt,o_kex_data:bitstring) = make_key_share_extension(tls_g,true) in
+
+  (* Generate the random for the inner and outer client hello *)
+  let i_cr = gen_B32_random () in
+  let o_cr = gen_B32_random () in
+
+  (* The pre shared key extension for the inner  *)
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    make_pre_shared_key_extension(id_client,old_psk_data,use_psk,c_dom,i_dom,i_cr,backend_h,backend_a,i_kex_ext,ECHClientHelloInner,i_extra,cur_log)
+  in
+
+  (* The innner client hello *)
+  let i_offer = nego(TLS13,backend_h,backend_a,i_kex_ext,SNI(i_dom),ECHClientHelloInner,i_extra,psk_ext) in
+  let i_client_hello = CH(i_cr,i_offer) in
+
+  let o_psk_ext =
+    if use_psk
+    then
+      new fake_id[]:identityPsk;
+      new fake_binder[]:bitstring;
+      client_psk_ext(fake_id,fake_binder)
+    else empty_psk_ext
+  in
+
+  (* Direct generation of ADD *)
+  let o_ech_ext_ADD = ECHClientHelloOuter(ech_h,ech_a,config_id,b2e(zero),zero) in
+  let o_offer_ADD = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),o_ech_ext_ADD,empty_extra_ext,o_psk_ext) in
+  let o_client_hello_ADD = CH(o_cr,o_offer_ADD) in
+
+  let payload = kpke_seal(ech_a,context,2,m2b(o_client_hello_ADD),m2b(i_client_hello)) in
+  let o_ech_ext = ECHClientHelloOuter(ech_h,ech_a,config_id,b2e(zero),payload) in
+  let o_offer = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),o_ech_ext,empty_extra_ext,o_psk_ext) in
+
+  (CH(o_cr,o_offer),i_client_hello,i_cr,i_kex_data,psk_data)
+.
+
+(* Generate the second client hello for the frontend *)
+letfun generate_second_client_hello_for_frontend(
+  id_client:idProc,old_psk_data:bitstring,old_psk_ext:preSharedKeyExt,old_ech_ext:echExt,
+  use_grease,use_psk:bool,c_dom:domain,
+  tls_g:group,tls_h:hash_alg,tls_a:aead_alg,
+  ech_conf:echConfig, (* For ech *)
+  cur_log:bitstring (* Should be ((zero,Outer1),HRR) *)
+  ) =
+
+  let ech_config(config_id,ech_g,pkR,o_dom,ech_h,ech_a) = ech_conf in
+
+  (* Generate the random for the outer client hello *)
+  let o_cr = gen_B32_random () in
+
+  (* The key share extension *)
+  let (o_kex_ext:keyShareExt,kex_data:bitstring) = make_key_share_extension(tls_g,true) in
+
+  let (psk_ext:preSharedKeyExt,psk_data:bitstring) =
+    if use_grease
+    then (
+      make_pre_shared_key_extension(
+        id_client,
+        old_psk_data,
+        use_psk,c_dom,o_dom,o_cr,
+        tls_h,tls_a,o_kex_ext,old_ech_ext,empty_extra_ext,cur_log)
+    )
+    else
+      (* When grease was not used then the PSK ext in Outer1 was a greased PSK.
+        We need to generate a new Grease PSK in Outer2 with the same id. *)
+      let (es:bitstring,kb:mac_key) = kdf_es(tls_h,NoPsk) in
+      let client_psk_ext(fake_id,fake_binder) = old_psk_ext in (
+        (* When use_psk = true *)
+        new fake_binder'[]:bitstring;
+        (client_psk_ext(fake_id,fake_binder'),(NoPsk,b2idpsk(zero),es,false))
+      )
+      else
+        (* When use_psk = false *)
+        (empty_psk_ext,(NoPsk,b2idpsk(zero),es,false))
+  in
+
+  (* The client hello *)
+  let o_offer = nego(TLS13,tls_h,tls_a,o_kex_ext,SNI(o_dom),old_ech_ext,empty_extra_ext,psk_ext) in
+  (CH(o_cr,o_offer),o_cr,kex_data,psk_data)
+.

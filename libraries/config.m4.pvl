@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = true.
+letfun allow_HRR = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -20,8 +20,57 @@ letfun allow_PH_data = true.
 
 (* When `false`, honest servers will request post handshake authentication
   and honest clients will never wait for one. *)
-letfun allow_PH_authentication = true.
+letfun allow_PH_authentication = false.
 
 (* When `false`, the client never leak the pre shared keys derived from the tickets.
   Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
 letfun allow_compromised_ticket = true.
+
+(* When `true`, the attacker can choose different ciphersuites and DH groups for
+  honest clients and servers. When `false`, the ciphersuite and DH group is
+  fixed and the same for all sessions. *)
+letfun allow_multiple_ciphersuite_and_group = false.
+
+(* When `true`, the honest client and server can use weak hash algorithm,
+  weak aead algorithm and weak DH group.
+  Note that by ECH RFC, the hash algorithm, aead algorithm and DH group used in
+  the ECH configuration of frontend MUST be strong.
+  This option does nothing when allow_multiple_ciphersuite_and_group = false. *)
+letfun allow_weak_ciphersuite_and_group = false.
+
+(* When `true`, private keys of Ech configuration can be compromised. *)
+letfun allow_compromised_Ech_keys = true.
+
+(********************************************************)
+(*                        Scenarios                     *)
+(********************************************************)
+
+letfun set_comp_psk = true.
+letfun default_comp_psk = false.
+
+letfun set_send_kex = true.
+letfun default_send_kex = true.
+
+letfun set_use_psk = true.
+letfun default_use_psk = false.
+
+letfun set_use_grease = true.
+letfun default_use_grease = false.
+
+letfun set_use_ech = true.
+letfun default_use_ech = true.
+
+letfun set_req_cert = true.
+letfun default_req_cert = false.
+
+(********************************************************)
+(*    Configuration variables for equivalence queries   *)
+(********************************************************)
+
+letfun select_client_certificate_by_restriction = false.
+
+letfun select_server_certificate_by_restriction = false.
+
+letfun select_client_pre_shared_key_by_restriction = false.
+
+letfun select_server_pre_shared_key_by_restriction = false.
