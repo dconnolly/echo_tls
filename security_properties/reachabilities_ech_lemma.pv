@@ -74,6 +74,8 @@ lemma c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 query attacker(()).
 
+expand macro_ech_client(true,false,run_ech_client).
+
 process
   (
     (* Generates the keys *)
@@ -81,7 +83,7 @@ process
     | gen_dishonest_key
     | all_internal_processes
   ) | (
-    (* TLS client *)
+    (* ECH client *)
     !
     new id_client:idProc;
     (* Domains *)
@@ -92,10 +94,10 @@ process
     get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR)[precise] in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
 
-    run_ech_client(id_client,empty_extra_ext,true,false,c_dom,backend_dom,ech_conf)
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain)[precise];
+    in(io,s_dom:domain) [precise];
     run_server(s_dom,empty_extra_ext)
   )
