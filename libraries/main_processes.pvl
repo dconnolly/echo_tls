@@ -210,57 +210,69 @@ let all_internal_processes =
 
 (* Generic Standard Client *)
 
-let run_standard_client_comp_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk,send_kex:bool) =
-  if set_comp_psk
-  then (
-    let comp_psk = default_comp_psk in
-    standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
-  )
-  else
-    in(io,comp_psk:bool);
-    event Same(bool2b(comp_psk));
-    standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
-.
+def macro_standard_client(do_precise,run_standard_client) {
+  letfun mkprecise(x:bitstring) =
+    if do_precise
+    then new st[]:stamp; event PreciseInput(st,x); ()
+    else ()
+  .
 
-let run_standard_client_send_kex(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk:bool) =
-  if set_send_kex
-  then (
-    let send_kex = default_send_kex in
-    run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
-  ) else
-    in(io,send_kex:bool);
-    event Same(bool2b(send_kex));
-    run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
-.
+  let run_standard_client_comp_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk,send_kex:bool) =
+    if set_comp_psk
+    then (
+      let comp_psk = default_comp_psk in
+      standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
+    )
+    else
+      in(io,comp_psk:bool);
+      event Same(bool2b(comp_psk));
+      let () = mkprecise(bool2b(comp_psk)) in
+      standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
+  .
 
-let run_standard_client_use_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg) =
-  if set_use_psk
-  then (
-    let use_psk = default_use_psk in
-    run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
-  ) else
-    in(io,use_psk:bool);
-    event Same(bool2b(use_psk));
-    run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
-.
+  let run_standard_client_send_kex(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk:bool) =
+    if set_send_kex
+    then (
+      let send_kex = default_send_kex in
+      run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
+    ) else
+      in(io,send_kex:bool);
+      event Same(bool2b(send_kex));
+      let () = mkprecise(bool2b(send_kex)) in
+      run_standard_client_comp_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk,send_kex)
+  .
 
-let run_standard_client(id_client:idProc,c_dom,s_dom:domain) =
-  if allow_multiple_ciphersuite_and_group
-  then (
-    in(io,(tls_g:group,tls_h:hash_alg,tls_a:aead_alg));
-    if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
-    if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
-    if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
-    event Same(g2b(tls_g));
-    event Same(h2b(tls_h));
-    event Same(a2b(tls_a));
-    run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
-  ) else
-    let tls_h = id_hash(StrongHash,1) in
-    let tls_a = id_aead(StrongAE,1) in
-    let tls_g = id_g(StrongDH,1) in
-    run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
-.
+  let run_standard_client_use_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg) =
+    if set_use_psk
+    then (
+      let use_psk = default_use_psk in
+      run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
+    ) else
+      in(io,use_psk:bool);
+      event Same(bool2b(use_psk));
+      let () = mkprecise(bool2b(use_psk)) in
+      run_standard_client_send_kex(id_client,c_dom,s_dom,tls_a,tls_g,tls_h,use_psk)
+  .
+
+  let run_standard_client(id_client:idProc,c_dom,s_dom:domain) =
+    if allow_multiple_ciphersuite_and_group
+    then (
+      in(io,(tls_g:group,tls_h:hash_alg,tls_a:aead_alg));
+      let () = mkprecise((tls_g,tls_h,tls_a)) in
+      if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
+      if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
+      if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
+      event Same(g2b(tls_g));
+      event Same(h2b(tls_h));
+      event Same(a2b(tls_a));
+      run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
+    ) else
+      let tls_h = id_hash(StrongHash,1) in
+      let tls_a = id_aead(StrongAE,1) in
+      let tls_g = id_g(StrongDH,1) in
+      run_standard_client_use_psk(id_client,c_dom,s_dom,tls_a,tls_g,tls_h)
+  .
+}
 
 (* Generic Server  *)
 
@@ -329,101 +341,100 @@ let run_server(s_dom:domain,extra_ext:extraExt) =
 
 (* Generic ECH client *)
 
-letfun precise_input(do_precise:bool,x:bitstring) =
-  if do_precise
-  then
-    new st[]:stamp;
-    event PreciseInput(st,x);
-    ()
-  else ()
-.
+def macro_ech_client(do_precise,force_nogrease,run_ech_client) {
+  letfun mkprecise(x:bitstring) =
+    if do_precise
+    then new st[]:stamp; event PreciseInput(st,x); ()
+    else ()
+  .
 
-let run_ech_client_use_grease(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk,send_kex:bool) =
-  if set_use_grease
-  then (
-    let use_grease =
-      if force_nogrease
-      then false
-      else default_use_grease
-    in
-    ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
-  )
-  else
-    if force_nogrease
+  let run_ech_client_use_grease(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk,send_kex:bool) =
+    if set_use_grease
     then (
-      let use_grease = false in
-      ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
-    ) else (
-      in(io,use_grease:bool);
-      let () = precise_input(do_precise,bool2b(use_grease)) in
-      event Same(bool2b(use_grease));
+      let use_grease =
+        if force_nogrease
+        then false
+        else default_use_grease
+      in
       ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
     )
-.
+    else
+      if force_nogrease
+      then (
+        let use_grease = false in
+        ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
+      ) else (
+        in(io,use_grease:bool);
+        let () = mkprecise(bool2b(use_grease)) in
+        event Same(bool2b(use_grease));
+        ech_client(id_client,use_psk,comp_psk,send_kex,use_grease,c_dom,backend_dom,tls_g,backend_g,tls_h,backend_h,tls_a,backend_a,ech_conf,i_extra_ext)
+      )
+  .
 
-let run_ech_client_send_kex(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk:bool) =
-  if set_send_kex
-  then (
-    let send_kex = default_send_kex in
-    run_ech_client_use_grease(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
-  )
-  else
-    in(io,send_kex:bool);
-    let () = precise_input(do_precise,bool2b(send_kex)) in
-    event Same(bool2b(send_kex));
-    run_ech_client_use_grease(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
-.
+  let run_ech_client_send_kex(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk,comp_psk:bool) =
+    if set_send_kex
+    then (
+      let send_kex = default_send_kex in
+      run_ech_client_use_grease(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
+    )
+    else
+      in(io,send_kex:bool);
+      let () = mkprecise(bool2b(send_kex)) in
+      event Same(bool2b(send_kex));
+      run_ech_client_use_grease(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk,send_kex)
+  .
 
-let run_ech_client_comp_psk(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk:bool) =
-  if set_comp_psk
-  then (
-    let comp_psk = default_comp_psk in
-    run_ech_client_send_kex(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
-  )
-  else
-    in(io,comp_psk:bool);
-    let () = precise_input(do_precise,bool2b(comp_psk)) in
-    event Same(bool2b(comp_psk));
-    run_ech_client_send_kex(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
-.
+  let run_ech_client_comp_psk(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk:bool) =
+    if set_comp_psk
+    then (
+      let comp_psk = default_comp_psk in
+      run_ech_client_send_kex(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
+    )
+    else
+      in(io,comp_psk:bool);
+      let () = mkprecise(bool2b(comp_psk)) in
+      event Same(bool2b(comp_psk));
+      run_ech_client_send_kex(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
+  .
 
-let run_ech_client_use_psk(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
-  if set_use_psk
-  then (
-    let use_psk = default_use_psk in
-    run_ech_client_comp_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
-  )
-  else
-    in(io,use_psk:bool);
-    let () = precise_input(do_precise,bool2b(use_psk)) in
-    event Same(bool2b(use_psk));
-    run_ech_client_comp_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
-.
+  let run_ech_client_use_psk(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
+    if set_use_psk
+    then (
+      let use_psk = default_use_psk in
+      run_ech_client_comp_psk(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
+    )
+    else
+      in(io,use_psk:bool);
+      let () = mkprecise(bool2b(use_psk)) in
+      event Same(bool2b(use_psk));
+      run_ech_client_comp_psk(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk)
+  .
 
-let run_ech_client(id_client:idProc,i_extra_ext:extraExt,do_precise,force_nogrease:bool,c_dom,backend_dom:domain,ech_conf:echConfig) =
-  if allow_multiple_ciphersuite_and_group
-  then (
-    in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg));
-    let () = precise_input(do_precise,(tls_g,backend_g,tls_h,backend_g,tls_a,backend_a)) in
-    if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
-    if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
-    if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
-    if allow_weak_ciphersuite_and_group || is_strong_hash(backend_h) then
-    if allow_weak_ciphersuite_and_group || is_strong_aead(backend_a) then
-    if allow_weak_ciphersuite_and_group || is_strong_group(backend_g) then
-    event Same(g2b(tls_g));
-    event Same(h2b(tls_h));
-    event Same(a2b(tls_a));
-    event Same(g2b(backend_g));
-    event Same(h2b(backend_h));
-    event Same(a2b(backend_a));
-    run_ech_client_use_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
-  ) else
-    let tls_h = id_hash(StrongHash,1) in
-    let tls_a = id_aead(StrongAE,1) in
-    let tls_g = id_g(StrongDH,1) in
-    let backend_h = id_hash(StrongHash,1) in
-    let backend_a = id_aead(StrongAE,1) in
-    let backend_g = id_g(StrongDH,1) in
-    run_ech_client_use_psk(id_client,i_extra_ext,do_precise,force_nogrease,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
-.
+  let run_ech_client(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig) =
+    if allow_multiple_ciphersuite_and_group
+    then (
+      in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg));
+      let () = mkprecise((tls_g,backend_g,tls_h,backend_g,tls_a,backend_a)) in
+      if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
+      if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
+      if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
+      if allow_weak_ciphersuite_and_group || is_strong_hash(backend_h) then
+      if allow_weak_ciphersuite_and_group || is_strong_aead(backend_a) then
+      if allow_weak_ciphersuite_and_group || is_strong_group(backend_g) then
+      event Same(g2b(tls_g));
+      event Same(h2b(tls_h));
+      event Same(a2b(tls_a));
+      event Same(g2b(backend_g));
+      event Same(h2b(backend_h));
+      event Same(a2b(backend_a));
+      run_ech_client_use_psk(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+    ) else
+      let tls_h = id_hash(StrongHash,1) in
+      let tls_a = id_aead(StrongAE,1) in
+      let tls_g = id_g(StrongDH,1) in
+      let backend_h = id_hash(StrongHash,1) in
+      let backend_a = id_aead(StrongAE,1) in
+      let backend_g = id_g(StrongDH,1) in
+      run_ech_client_use_psk(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+  .
+}

@@ -154,6 +154,7 @@ event PreServerFinished(
 (* Post Handshake Authentication *)
 
 event ServerRequestPH(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
@@ -162,6 +163,7 @@ event ServerRequestPH(
 ).
 
 event ClientFinishedPH(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
@@ -171,6 +173,7 @@ event ClientFinishedPH(
 ).
 
 event ServerFinishedPH(
+  idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)

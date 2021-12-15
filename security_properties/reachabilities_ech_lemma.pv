@@ -1,10 +1,10 @@
 
 set removeEventsForLemma = true.
-set verboseLemmas = true.
+(* set verboseLemmas = true. *)
+(* set nounifIgnoreAFewTimes = auto. *)
+(* set preciseActions = true. *)
 
-nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
-  attacker(mk_idpsk( *s_dom, *h_alg, *psk)) [ignoreAFewTimes]
-.
+nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)) [ignoreAFewTimes].
 
 nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) [ignoreAFewTimes]
@@ -74,22 +74,6 @@ lemma c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 query attacker(()).
 
-(* Post Handshake Application Data: Secrecy and Authentication *)
-
-restriction idP,idP':idProc,s_dom:domain,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,pk_srv,pk_srv':pubkey,st,st':stamp,n:nat,ad,ad',msg,msg':bitstring;
-  event(ServerSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-  event(ClientSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-
-  event(ClientSends0(idP,cr,psk,st,n,ad,msg)) && event(ClientSends0(idP,cr,psk,st',n,ad',msg')) ==> st = st';
-
-  event(ServerReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-  event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-
-  event(ServerReceives0(idP,s_dom,cr,psk,st,n,ad,msg)) && event(ServerReceives0(idP',s_dom,cr',psk,st',n,ad',msg')) ==> st = st'
-.
-
-expand macro_standard_client(true,run_standard_client).
-
 process
   (
     (* Generates the keys *)
@@ -101,12 +85,17 @@ process
     !
     new id_client:idProc;
     (* Domains *)
-    in(io,s_dom:domain) [precise];
+    in(io,backend_dom:domain) [precise];
+    in(io,frontend_dom:domain) [precise];
     in(io,c_dom:domain) [precise];
-    standard_client(id_client,c_dom,s_dom)
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR)[precise] in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,true,false,c_dom,backend_dom,ech_conf)
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain) [precise];
+    in(io,s_dom:domain)[precise];
     run_server(s_dom,empty_extra_ext)
   )

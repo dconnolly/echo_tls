@@ -62,7 +62,7 @@ let client_post_handshake(id_client:idProc,
       !
       in(io,(seq_client:nat,ad:bitstring)) [precise];
       if is_nat(seq_client) then
-      new msgs[]:bitstring;
+      new msgs[seq_client,ad]:bitstring;
       new st[]:stamp;
       event ClientSends(id_client,cr,sr,psk,s_pkey,st,seq_client,ad,msgs);
       out(io,aead_enc(a_alg,cak,n2b(seq_client),ad,msgs))
@@ -124,7 +124,7 @@ let client_post_handshake(id_client:idProc,
     let enc_fin = aead_enc(a_alg,cak,n2b(seq_client+2),zero,m2b(FIN(hash_msg))) in
     new st3[]:stamp;
     event ClientSends(id_client,cr,sr,psk,s_pkey,st3,seq_client+2,zero,m2b(FIN(hash_msg)));
-    event ClientFinishedPH(cr,sr,psk,s_pkey,rand_crt,c_pkey);
+    event ClientFinishedPH(id_client,cr,sr,psk,s_pkey,rand_crt,c_pkey);
     out(io,enc_fin)
   )
 .

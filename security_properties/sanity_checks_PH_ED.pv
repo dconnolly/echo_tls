@@ -22,51 +22,51 @@ event ServerReqCert(bool).
 
 (* The queries *)
 
-query cr,sr:bytes32,psk:preSharedKey,c_pkey,s_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,msg_ed:bitstring,i:nat,ad:bitstring,rand_req:bitstring;
+query s_som:domain,st,st':stamp,id_s,id_c:idProc,cr,sr:bytes32,psk:preSharedKey,c_pkey,s_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,msg_ed:bitstring,i:nat,ad:bitstring,rand_req:bitstring;
 
   (* Early Data *)
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(true)) &&
-  event(ClientSends0(cr,psk,i,ad,msg_ed)) &&
-  event(ServerReceives0(cr,psk,i,ad,msg_ed));
+  event(ClientSends0(id_c,cr,psk,st',i,ad,msg_ed)) &&
+  event(ServerReceives0(id_s,s_dom,cr,psk,st,i,ad,msg_ed));
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(false)) &&
-  event(ClientSends0(cr,psk,i,ad,msg_ed)) &&
-  event(ServerReceives0(cr,psk,i,ad,msg_ed));
+  event(ClientSends0(id_c,cr,psk,st,i,ad,msg_ed)) &&
+  event(ServerReceives0(id_s,s_dom,cr,psk,st',i,ad,msg_ed));
 
   (* Post Handshake Authentication *)
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(true)) &&
-  event(ServerRequestPH(cr,sr,psk,s_pkey,rand_req)) &&
-  event(ClientFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
-  event(ServerFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey));
+  event(ServerRequestPH(id_s,cr,sr,psk,s_pkey,rand_req)) &&
+  event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
+  event(ServerFinishedPH(id_s,cr,sr,psk,s_pkey,rand_req,c_pkey));
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(false)) &&
-  event(ServerRequestPH(cr,sr,psk,s_pkey,rand_req)) &&
-  event(ClientFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
-  event(ServerFinishedPH(cr,sr,psk,s_pkey,rand_req,c_pkey));
+  event(ServerRequestPH(id_s,cr,sr,psk,s_pkey,rand_req)) &&
+  event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,rand_req,c_pkey)) &&
+  event(ServerFinishedPH(id_s,cr,sr,psk,s_pkey,rand_req,c_pkey));
 
   (* Post Handshake Application Data*)
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(true)) &&
-  event(ClientSends(cr,sr,psk,s_pkey,i,ad,msg_ed)) &&
-  event(ServerReceives(cr,sr,psk,s_pkey,i,ad,msg_ed));
+  event(ClientSends(id_c,cr,sr,psk,s_pkey,st',i,ad,msg_ed)) &&
+  event(ServerReceives(id_s,cr,sr,psk,s_pkey,st,i,ad,msg_ed));
 
-  event(ServerFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
   event(ServerUseEch(false)) &&
-  event(ClientSends(cr,sr,psk,s_pkey,i,ad,msg_ed)) &&
-  event(ServerReceives(cr,sr,psk,s_pkey,i,ad,msg_ed))
+  event(ClientSends(id_c,cr,sr,psk,s_pkey,st',i,ad,msg_ed)) &&
+  event(ServerReceives(id_s,cr,sr,psk,s_pkey,st,i,ad,msg_ed))
 .
 
 (* The process *)
@@ -112,7 +112,7 @@ process
     | gen_honest_long_term_key_sanity(s_dom)
     | gen_honest_pre_shared_keys_sanity(c_dom,s_dom,tls_h)
     | gen_honest_ech_config_sanity(s_dom,ech_g,ech_h,ech_a)
-    | main_process
+    | all_internal_processes
   ) | (
     (* TLS client *)
     new id_client:idProc;

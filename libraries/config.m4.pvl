@@ -20,7 +20,7 @@ letfun allow_PH_data = true.
 
 (* When `false`, honest servers will request post handshake authentication
   and honest clients will never wait for one. *)
-letfun allow_PH_authentication = false.
+letfun allow_PH_authentication = true.
 
 (* When `false`, the client never leak the pre shared keys derived from the tickets.
   Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
@@ -45,21 +45,27 @@ letfun allow_compromised_Ech_keys = true.
 (*                        Scenarios                     *)
 (********************************************************)
 
-letfun set_comp_psk = true.
+(* Determine if psk from ticket can be compromised *)
+letfun set_comp_psk = false.
 letfun default_comp_psk = false.
 
+(* Determine if client send their key share. *)
 letfun set_send_kex = true.
 letfun default_send_kex = true.
 
+(* Determine if client and server want to use a psk. *)
 letfun set_use_psk = true.
 letfun default_use_psk = false.
 
+(* Determine if the client uses grease *)
 letfun set_use_grease = true.
 letfun default_use_grease = false.
 
+(* Determine if the server uses ECH *)
 letfun set_use_ech = true.
 letfun default_use_ech = true.
 
+(* Determine if the server request a certificate from the client. *)
 letfun set_req_cert = true.
 letfun default_req_cert = false.
 

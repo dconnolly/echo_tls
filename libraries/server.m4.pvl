@@ -72,7 +72,7 @@ let server_post_handshake(id_server:idProc,
 
     (* The server requests a client certificate *)
     new req_rand[]:bitstring;
-    event ServerRequestPH(cr,sr,psk,s_pkey,req_rand);
+    event ServerRequestPH(id_server,cr,sr,psk,s_pkey,req_rand);
 
     let crtr_msg = CRTR(req_rand) in
     let enc_crt = aead_enc(a_alg,sak,n2b(seq_srv),zero,m2b(crtr_msg)) in
@@ -106,7 +106,7 @@ let server_post_handshake(id_server:idProc,
     let FIN(hash_msg) = fin_msg in
 
     if hash_msg = hmac(h_alg,cfkad,cur_log_CV)
-    then event ServerFinishedPH(cr,sr,psk,s_pkey,req_rand,c_pkey)
+    then event ServerFinishedPH(id_server,cr,sr,psk,s_pkey,req_rand,c_pkey)
     else out(io,handshake_failure)
   )
 .
@@ -556,7 +556,7 @@ let server(
         for everyone that will not be used.
         Similarly, we directly generate the retry_ech_ext that may be used later
         on. Does not impact the verification but make the verification more efficient. *)
-      get ech_configurations(ech_config(config_id,ech_g,pkR,=s_dom,ech_h,ech_a),skR) in
+      get ech_configurations(ech_config(config_id,ech_g,pkR,=s_dom,ech_h,ech_a),skR) [precise] in
       let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h,ech_a) in
 
       event ServerChoosesEchConfig(id_server,ech_conf);
