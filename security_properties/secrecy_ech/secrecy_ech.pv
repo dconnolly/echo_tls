@@ -127,6 +127,6 @@ process
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain) ;
+    in(io,s_dom:domain) [precise];
     run_server(s_dom,empty_extra_ext)
   )
