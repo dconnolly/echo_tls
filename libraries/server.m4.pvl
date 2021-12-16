@@ -47,7 +47,7 @@ let server_post_handshake(id_server:idProc,
     if allow_PH_data then
     (
       !
-      in(io,(seq_srv:nat,ad:bitstring)) [precise];
+      in(io,(seq_srv:nat,ad:bitstring)) (*[precise]*);
       if is_nat(seq_srv) then
       new msgs[seq_srv,ad]:bitstring;
       new st[]:stamp;
@@ -177,7 +177,7 @@ let send_server_finished_message =
     cur_log)));
 
   new st[]:stamp;
-  event PreciseMess(ch_server_FIN,id_server,st,(master_secret));
+  event PreciseMess(ch_server_FIN,id_server,st,master_secret);
 
   let hash_msg = hmac(h_alg,sfin,cur_log) in
   let finished_msg = FIN(hash_msg) in
@@ -248,12 +248,14 @@ let send_server_certificate_message =
   let (sk:privkey,s_pkey:pubkey,crt:certificate) =
     if select_server_certificate_by_restriction
     then (
-      get long_term_keys(s_dom',sk,s_pkey,crt,idP) [precise] in
+      get long_term_keys(s_dom',sk,s_pkey,crt,idP) in
+      let () = proof_helper_S_PH_get((s_dom',sk,s_pkey,crt,idP)) in
       event Selected_ltk(s_dom,s_dom',idP);
       (sk,s_pkey,crt)
     )
     else
-      get long_term_keys(=s_dom,sk,s_pkey,crt,idP) [precise] in
+      get long_term_keys(=s_dom,sk,s_pkey,crt,idP) in
+      let () = proof_helper_S_PH_get((s_dom,sk,s_pkey,crt,idP)) in
       (sk,s_pkey,crt)
   in
 
@@ -319,7 +321,7 @@ let process_client_hello_noHRR =
         (
           if allow_early_data && no_HRR && psk <> NoPsk then
           !
-          in(io,(i:nat,ad:bitstring,enc_early_data:bitstring))[precise];
+          in(io,(i:nat,ad:bitstring,enc_early_data:bitstring)) (*[precise]*);
           let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
           let early_data:bitstring = aead_dec(tls_a,wkc0,n2b(i),ad,enc_early_data) in (
             new st1[]:stamp;
@@ -556,8 +558,9 @@ let server(
         for everyone that will not be used.
         Similarly, we directly generate the retry_ech_ext that may be used later
         on. Does not impact the verification but make the verification more efficient. *)
-      get ech_configurations(ech_config(config_id,ech_g,pkR,=s_dom,ech_h,ech_a),skR) [precise] in
+      get ech_configurations(ech_config(config_id,ech_g,pkR,=s_dom,ech_h,ech_a),skR) in
       let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h,ech_a) in
+      let () = proof_helper_S((ech_conf,skR)) in
 
       event ServerChoosesEchConfig(id_server,ech_conf);
 

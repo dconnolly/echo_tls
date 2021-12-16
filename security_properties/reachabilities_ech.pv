@@ -94,29 +94,6 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
     psk = NoPsk || event(CompromisedPsk(psk));
 
   (* Authentication *)
-  inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
-    inj-event(PreServerFinished(id_s,cr,sr,psk,pk_srv)) ||
-    (
-      (
-        event(CompromisedLtk(pk_srv)) ||
-        event(CompromisedPsk(psk))
-      ) && (
-        event(ClientEchAcceptance(id_c,false)) ||
-        (
-          event(ClientOffersEchConfig(id_c,config)) &&
-          event(CompromisedEchKey(config))
-        )
-      )
-    );
-
-  (* As an honest server can talk with a dishonest client, the ClientFinished
-    is triggered only when the server uses an uncompromised PSK or
-    request a client certificate. *)
-  inj-event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
-    inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ||
-    event(CompromisedPsk(psk)) ||
-    (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk)) ||
-    psk = NoPsk;
 
   event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
   event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
@@ -144,6 +121,34 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
   event(ClientOffersEchConfig(id_c,config)) ==>
     (event(ClientEchAcceptance(id_c,true)) && event(ServerEchAcceptance(id_s,true)))
 .
+
+query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
+  (* Authentication *)
+  inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+    inj-event(PreServerFinished(id_s,cr,sr,psk,pk_srv)) ||
+    (
+      (
+        event(CompromisedLtk(pk_srv)) ||
+        event(CompromisedPsk(psk))
+      ) && (
+        event(ClientEchAcceptance(id_c,false)) ||
+        (
+          event(ClientOffersEchConfig(id_c,config)) &&
+          event(CompromisedEchKey(config))
+        )
+      )
+    );
+
+  (* As an honest server can talk with a dishonest client, the ClientFinished
+    is triggered only when the server uses an uncompromised PSK or
+    request a client certificate. *)
+  inj-event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ==>
+    inj-event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) ||
+    event(CompromisedPsk(psk)) ||
+    (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk)) ||
+    psk = NoPsk
+.
+
 
 (* Post Handshake Application Data: Secrecy and Authentication *)
 

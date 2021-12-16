@@ -1,8 +1,3 @@
-
-(* M4 variables in this file:
-  - CLIENT_SELECT_CRT : For the selection of client certificate.
-*)
-
 (********************
   Client processes
 *********************)
@@ -60,7 +55,7 @@ let client_post_handshake(id_client:idProc,
     if allow_PH_data then
     (
       !
-      in(io,(seq_client:nat,ad:bitstring)) [precise];
+      in(io,(seq_client:nat,ad:bitstring)) (*[precise]*);
       if is_nat(seq_client) then
       new msgs[seq_client,ad]:bitstring;
       new st[]:stamp;
@@ -80,11 +75,11 @@ let client_post_handshake(id_client:idProc,
     if allow_PH_authentication then
     !
     (* Selection of the sequence numbers *)
-    in(io,(seq_srv:nat,seq_client:nat)) [precise];
+    in(io,(seq_srv:nat,seq_client:nat)) (*[precise]*);
     if is_nat(seq_srv) && is_nat(seq_client) then
 
     (* Reception of a certificate request *)
-    in(io,enc_msg:bitstring) [precise];
+    in(io,enc_msg:bitstring) (*[precise]*);
     let m2b(CRTR(rand_crt)) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_msg) in
     new st[]:stamp;
     event ClientReceives(id_client,cr,sr,psk,s_pkey,st,seq_srv,zero,m2b(CRTR(rand_crt)));
@@ -93,12 +88,14 @@ let client_post_handshake(id_client:idProc,
     let (sk:privkey,c_pkey:pubkey,crt:certificate) =
       if select_client_certificate_by_restriction
       then (
-        get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+        get long_term_keys(c_dom',sk,c_pkey,crt,idP) in
+        let () = proof_helper_C_PH_get((c_dom',sk,c_pkey,crt,idP)) in
         event Selected_ltk(c_dom,c_dom',idP);
         (sk,c_pkey,crt)
       )
       else
-        get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+        get long_term_keys(=c_dom,sk,c_pkey,crt,idP) in
+        let () = proof_helper_C_PH_get((c_dom,sk,c_pkey,crt,idP)) in
         (sk,c_pkey,crt)
     in
 
@@ -151,7 +148,14 @@ let send_client_finished_message =
   )));
 
   new st[]:stamp;
-  event PreciseMess(ch_client_CFIN,id_client,st,(c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,cur_log));
+  let args =
+    if strong_PreciseMess_C_CFIN
+    then (c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,cur_log)
+    else if medium_PreciseMess_C_CFIN
+    then cur_log
+    else master_secret
+  in
+  event PreciseMess(ch_client_CFIN,id_client,st,args);
 
   let (cak:aead_key,sak:aead_key,cfkad:mac_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
   let client_hash_msg = hmac(h_alg,cfin,cur_log) in
@@ -191,12 +195,14 @@ let send_client_certificate_message(id_client:idProc,
   let (sk:privkey,c_pkey:pubkey,crt:certificate) =
     if select_client_certificate_by_restriction
     then (
-      get long_term_keys(c_dom',sk,c_pkey,crt,idP) [precise] in
+      get long_term_keys(c_dom',sk,c_pkey,crt,idP)  in
+      let () = proof_helper_C_CertMess((c_dom',sk,c_pkey,crt,idP)) in
       event Selected_ltk(c_dom,c_dom',idP);
       (sk,c_pkey,crt)
     )
     else
-      get long_term_keys(=c_dom,sk,c_pkey,crt,idP) [precise] in
+      get long_term_keys(=c_dom,sk,c_pkey,crt,idP) in
+      let () = proof_helper_C_CertMess((c_dom,sk,c_pkey,crt,idP)) in
       (sk,c_pkey,crt)
   in
 
@@ -508,7 +514,7 @@ let standard_client(id_client:idProc,
     if allow_early_data && psk <> NoPsk then
     let (wkc0:aead_key,ems0:bitstring) = kdf_k0(h_alg,es,(zero,client_hello)) in
     !
-    in(io,(i:nat,ad:bitstring)) [precise];
+    in(io,(i:nat,ad:bitstring)) (*[precise]*);
     if is_nat(i) then
     new msg_ed[]:bitstring;
     let enc_ed = aead_enc(a_alg,wkc0,n2b(i),ad,msg_ed) in

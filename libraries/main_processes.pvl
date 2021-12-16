@@ -283,7 +283,8 @@ let run_server_req_cert(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg
     server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
   )
   else
-    in(io,req_cert:bool) [precise];
+    in(io,req_cert:bool);
+    let () = proof_helper_server(bool2b(req_cert)) in
     event Same(bool2b(req_cert));
     server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
 .
@@ -295,7 +296,8 @@ let run_server_use_psk(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,
     run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
   )
   else
-    in(io,use_psk:bool) [precise];
+    in(io,use_psk:bool);
+    let () = proof_helper_server(bool2b(use_psk)) in
     event Same(bool2b(use_psk));
     run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
 .
@@ -307,7 +309,8 @@ let run_server_use_ech(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,
     run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
   )
   else
-    in(io,use_ech:bool) [precise];
+    in(io,use_ech:bool);
+    let () = proof_helper_server(bool2b(use_ech)) in
     event Same(bool2b(use_ech));
     run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
 .
@@ -315,7 +318,8 @@ let run_server_use_ech(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,
 let run_server(s_dom:domain,extra_ext:extraExt) =
   if allow_multiple_ciphersuite_and_group
   then (
-    in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg)) [precise];
+    in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg));
+    let () = proof_helper_server((tls_g,backend_g,tls_h,backend_h,tls_a,backend_a)) in
     if allow_weak_ciphersuite_and_group || is_strong_hash(tls_h) then
     if allow_weak_ciphersuite_and_group || is_strong_aead(tls_a) then
     if allow_weak_ciphersuite_and_group || is_strong_group(tls_g) then
