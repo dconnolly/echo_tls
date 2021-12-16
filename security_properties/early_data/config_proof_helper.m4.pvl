@@ -14,11 +14,11 @@ letfun precise_C_CertMess = false.
 (* In server.pvl *)
 
 letfun precise_S_PH_get = false.
-letfun precise_S_get = false.
+letfun precise_S_get = true.
 
 (* In main process *)
 
-letfun precise_server = false.
+letfun precise_server = true.
 
 (* Expand of macros *)
 
