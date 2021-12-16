@@ -81,7 +81,7 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
     (event(ClientEchAcceptance(id_c,true)) && event(ServerEchAcceptance(id_s,true)))
 .
 
-expand macro_ech_client(false,false,run_ech_client).
+expand macro_ech_client(true,false,run_ech_client).
 
 process
   (
@@ -94,9 +94,9 @@ process
     !
     new id_client:idProc;
     (* Domains *)
-    in(io,backend_dom:domain) ;
-    in(io,frontend_dom:domain);
-    in(io,c_dom:domain) ;
+    in(io,backend_dom:domain) [precise];
+    in(io,frontend_dom:domain) [precise];
+    in(io,c_dom:domain) [precise];
 
     get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
@@ -105,6 +105,6 @@ process
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain) ;
+    in(io,s_dom:domain) [precise];
     run_server(s_dom,empty_extra_ext)
   )

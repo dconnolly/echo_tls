@@ -7,9 +7,9 @@
 letfun precise_C_PH_get = false.
 
 letfun strong_PreciseMess_C_CFIN = false.
-letfun medium_PreciseMess_C_CFIN = false.
+letfun medium_PreciseMess_C_CFIN = true.
 
-letfun precise_C_CertMess = false.
+letfun precise_C_CertMess = true.
 
 (* In server.pvl *)
 
@@ -18,7 +18,7 @@ letfun precise_S_get = true.
 
 (* In main process *)
 
-letfun precise_server = false.
+letfun precise_server = true.
 
 (* Expand of macros *)
 
