@@ -3,6 +3,7 @@ set removeEventsForLemma = true.
 (* set verboseLemmas = true. *)
 (* set nounifIgnoreAFewTimes = auto. *)
 (* set preciseActions = true. *)
+(* set verboseRules = true. *)
 
 nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
 
@@ -84,7 +85,7 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
     (event(ServerNewTicket(old_psk,s_pkey',psk))@j' && attacker(psk) && j > j')
 .
 
-expand macro_ech_client(false,false,run_ech_client).
+expand macro_ech_client(true,false,run_ech_client).
 
 process
   (
