@@ -72,35 +72,28 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* Security properties *)
 
-(* 1-RTT handshake : secrecy and authentication queries *)
+(* Post Handshake Authentication *)
 
-query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
-  (* Secrecy *)
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
+query id_c,id_s:idProc,config:echConfig, cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg':bitstring,req_rand:bitstring,st,st':stamp;
+  inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
+    inj-event(ServerRequestPH(id_s,cr,sr,psk,s_pkey,req_rand)) ||
     (
-      event(CompromisedLtk(pk_srv)) ||
-      event(CompromisedPsk(psk))
-    ) && (
-      event(ClientEchAcceptance(id_c,false)) ||
       (
-        event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
+        event(CompromisedLtk(s_pkey)) ||
+        event(CompromisedPsk(psk))
+      ) && (
+        event(ClientEchAcceptance(id_c,false)) ||
+        (
+          event(ClientOffersEchConfig(id_c,config)) &&
+          event(CompromisedEchKey(config))
+        )
       )
     );
 
-  (* Authentication *)
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv'
+  inj-event(ServerFinishedPH(id_s,cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
+    inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,req_rand,c_pkey)) ||
+    event(CompromisedLtk(c_pkey)) ||
+    event(CompromisedPsk(psk))
 .
 
 expand macro_ech_client(false,false,run_ech_client).

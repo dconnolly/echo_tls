@@ -12,6 +12,8 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
 
 axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
+  attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
+    event(ServerNewTicket(old_psk,s_pkey,psk)) || event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
@@ -72,35 +74,14 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* Security properties *)
 
-(* 1-RTT handshake : secrecy and authentication queries *)
+(* Sequentiallity of compromised psk. *)
 
 query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
-  (* Secrecy *)
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
-    (
-      event(CompromisedLtk(pk_srv)) ||
-      event(CompromisedPsk(psk))
-    ) && (
-      event(ClientEchAcceptance(id_c,false)) ||
-      (
-        event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
-      )
-    );
-
-  (* Authentication *)
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv'
+  event(ServerNewTicket(psk,s_pkey,new_psk))@j && attacker(new_psk) ==>
+    event(CompromisedPsk(new_psk)) ||
+    event(CompromisedPsk(psk)) ||
+    psk = NoPsk ||
+    (event(ServerNewTicket(old_psk,s_pkey',psk))@j' && attacker(psk) && j > j')
 .
 
 expand macro_ech_client(false,false,run_ech_client).

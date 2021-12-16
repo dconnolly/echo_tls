@@ -67,40 +67,18 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
   attacker(server_fk)
-  [fullSat]
+  [induction,fullSat]
 .
 
 (* Security properties *)
 
-(* 1-RTT handshake : secrecy and authentication queries *)
-
 query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
-  (* Secrecy *)
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
-    (
-      event(CompromisedLtk(pk_srv)) ||
-      event(CompromisedPsk(psk))
-    ) && (
-      event(ClientEchAcceptance(id_c,false)) ||
-      (
-        event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
-      )
-    );
-
-  (* Authentication *)
-
+  (* Downgrade resilient *)
+  event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
   event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv'
+  event(ServerChoosesEchConfig(id_s,config)) &&
+  event(ClientOffersEchConfig(id_c,config)) ==>
+    (event(ClientEchAcceptance(id_c,true)) && event(ServerEchAcceptance(id_s,true)))
 .
 
 expand macro_ech_client(false,false,run_ech_client).
@@ -117,10 +95,10 @@ process
     new id_client:idProc;
     (* Domains *)
     in(io,backend_dom:domain) ;
-    in(io,frontend_dom:domain) ;
-    in(io,c_dom:domain);
+    in(io,frontend_dom:domain);
+    in(io,c_dom:domain) ;
 
-    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
 
     run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)

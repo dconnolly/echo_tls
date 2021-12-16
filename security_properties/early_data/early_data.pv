@@ -12,6 +12,8 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
 
 axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
+  attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
+    event(ServerNewTicket(old_psk,s_pkey,psk)) || event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
@@ -72,35 +74,21 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* Security properties *)
 
-(* 1-RTT handshake : secrecy and authentication queries *)
+restriction idP,idP':idProc,s_dom:domain,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,pk_srv,pk_srv':pubkey,st,st':stamp,n:nat,ad,ad',msg,msg':bitstring;
+  event(ClientSends0(idP,cr,psk,st,n,ad,msg)) && event(ClientSends0(idP,cr,psk,st',n,ad',msg')) ==> st = st';
+  event(ServerReceives0(idP,s_dom,cr,psk,st,n,ad,msg)) && event(ServerReceives0(idP',s_dom,cr',psk,st',n,ad',msg')) ==> st = st'
+.
 
-query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
-  (* Secrecy *)
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) && attacker(cak) ==>
-    (
-      event(CompromisedLtk(pk_srv)) ||
-      event(CompromisedPsk(psk))
-    ) && (
-      event(ClientEchAcceptance(id_c,false)) ||
-      (
-        event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
-      )
-    );
+(* Sequentiallity of compromised psk. *)
 
-  (* Authentication *)
+query config:echConfig,id_c,id_s,idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey,pk_srv:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg:bitstring,st,st':stamp;
+  event(ClientSends0(id_c,cr,psk,st,n,ad,msg)) && attacker(msg) ==>
+    event(CompromisedPsk(psk));
 
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems,rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak',sak',ems',rms)) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv';
-
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerFinished(id_s,cr',sr',psk',pk_srv',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && pk_srv = pk_srv'
+  inj-event(ServerReceives0(id_s,s_dom,cr,psk,st,n,ad,msg)) ==>
+    inj-event(ClientSends0(id_c,cr,psk,st',n,ad,msg)) ||
+    event(CompromisedPsk(psk)) ||
+    (event(ServerNewTicket(old_psk,s_pkey,psk)) && attacker(psk))
 .
 
 expand macro_ech_client(false,false,run_ech_client).
