@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = true.
+letfun allow_HRR = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
