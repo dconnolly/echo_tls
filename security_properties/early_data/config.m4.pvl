@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = false.
+letfun allow_HRR = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -24,7 +24,7 @@ letfun allow_PH_authentication = true.
 
 (* When `false`, the client never leak the pre shared keys derived from the tickets.
   Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
-letfun allow_compromised_ticket = false.
+letfun allow_compromised_ticket = true.
 
 (* When `true`, the attacker can choose different ciphersuites and DH groups for
   honest clients and servers. When `false`, the ciphersuite and DH group is
