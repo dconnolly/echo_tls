@@ -1,5 +1,7 @@
 (* Force selection of channels *)
 
+set privateCommOnPublicTerms = false.
+
 nounif x:bitstring; mess(ch_client_CFIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_FIN,*x) / -300000.
 nounif x:bitstring; mess(ch_client_CRT,*x) / -300000.

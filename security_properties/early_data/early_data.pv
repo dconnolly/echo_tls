@@ -1,4 +1,4 @@
-
+set verboseRules = true.
 set removeEventsForLemma = true.
 (* set verboseLemmas = true. *)
 (* set nounifIgnoreAFewTimes = auto. *)
