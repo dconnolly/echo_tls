@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = false.
+letfun allow_HRR = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -68,15 +68,3 @@ letfun default_use_ech = true.
 (* Determine if the server request a certificate from the client. *)
 letfun set_req_cert = true.
 letfun default_req_cert = false.
-
-(********************************************************)
-(*    Configuration variables for equivalence queries   *)
-(********************************************************)
-
-letfun select_client_certificate_by_restriction = false.
-
-letfun select_server_certificate_by_restriction = false.
-
-letfun select_client_pre_shared_key_by_restriction = false.
-
-letfun select_server_pre_shared_key_by_restriction = false.

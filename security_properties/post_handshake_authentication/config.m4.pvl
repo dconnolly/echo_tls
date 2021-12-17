@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = false.
+letfun allow_HRR = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -12,7 +12,7 @@ letfun allow_early_data = false.
 
 (* When `false`, honest clients and servers are not expecting and sending a new
   session ticket respectively. *)
-letfun allow_PH_new_session_ticket = false.
+letfun allow_PH_new_session_ticket = true.
 
 (* When `false`, honest clients and servers will never send or try to receive
   Post Handshake Application Data. *)
@@ -46,7 +46,7 @@ letfun allow_compromised_Ech_keys = false.
 (********************************************************)
 
 (* Determine if psk from ticket can be compromised *)
-letfun set_comp_psk = true.
+letfun set_comp_psk = false.
 letfun default_comp_psk = false.
 
 (* Determine if client send their key share. *)
@@ -54,7 +54,7 @@ letfun set_send_kex = false.
 letfun default_send_kex = true.
 
 (* Determine if client and server want to use a psk. *)
-letfun set_use_psk = true.
+letfun set_use_psk = false.
 letfun default_use_psk = false.
 
 (* Determine if the client uses grease *)
@@ -62,21 +62,9 @@ letfun set_use_grease = true.
 letfun default_use_grease = false.
 
 (* Determine if the server uses ECH *)
-letfun set_use_ech = true.
+letfun set_use_ech = false.
 letfun default_use_ech = true.
 
 (* Determine if the server request a certificate from the client. *)
 letfun set_req_cert = true.
 letfun default_req_cert = false.
-
-(********************************************************)
-(*    Configuration variables for equivalence queries   *)
-(********************************************************)
-
-letfun select_client_certificate_by_restriction = false.
-
-letfun select_server_certificate_by_restriction = false.
-
-letfun select_client_pre_shared_key_by_restriction = false.
-
-letfun select_server_pre_shared_key_by_restriction = false.

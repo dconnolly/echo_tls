@@ -8,8 +8,8 @@ all:
 	-lib config_proof_helper.m4.pvl \
 	-lib ../../libraries/tls_functions.pvl \
 	-lib ../../libraries/ech_functions.pvl \
-	-lib ../../libraries/server.m4.pvl \
-	-lib ../../libraries/client.m4.pvl \
+	-lib ../../libraries/server.pvl \
+	-lib ../../libraries/client.pvl \
 	-lib ../../libraries/main_processes.pvl \
 	-lib ../../libraries/proof_helper_reachability.pvl \
 	post_handshake_authentication.pv
