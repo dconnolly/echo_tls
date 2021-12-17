@@ -75,11 +75,11 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 (* Security properties *)
 
 restriction idP,idP':idProc,s_dom:domain,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,pk_srv,pk_srv':pubkey,st,st':stamp,n:nat,ad,ad',msg,msg':bitstring;
-  event(ServerSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-  event(ClientSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
+  event(ServerSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg';
+  event(ClientSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg';
 
-  event(ServerReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st';
-  event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st'
+  event(ServerReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg';
+  event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg'
 .
 
 (* Sequentiallity of compromised psk. *)
@@ -139,7 +139,7 @@ query config:echConfig,id_c,id_s,idP,idP':idProc,s_dom:domain,cr,sr:bytes32,old_
     psk = NoPsk
 .
 
-expand macro_ech_client(true,false,run_ech_client).
+expand macro_ech_client(false,false,run_ech_client).
 
 process
   (
@@ -152,17 +152,17 @@ process
     !
     new id_client:idProc;
     (* Domains *)
-    in(io,backend_dom:domain) [precise] ;
-    in(io,frontend_dom:domain) [precise];
-    in(io,c_dom:domain) [precise];
+    in(io,backend_dom:domain);
+    in(io,frontend_dom:domain);
+    in(io,c_dom:domain);
 
-    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
 
     run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain) [precise];
+    in(io,s_dom:domain);
     run_server(s_dom,empty_extra_ext)
   )

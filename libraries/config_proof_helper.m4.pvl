@@ -13,7 +13,7 @@ letfun precise_C_CertMess = false.
 
 (* In server.pvl *)
 
-letfun precise_S_PH_get = false.
+letfun precise_S_CRT_get = false.
 letfun precise_S_get = false.
 
 (* In main process *)
@@ -33,7 +33,7 @@ def mk_precise(proof_helper,setting) {
 expand mk_precise(proof_helper_C_PH_get,precise_C_PH_get).
 expand mk_precise(proof_helper_C_CertMess,precise_C_CertMess).
 
-expand mk_precise(proof_helper_S_PH_get,precise_S_PH_get).
+expand mk_precise(proof_helper_S_CRT_get,precise_S_CRT_get).
 expand mk_precise(proof_helper_S,precise_S_get).
 
 expand mk_precise(proof_helper_server,precise_server).

@@ -4,16 +4,16 @@
 
 (* In client.pvl *)
 
-letfun precise_C_PH_get = false.
+letfun precise_C_PH_get = true.
 
 letfun strong_PreciseMess_C_CFIN = false.
 letfun medium_PreciseMess_C_CFIN = true.
 
-letfun precise_C_CertMess = false.
+letfun precise_C_CertMess = true.
 
 (* In server.pvl *)
 
-letfun precise_S_PH_get = true.
+letfun precise_S_CRT_get = true.
 letfun precise_S_get = true.
 
 (* In main process *)
@@ -33,7 +33,7 @@ def mk_precise(proof_helper,setting) {
 expand mk_precise(proof_helper_C_PH_get,precise_C_PH_get).
 expand mk_precise(proof_helper_C_CertMess,precise_C_CertMess).
 
-expand mk_precise(proof_helper_S_PH_get,precise_S_PH_get).
+expand mk_precise(proof_helper_S_CRT_get,precise_S_CRT_get).
 expand mk_precise(proof_helper_S,precise_S_get).
 
 expand mk_precise(proof_helper_server,precise_server).

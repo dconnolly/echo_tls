@@ -10,3 +10,30 @@
 - WARNING : The sending of HRR request in ECH has been changed with respect to the
 	random
 - Model post handshake authentication
+
+
+
+----- Scenario -----
+
+- Equivalence between grease and not grease
+	-> No HRR
+
+-> Reachability property concerning the handshake :
+		-> Remove Early
+		-> Remove PH Authentication
+		-> Remove PH Data
+
+		-> No compromise Certificate Key
+		->
+
+
+-> High private key
+		-> No PSK, No Client Certificate TLS1.3
+		-> No PSK, No Client Certificate ECH
+		-> PSK, TLS1.3
+		-> PSK, ECH
+		-> Same with TLS1.3 + ECH
+
+		->
+
+		-> No PSK,

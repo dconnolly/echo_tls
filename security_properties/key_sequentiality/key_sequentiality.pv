@@ -1,4 +1,4 @@
-
+(* set verboseRedundant = true. *)
 set removeEventsForLemma = true.
 (* set verboseLemmas = true. *)
 (* set nounifIgnoreAFewTimes = auto. *)
@@ -85,7 +85,7 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
     (event(ServerNewTicket(old_psk,s_pkey',psk))@j' && attacker(psk) && j > j')
 .
 
-expand macro_ech_client(true,false,run_ech_client).
+expand macro_ech_client(false,false,run_ech_client).
 
 process
   (
@@ -98,17 +98,17 @@ process
     !
     new id_client:idProc;
     (* Domains *)
-    in(io,backend_dom:domain) [precise];
-    in(io,frontend_dom:domain) [precise];
+    in(io,backend_dom:domain);
+    in(io,frontend_dom:domain);
     in(io,c_dom:domain);
 
-    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
 
     run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   ) | (
     !
     (* Server *)
-    in(io,s_dom:domain) [precise];
+    in(io,s_dom:domain);
     run_server(s_dom,empty_extra_ext)
   )

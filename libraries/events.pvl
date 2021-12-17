@@ -197,7 +197,8 @@ event ClientOffersEchConfig(
 
 event ServerChoosesEchConfig(
   idProc,         (* Process identity of the server *)
-  echConfig       (* The ECH config that the frontend server accepts *)
+  echConfig,      (* The ECH config that the frontend server accepts *)
+  bool            (* Indicates if the server was running ECH. *)
 ).
 
 event ClientEchAcceptance(

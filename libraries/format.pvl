@@ -11,7 +11,7 @@ fun id2b(idProc):bitstring [typeConverter].
   All terms of this type will be public. When we refer to a client or a server
   in our explanation, we always refer to their public domain. *)
 type domain.
-const empty_domain:domain.
+const empty_domain:domain [data].
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
@@ -59,7 +59,7 @@ letfun gen_honest_psk() =
   uc_psk(s)
 .
 
-const NoPsk: preSharedKey.
+const NoPsk: preSharedKey [data].
 
 fun b2psk(bitstring):preSharedKey [typeConverter].
 (* A type converter only used for some proof helpers and following definition. *)
@@ -164,7 +164,7 @@ const
   hrr_ech_accept_confirmation, (* "hrr ech accept confirmation" in Section 7.2.1 of ECH RFC *)
   ech_accept_confirmation, (* "ech accept confirmation" in Section 7.2 of ECH RFC *)
   tls_ech_str (* "tls ech" in Section 6.1 of ECH RFC *)
-  :label.
+  :label [data].
 
 table ech_configurations(
   echConfig, (* Ech configuration *)
@@ -179,10 +179,10 @@ type echExt.
 fun echExt2b(echExt):bitstring [typeConverter].
 
 (* Represents the absence of extension *)
-const empty_ech_ext: echExt.
+const empty_ech_ext: echExt [data].
 
 (* This extension should only occur in the ClientHelloInner. *)
-const ECHClientHelloInner: echExt.
+const ECHClientHelloInner: echExt [data].
 
 (* This extension should only occur in the ClientHelloOuter. *)
 (* This includes the following element
@@ -208,11 +208,11 @@ fun ECHHelloRetryRequest(bytes8):echExt [data].
 ****************************************)
 
 type TLS_version.
-const TLS13: TLS_version.
+const TLS13: TLS_version [data].
 
 (* "HelloRetryRequest" in Section 4.1.3 of TLS RFC *)
-const HRR8:bytes8.
-const HRR24:bytes24.
+const HRR8:bytes8 [data].
+const HRR24:bytes24 [data].
 letfun rand_HelloRetryRequest = B32(HRR24,HRR8).
 
 (* The SNI extension *)

@@ -76,7 +76,7 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
   (* Downgrade resilient *)
   event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
   event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ServerChoosesEchConfig(id_s,config)) &&
+  event(ServerChoosesEchConfig(id_s,config,true)) &&
   event(ClientOffersEchConfig(id_c,config)) ==>
     (event(ClientEchAcceptance(id_c,true)) && event(ServerEchAcceptance(id_s,true)))
 .
@@ -98,7 +98,7 @@ process
     in(io,frontend_dom:domain) [precise];
     in(io,c_dom:domain) [precise];
 
-    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise]  in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
 
     run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)

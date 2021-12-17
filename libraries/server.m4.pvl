@@ -249,13 +249,13 @@ let send_server_certificate_message =
     if select_server_certificate_by_restriction
     then (
       get long_term_keys(s_dom',sk,s_pkey,crt,idP) in
-      let () = proof_helper_S_PH_get((s_dom',sk,s_pkey,crt,idP)) in
+      let () = proof_helper_S_CRT_get((s_dom',sk,s_pkey,crt,idP)) in
       event Selected_ltk(s_dom,s_dom',idP);
       (sk,s_pkey,crt)
     )
     else
       get long_term_keys(=s_dom,sk,s_pkey,crt,idP) in
-      let () = proof_helper_S_PH_get((s_dom,sk,s_pkey,crt,idP)) in
+      let () = proof_helper_S_CRT_get((s_dom,sk,s_pkey,crt,idP)) in
       (sk,s_pkey,crt)
   in
 
@@ -562,7 +562,7 @@ let server(
       let ech_conf = ech_config(config_id,ech_g,pkR,s_dom,ech_h,ech_a) in
       let () = proof_helper_S((ech_conf,skR)) in
 
-      event ServerChoosesEchConfig(id_server,ech_conf);
+      event ServerChoosesEchConfig(id_server,ech_conf,use_ech);
 
       let retry_ech_ext = generate_retry_ech_ext(ech_conf) in
 
