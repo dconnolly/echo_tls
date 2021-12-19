@@ -50,51 +50,52 @@ function header() {
 	echo "" >> $6
 }
 
+forbidden=0
 
 function forbidden_options() {
 	if [[ $4 -eq 4 && $5 -eq 1 ]]; then
-		echo 1
+		forbidden=1
 	else
 		case .$1 in
 			.secrecy)
-				echo 0
+				forbidden=0
 				;;
 			.early)
 				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 5 || $2 -eq 6 || $2 -eq 7 ]]; then
-					echo 1
+					forbidden=1
 				else
-					echo 0
+					forbidden=0
 				fi
 				;;
 			.auth)
-				echo 0
+				forbidden=0
 				;;
 			.downgrade)
 				if [ $5 -eq 1 ]; then
-					echo 1
+					forbidden=1
 				else
-					echo 0
+					forbidden=0
 				fi
 				;;
 			.key)
-				echo 0
+				forbidden=0
 				;;
 			.PHauth)
 				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 5 || $2 -eq 6 ]]; then
-					echo 1
+					forbidden=1
 				else
-					echo 0
+					forbidden=0
 				fi
 				;;
 			.PHdata)
 				if [[ $2 -eq 1 || $2 -eq 5 ]]; then
-					echo 1
+					forbidden=1
 				else
-					echo 0
+					forbidden=0
 				fi
 				;;
 			.Rlemma)
-				echo 0
+				forbidden=0
 				;;
 		esac
 	fi
@@ -103,11 +104,13 @@ function forbidden_options() {
 # Arguments:
 # 	$1: name of the query
 function run_scenario() {
-	forbidden="$(forbidden_options $1 $2 $3 $4 $5)"
+	forbidden_options $1 $2 $3 $4 $5
+	echo $forbidden
 	querydone=0
 	if [ -f "security_properties/${1}/result.txt" ]; then
 		querydone="$(grep -c "${1} - Scenario F${2} S${3} B${4} A${5}" security_properties/${1}/result.txt)"
 	fi
+	echo $querydone
 	if [[ $querydone -eq 0 && $forbidden -eq 0 ]]; then
 		# Generation of the config file
 		cat m4_declarations.m4 > tmp.m4
