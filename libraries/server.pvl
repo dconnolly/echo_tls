@@ -71,7 +71,7 @@ let server_post_handshake(id_server:idProc,
     if is_nat(seq_srv) && is_nat(seq_client) then
 
     (* The server requests a client certificate *)
-    new req_rand[]:bitstring;
+    new req_rand:bitstring;
     event ServerRequestPH(id_server,cr,sr,psk,s_pkey,req_rand);
 
     let crtr_msg = CRTR(req_rand) in

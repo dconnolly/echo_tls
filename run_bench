@@ -1,337 +1,170 @@
 #!/bin/bash
 
-lib=""
-tmp_name=""
-
-TMPDIR="$(mktemp -d "./tmp.XXXXXXXXXX")"
+max_time=172800
 
 mkdir -p tests
-mkdir -p generated_models
-mkdir -p generated_libraries
+mkdir -p generated_configs
+
+fullname=""
+isequiv=0
 
 # Arguments:
-# 	$1: name of the file
-# 	$2: list of valid options in the correct order
-# 	$3: list of requested options
-function generate_file_name() {
-	m4name=libraries/$1.m4.pvl
-	m4def=" "
-
-	tmp_name="generated_libraries/$1"
-	for v_op in $2
-	do
-		for op in $3
-		do
-			if [ \( $v_op = $op \) ]
-			then
-				tmp_name="$tmp_name"_$op
-				m4def="$m4def-D $op "
-			fi
-		done
-	done
-	tmp_name="$tmp_name.pvl"
-	m4 $m4def $m4name > $tmp_name
-}
-
-function generate_misc() {
-	generate_file_name "misc" "BACKENDFULL CLIENTFULL" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_client_ech() {
-	generate_file_name "client_ech" "NOHRR ROR BACKENDFULL CLIENTFULL ATTACK_HRR_HIJACK ATTACK_REACTION ATTACK_TEST" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_client() {
-	generate_file_name "client" "NOHRR CLIENT ROR BACKEND BACKENDFULL CLIENTFULL INNER INNERFULL SANITY DATA" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_server() {
-	generate_file_name "server" "NOHRR ROR INNER SANITY DATA ATTACK_HRR_HIJACK ATTACK_TEST" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_format() {
-	generate_file_name "format" "ROR CLIENTFULL BACKENDFULL" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_proof_helper() {
-	generate_file_name "proof_helper" "EQUIV ROR BACKENDFULL CLIENTFULL INNERFULL" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_main_processes() {
-	generate_file_name "main_processes" "ROR CLIENTFULL DATA BACKENDFULL TLSONLY" "$1"
-	lib="$lib -lib $tmp_name"
-}
-
-function generate_libraries() {
-	# Standard libraries
-
-	option=""
-
-	case $1 in
-		sanity_nohrr)
-			option="NOHRR SANITY"
-			;;
-		sanity)
-			option="SANITY"
-			;;
-		attack_hrr_hijack)
-			option="EQUIV BACKEND ATTACK_HRR_HIJACK"
-			;;
-		attack_reaction)
-			option="NOHRR EQUIV BACKEND ATTACK_REACTION"
-			;;
-		attack_test)
-			option="NOHRR EQUIV BACKEND ATTACK_TEST"
-			;;
-		backend_nohrr)
-			option="NOHRR EQUIV BACKEND"
-			;;
-		backend|main_backend)
-			option="EQUIV BACKEND"
-			;;
-		backend_full_nohrr)
-			option="NOHRR EQUIV BACKENDFULL"
-			;;
-		backend_full)
-			option="EQUIV BACKENDFULL"
-			;;
-		inner_nohrr)
-			option="NOHRR EQUIV INNER"
-			;;
-		inner|main_inner)
-			option="EQUIV INNER"
-			;;
-		inner_full_nohrr)
-			option="NOHRR EQUIV INNER INNERFULL"
-			;;
-		inner_full)
-			option="EQUIV INNER INNERFULL"
-			;;
-		client_nohrr|client_ech_nohrr)
-			option="NOHRR EQUIV CLIENT"
-			;;
-		client|client_ech|main_client_ech)
-			option="EQUIV CLIENT"
-			;;
-		client_full_nohrr|client_ech_full_nohrr|unlinkability_nohrr)
-			option="NOHRR EQUIV CLIENTFULL"
-			;;
-		client_full|client_ech_full|unlinkability)
-			option="EQUIV CLIENTFULL"
-			;;
-		ror_nohrr)
-			option="NOHRR EQUIV ROR"
-			;;
-		ror)
-			option="EQUIV ROR"
-			;;
-		main_client)
-			option="EQUIV CLIENTFULL TLSONLY"
-			;;
-		main_ror)
-			option="EQUIV ROR TLSONLY"
-			;;
-	esac
-
-	lib="$lib -lib libraries/primitives.pvl"
-	generate_format "$option"
-	lib="$lib -lib libraries/key_schedule.pvl"
-	generate_proof_helper "$option"
-	generate_misc "$option"
-	generate_client "$option"
-	generate_client_ech "$option"
-	generate_server "$option"
-	generate_main_processes "$option"
-}
-
-generate_libraries $1
-
-function analyze_one_file() {
-	file=$1
-	filename_ext=${file##*/}
-	filename=${filename_ext%.*}
-	analyze -progopt $lib -set displayDerivation false -set traceDisplay none -set verboseClauses none -endprogopt PV add "$TMPDIR" $2 file generated_models $filename_ext
-}
-
-function run_file() {
-	if [ \( .$3 = .PV \) ]
-	then
-		echo --------------------------------
-		echo Executing the following command:
-		echo proverif $lib $1
-		echo --------------------------------
-		proverif $lib $1
+# 	$1: name of the query
+#		$2: Functionalities
+#		$3: Safety
+#		$4: Behavior
+#		$5: Agents
+#		$6: Output file
+#		$7: 0 when query is reachability, 1 when equivalence
+function header() {
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "  Result of the execution of the following command: " >> $6
+	echo "" >> $6
+	echo "    proverif \\" >> $6
+	echo "      -lib generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl \\" >> $6
+	echo "      -lib libraries/primitives.pvl \\" >> $6
+	echo "      -lib libraries/format.pvl \\" >> $6
+	echo "      -lib libraries/key_schedule.pvl \\" >> $6
+	echo "      -lib libraries/events.pvl \\" >> $6
+	echo "      -lib security_properties/${1}/config_proof_helper.m4.pvl \\" >> $6
+	echo "      -lib libraries/tls_functions.pvl \\" >> $6
+	echo "      -lib libraries/ech_functions.pvl \\" >> $6
+	echo "      -lib libraries/main_processes.pvl \\" >> $6
+	echo "      -lib libraries/client.pvl \\" >> $6
+	echo "      -lib libraries/main_processes.pvl \\" >> $6
+	if [ $isequiv -eq 0 ]; then
+		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
 	else
-		echo --------------------------------
-		echo Executing the following command:
-		echo analyze_one_file $1 "$2-"
-		echo --------------------------------
-		analyze_one_file $1 "$2-"
+		echo "      -lib libraries/proof_helper_equivalence.pvl \\" >> $6
+	fi
+	echo "      security_properties/${1}/${1}.pv" >> $6
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "" >> $6
+	m4 -D F$2 -D S$3 -D B$4 -D A$5 scenario.m4 >> $6
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "" >> $6
+	echo "   ProVerif output:" >> $6
+	echo "" >> $6
+}
+
+# Arguments:
+# 	$1: name of the query
+function run_scenario() {
+	querydone=0
+	if [ -f "security_properties/${1}/result.txt" ]; then
+		querydone="$(grep -c "${1} - Scenario F${2} S${3} B${4} A${5}" security_properties/${1}/result.txt)"
+	fi
+	if [ $querydone -eq 0 ]; then
+		# Generation of the config file
+		cat m4_declarations.m4 > tmp.m4
+		cat libraries/config_script.m4.pvl >> tmp.m4
+		m4 -D F$2 -D S$3 -D B$4 -D A$5 tmp.m4 > generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl
+		rm tmp.m4
+
+		# Generation of file names
+		date_str=$(date "+%Y-%m-%d_%Hh%Mm%Ss")
+		mkdir -p "tests/${1}-${date_str}"
+		TMPDIR=tests/${1}-${date_str}
+		outputfile="${TMPDIR}/output.txt"
+		timefile="${TMPDIR}/time.txt"
+
+		header $1 $2 $3 $4 $5 $outputfile
+
+		#Generation of the librairies
+		lib="-lib generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl"
+		lib="${lib} -lib libraries/primitives.pvl"
+		lib="${lib} -lib libraries/format.pvl"
+		lib="${lib} -lib libraries/key_schedule.pvl"
+		lib="${lib} -lib libraries/events.pvl"
+		lib="${lib} -lib security_properties/${1}/config_proof_helper.m4.pvl"
+		lib="${lib} -lib libraries/tls_functions.pvl"
+		lib="${lib} -lib libraries/ech_functions.pvl"
+		lib="${lib} -lib libraries/server.pvl"
+		lib="${lib} -lib libraries/client.pvl"
+		lib="${lib} -lib libraries/main_processes.pvl"
+		lib="${lib} -lib libraries/proof_helper_reachability.pvl"
+		command="proverif ${lib} security_properties/${1}/${1}.pv"
+		(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
+		if uname -a | egrep -q \(Darwin\)
+		then
+			{ gtime -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+		else
+			{ /usr/bin/time -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+		fi
+		time_tmp=$(cat $timefile | grep Time);
+		limit_tmp=$(cat $timefile | grep 'Command terminated by signal 9');
+		nbTrue="$(grep -c 'RESULT.*is true.' ${outputfile})"
+		echo "${1} - Scenario F${2} S${3} B${4} A${5} - ${nbTrue} true queries - ${time_tmp} ${limit_tmp}" >> security_properties/${1}/result.txt
+		rm .tmp
+		echo "Verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
+		)
+	else
+		echo "Already verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
 	fi
 }
 
-function sanity() {
-	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
+function doall() {
+	# NoHRR
+	for F in 1 2 3 4 5 6 7 8
 	do
-		full_file="generated_models/sanity_checks_$i.pv"
-		m4 -D$i sanity_checks.m4.pv > $full_file
-		run_file $full_file $1 $2
+		for S in 1 2 3
+		do
+			for B in 1 2 3
+			do
+				for A in 1 2 3 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
 	done
 }
 
-function sanity_nohrr() {
-	for i in tls_C_tls_S tls_C_ech_S ech_C_tls_S ech_C_ech_S grease_C_tls_S grease_C_ech_S
-	do
-		full_file="generated_models/sanity_checks_NOHRR_$i.pv"
-		m4 -D$i -D NOHRR sanity_checks.m4.pv > $full_file
-		run_file $full_file $1 $2
-	done
-}
-
-function header() {
-	echo "" >> $TMPDIR/tmp.m4
-	echo "(* -------------------------------------------------------- " >> $TMPDIR/tmp.m4
-	echo "   This file should be executed with the following command: " >> $TMPDIR/tmp.m4
-	echo "" >> $TMPDIR/tmp.m4
-	echo "   		proverif $lib $1" >> $TMPDIR/tmp.m4
-	echo "" >> $TMPDIR/tmp.m4
-	echo "   -------------------------------------------------------- *)" >> $TMPDIR/tmp.m4
-	echo "" >> $TMPDIR/tmp.m4
-}
-
-# Argments:
-# 	1) First argument given to run_bench
-# 	2) Second argument given to run_bench
-#		4) Real file name
-# 	4) Third argument given to run_bench
-function runm4() {
-	full_file="generated_models/${3}_SCENARIO$2.pv"
-	cat scenario.m4 > $TMPDIR/tmp.m4
-	header $full_file
-	cat $3.m4.pv >> $TMPDIR/tmp.m4
-	m4 -D SCENARIO$2 $TMPDIR/tmp.m4 > $full_file
-	run_file $full_file "$1-$2" $4
-}
-
-function runm4_nohrr() {
-	full_file="generated_models/${3}_NOHRR_SCENARIO$2.pv"
-	cat scenario.m4 > $TMPDIR/tmp.m4
-	header $full_file
-	cat $3.m4.pv >> $TMPDIR/tmp.m4
-	m4 -D SCENARIO$2 -D NOHRR $TMPDIR/tmp.m4 > $full_file
-	run_file $full_file "$1-$2" $4
-}
-
-function runm4_main() {
-	full_file="generated_models/$2.pv"
-	header $full_file
-	cat $2.m4.pv >> $TMPDIR/tmp.m4
-	cat $TMPDIR/tmp.m4 > $full_file
-	run_file $full_file "$1" $3
+function getfullname() {
+	case .$1 in
+		.secrecy)
+			fullname="secrecy"
+			;;
+		.early)
+			fullname="early_data"
+			;;
+		.auth)
+			fullname="authentication"
+			;;
+		.downgrade)
+			fullname="downgrade_resilient_ech"
+			;;
+		.key)
+			fullname="key_sequentiality"
+			;;
+		.PHauth)
+			fullname="post_handshake_authentication"
+			;;
+		.PHdata)
+			fullname="post_handshake_data"
+			;;
+		.Rlemma)
+			fullname="lemmas_reachability"
+			;;
+	esac
 }
 
 case .$1 in
-	.sanity)
-		sanity $1 $2
+	.one)
+		echo Verifying one scenario.
+		getfullname $2
+		run_scenario $fullname $3 $4 $5 $6
 		;;
-	.sanity_nohrr)
-		sanity_nohrr $1 $2
-		;;
-	.backend)
-		runm4 $1 $2 "privacy_backend" $3
-		;;
-	.attack_hrr_hijack)
-		runm4 $1 2 "privacy_backend_attack_hrr_hijack" $2
-		;;
-	.attack_reaction)
-		runm4_nohrr $1 2 "privacy_backend_attack_reaction" $2
-		;;
-	.attack_test)
-		runm4_nohrr $1 2 "privacy_backend_attack_test" $2
-		;;
-	.backend_nohrr)
-		runm4_nohrr $1 $2 "privacy_backend" $3
-		;;
-	.backend_full)
-		runm4 $1 $2 "privacy_backend_full" $3
-		;;
-	.backend_full_nohrr)
-		runm4_nohrr $1 $2 "privacy_backend_full" $3
-		;;
-	.inner)
-		runm4 $1 $2 "strong_secrecy_inner" $3
-		;;
-	.inner_nohrr)
-		runm4_nohrr $1 $2 "strong_secrecy_inner" $3
-		;;
-	.inner_full)
-		runm4 $1 $2 "strong_secrecy_inner_full" $3
-		;;
-	.inner_full_nohrr)
-		runm4_nohrr $1 $2 "strong_secrecy_inner_full" $3
-		;;
-	.client)
-		runm4 $1 $2 "privacy_client" $3
-		;;
-	.client_nohrr)
-		runm4_nohrr $1 $2 "privacy_client" $3
-		;;
-	.client_full)
-		runm4 $1 $2 "privacy_client_full" $3
-		;;
-	.client_full_nohrr)
-		runm4_nohrr $1 $2 "privacy_client_full" $3
-		;;
-	.unlinkability)
-		runm4 $1 $2 "unlinkability" $3
-		;;
-	.unlinkability_nohrr)
-		runm4_nohrr $1 $2 "unlinkability" $3
-		;;
-	.client_ech)
-		runm4 $1 $2 "privacy_client_ech" $3
-		;;
-	.client_ech_nohrr)
-		runm4_nohrr $1 $2 "privacy_client_ech" $3
-		;;
-	.client_ech_full)
-		runm4 $1 $2 "privacy_client_ech_full" $3
-		;;
-	.client_ech_full_nohrr)
-		runm4_nohrr $1 $2 "privacy_client_ech_full" $3
-		;;
-	.ror)
-		runm4 $1 $2 "real_or_random_psk" $3
-		;;
-	.ror_nohrr)
-		runm4_nohrr $1 $2 "real_or_random_psk" $3
-		;;
-	.main_client)
-		runm4_main $1 "main_privacy_client_TLS_only" $2
-		;;
-	.main_ror)
-		runm4_main $1 "main_real_or_random_psk_TLS_only" $2
-		;;
-	.main_backend)
-		runm4_main $1 "main_privacy_backend_ECH_only" $2
-		;;
-	.main_inner)
-		runm4_main $1 "main_strong_secrecy_inner_ECH_only" $2
-		;;
-	.main_client_ech)
-		runm4_main $1 "main_privacy_client_ech_ECH_only" $2
+	.all)
+		echo Verifying all scenarios.
+		getfullname $2
+		doall $fullname
 		;;
 	.clean)
 		echo Removing all generated files
-		rm -f generated_libraries/*.pvl
-		rm -f generated_models/*.pv
+		rm -f generated_configs/*.pvl
 		;;
 esac
-
-rm -rf "$TMPDIR"

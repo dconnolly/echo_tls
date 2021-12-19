@@ -1,5 +1,6 @@
 generated_models
 generated_libraries
+generated_configs
 tests
 tmp
 **.DS_Store

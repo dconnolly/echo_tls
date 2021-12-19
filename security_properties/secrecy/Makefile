@@ -12,4 +12,4 @@ all:
 	-lib ../../libraries/client.pvl \
 	-lib ../../libraries/main_processes.pvl \
 	-lib ../../libraries/proof_helper_reachability.pvl \
-	secrecy_ech.pv
+	secrecy.pv

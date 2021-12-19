@@ -218,15 +218,15 @@ def macro_standard_client(do_precise,run_standard_client) {
   .
 
   let run_standard_client_comp_psk(id_client:idProc,c_dom,s_dom:domain,tls_a:aead_alg,tls_g:group,tls_h:hash_alg,use_psk,send_kex:bool) =
-    if set_comp_psk
+    if allow_compromised_ticket
     then (
-      let comp_psk = default_comp_psk in
-      standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
-    )
-    else
       in(io,comp_psk:bool);
       event Same(bool2b(comp_psk));
       let () = mkprecise(bool2b(comp_psk)) in
+      standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
+    )
+    else
+      let comp_psk = false in
       standard_client(id_client,use_psk,comp_psk,send_kex,c_dom,s_dom,tls_g,tls_h,tls_a)
   .
 
@@ -389,15 +389,15 @@ def macro_ech_client(do_precise,force_nogrease,run_ech_client) {
   .
 
   let run_ech_client_comp_psk(id_client:idProc,i_extra_ext:extraExt,c_dom,backend_dom:domain,ech_conf:echConfig,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_psk:bool) =
-    if set_comp_psk
+    if allow_compromised_ticket
     then (
-      let comp_psk = default_comp_psk in
-      run_ech_client_send_kex(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
-    )
-    else
       in(io,comp_psk:bool);
       let () = mkprecise(bool2b(comp_psk)) in
       event Same(bool2b(comp_psk));
+      run_ech_client_send_kex(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
+    )
+    else
+      let comp_psk = false in
       run_ech_client_send_kex(id_client,i_extra_ext,c_dom,backend_dom,ech_conf,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_psk,comp_psk)
   .
 

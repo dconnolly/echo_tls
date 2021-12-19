@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = true.
+letfun allow_HRR = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -54,7 +54,7 @@ letfun set_send_kex = false.
 letfun default_send_kex = true.
 
 (* Determine if client and server want to use a psk. *)
-letfun set_use_psk = false.
+letfun set_use_psk = true.
 letfun default_use_psk = false.
 
 (* Determine if the client uses grease *)
