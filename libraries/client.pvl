@@ -525,6 +525,7 @@ let standard_client(id_client:idProc,
     (* Retrieve Server Hello *)
     in(io,server_hello:msg);
     let SH(sr,mode) = server_hello in (
+      event ClientEchAcceptance(id_client,false);
 
       if allow_HRR && sr = rand_HelloRetryRequest
       then (

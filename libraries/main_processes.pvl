@@ -175,20 +175,23 @@ let gen_dishonest_ech_config_fixed =
 .
 
 let gen_dishonest_key =
-    gen_dishonest_long_term_keys
+    (if allow_compromised_long_term_keys
+    then gen_dishonest_long_term_keys)
   |
     if allow_multiple_ciphersuite_and_group
     then (
-        gen_dishonest_pre_shared_keys
+        (if allow_compromised_ext_PSK
+        then gen_dishonest_pre_shared_keys)
       |
-        if allow_compromised_Ech_keys
-        then gen_dishonest_ech_config
+        (if allow_compromised_Ech_keys
+        then gen_dishonest_ech_config)
     )
     else (
-        gen_dishonest_pre_shared_keys_fixed
+        (if allow_compromised_ext_PSK
+        then gen_dishonest_pre_shared_keys_fixed)
       |
-        if allow_compromised_Ech_keys
-        then gen_dishonest_ech_config_fixed
+        (if allow_compromised_Ech_keys
+        then gen_dishonest_ech_config_fixed)
     )
 .
 

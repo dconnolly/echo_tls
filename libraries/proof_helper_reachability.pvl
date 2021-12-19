@@ -1,5 +1,6 @@
 (* Force selection of channels *)
 
+set verboseGoalReachable = false.
 set privateCommOnPublicTerms = false.
 
 nounif x:bitstring; mess(ch_client_CFIN,*x) / -300000.

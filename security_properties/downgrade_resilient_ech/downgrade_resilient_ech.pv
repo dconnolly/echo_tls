@@ -82,6 +82,7 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,p
 .
 
 expand macro_ech_client(true,false,run_ech_client).
+expand macro_standard_client(true,run_tls_client).
 
 process
   (
@@ -89,6 +90,16 @@ process
       gen_honest_key
     | gen_dishonest_key
     | all_internal_processes
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    in(io,c_dom:domain);
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
   ) | (
     (* ECH client *)
     !
