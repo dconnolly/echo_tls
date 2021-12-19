@@ -32,6 +32,7 @@ let client_post_handshake(id_client:idProc,
     if allow_compromised_ticket && comp_psk
     then
       event CompromisedPsk(new_psk);
+      event CompromisedPskDiff(id_client);
       out(io,new_psk);
       insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
     else

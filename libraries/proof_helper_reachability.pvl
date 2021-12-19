@@ -95,6 +95,15 @@ not s:seed; attacker(dh_k(s)).
 
       let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
       let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+
+  - letfun kdf_k(h,master_secret,log) =
+    let client_ats = hmac_ideal(i,b2mk(master_secret),(tls13_client_application_traffic_secret,hash_ideal(i,log))) in
+    let server_ats = hmac_ideal(i,b2mk(master_secret),(tls13_server_application_traffic_secret,hash_ideal(i,log))) in
+
+    let client_wkad = hmac_ideal(i,b2mk(client_ats),(tls13_key,zero)) in
+    let client_wkad = hmac_ideal(i,b2mk(server_ats),(tls13_key,zero)) in
+    let client_fkad = hmac_ideal(i,b2mk(server_ats),(tls13_key,zero)) in
+
 *)
 
 (* Early secret and binder :
@@ -300,20 +309,20 @@ not i:nat,s_x, s_xy:seed,r,r':bytes32, v,v':TLS_version, h,h':hash_alg, a,a':aea
 
 (* Secrecy assumption related to ECH *)
 
-not s,s':seed; attacker(dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s))))).
+not s,s':seed,i:nat; attacker(dh_xy(s',e2b(dh_pub(id_g(StrongDH,i),dh_k(s))))).
 
-not s,s':seed, info:bitstring, m:hpkeRole;
-  let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,2),dh_k(s)))) in
-  let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
-  let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
-  let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
+not s,s':seed, info:bitstring, m:hpkeRole,i:nat;
+  let shared_secret = dh_xy(s',e2b(dh_pub(id_g(StrongDH,i),dh_k(s)))) in
+  let info_hash = hmac_ideal(i,b2mk(zero),(hpke_info_hash,info)) in
+  let xsecret = hmac_ideal(i,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
+  let key = hmac_ideal(i,b2mk(xsecret),(hpke_key,info_hash)) in
   attacker(key)
 .
 
-not s,s':seed, info:bitstring, m:hpkeRole;
+not s,s':seed, info:bitstring, m:hpkeRole,i:nat;
   let shared_secret = dh_f(s') in
-  let info_hash = hmac_ideal(2,b2mk(zero),(hpke_info_hash,info)) in
-  let xsecret = hmac_ideal(2,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
-  let key = hmac_ideal(2,b2mk(xsecret),(hpke_key,info_hash)) in
+  let info_hash = hmac_ideal(i,b2mk(zero),(hpke_info_hash,info)) in
+  let xsecret = hmac_ideal(i,b2mk(e2b(shared_secret)),(hpke_secret,zero)) in
+  let key = hmac_ideal(i,b2mk(xsecret),(hpke_key,info_hash)) in
   attacker(key)
 .

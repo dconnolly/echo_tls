@@ -236,6 +236,9 @@ event Selected_ech_config_private_key(
   element         (* The private key of the Ech Config *)
 ).
 
+(* The PSK obtained from ticket when the attacker decided to compromise it. *)
+event CompromisedPskDiff(idProc).
+
 (*** Events for proof helpers *)
 
 event PreciseInput(stamp,bitstring).

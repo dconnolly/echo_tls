@@ -97,6 +97,13 @@ function forbidden_options() {
 			.Rlemma)
 				echo 0
 				;;
+			.backend)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
 		esac
 	fi
 }
@@ -179,6 +186,23 @@ function doall() {
 	done
 }
 
+function doequiv() {
+	# No Post Handshake nor Early.
+	for F in 1 5
+	do
+		for S in 1 2 3
+		do
+			for B in 1 2 3
+			do
+				for A in 1 2 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
 function getfullname() {
 	case .$1 in
 		.secrecy)
@@ -205,6 +229,10 @@ function getfullname() {
 		.Rlemma)
 			fullname="lemmas_reachability"
 			;;
+		.backend)
+			isequiv=1
+			fullname="privacy_backend"
+			;;
 	esac
 }
 
@@ -218,6 +246,11 @@ case .$1 in
 		echo Verifying all scenarios.
 		getfullname $2
 		doall $fullname
+		;;
+	.equiv)
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		doequiv $fullname
 		;;
 	.clean)
 		echo Removing all generated files
