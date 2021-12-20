@@ -164,20 +164,24 @@ function run_scenario() {
 			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
 		fi
 		command="proverif ${lib} security_properties/${1}/${1}.pv"
-		(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
-		if uname -a | egrep -q \(Darwin\)
-		then
-			{ gtime -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+		if [ $6 == "PV" ]; then
+			$command
 		else
-			{ /usr/bin/time -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+			(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
+			if uname -a | egrep -q \(Darwin\)
+			then
+				{ gtime -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+			else
+				{ /usr/bin/time -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+			fi
+			time_tmp=$(cat $timefile | grep Time);
+			limit_tmp=$(cat $timefile | grep 'Command terminated by signal');
+			nbTrue="$(grep -c 'RESULT.*is true.' ${outputfile})"
+			echo "${1} - Scenario F${2} S${3} B${4} A${5} - ${nbTrue} true queries - ${time_tmp} ${limit_tmp}" >> security_properties/${1}/result.txt
+			rm .tmp
+			echo "Verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
+			)
 		fi
-		time_tmp=$(cat $timefile | grep Time);
-		limit_tmp=$(cat $timefile | grep 'Command terminated by signal');
-		nbTrue="$(grep -c 'RESULT.*is true.' ${outputfile})"
-		echo "${1} - Scenario F${2} S${3} B${4} A${5} - ${nbTrue} true queries - ${time_tmp} ${limit_tmp}" >> security_properties/${1}/result.txt
-		rm .tmp
-		echo "Verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
-		)
 	else
 		if [ $querydone -eq 0 ]; then
 			echo "Scenario ignored: ${1} - Scenario F${2} S${3} B${4} A${5}"
@@ -264,7 +268,7 @@ case .$1 in
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying one scenario.
 		getfullname $2
-		run_scenario $fullname $3 $4 $5 $6
+		run_scenario $fullname $3 $4 $5 $6 $7
 		;;
 	.all)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
