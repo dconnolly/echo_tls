@@ -172,7 +172,7 @@ function run_scenario() {
 			{ /usr/bin/time -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
 		fi
 		time_tmp=$(cat $timefile | grep Time);
-		limit_tmp=$(cat $timefile | grep 'Command terminated by signal 9');
+		limit_tmp=$(cat $timefile | grep 'Command terminated by signal');
 		nbTrue="$(grep -c 'RESULT.*is true.' ${outputfile})"
 		echo "${1} - Scenario F${2} S${3} B${4} A${5} - ${nbTrue} true queries - ${time_tmp} ${limit_tmp}" >> security_properties/${1}/result.txt
 		rm .tmp
