@@ -261,20 +261,20 @@ function getfullname() {
 
 case .$1 in
 	.one)
-		m4 libraries/client.m4.pvl > generated_configs/client.pvl
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying one scenario.
 		getfullname $2
 		run_scenario $fullname $3 $4 $5 $6
 		;;
 	.all)
-		m4 libraries/client.m4.pvl > generated_configs/client.pvl
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying all scenarios.
 		getfullname $2
 		doall $fullname
 		;;
 	.equiv)
-		m4 libraries/client.m4.pvl > generated_configs/client.pvl
-		m4 -D PSK_or_random libraries/client.m4.pvl > generated_configs/client_psk_or_random.pvl
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
 		getfullname $2
 		doequiv $fullname
