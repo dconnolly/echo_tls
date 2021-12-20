@@ -1,4 +1,5 @@
 set removeEventsForLemma = true.
+(* set verboseRules = true. *)
 
 (* Restriction for equivalence *)
 
@@ -128,7 +129,6 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom',h_alg',ipsk')]) && attacker(diff[s_dom,s_dom'']) ==> s_dom' = s_dom'';
   attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom',h_alg',ipsk')]) && attacker(diff[s_dom'',s_dom]) ==> s_dom = s_dom'';
 
-
   (* -------------- *)
 
   event(Selected_psk(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[idP,idP'],diff[safe,safe'])) &&
@@ -138,6 +138,12 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   event(Selected_psk(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[idP,idP'],diff[safe,safe'])) &&
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,mk_idpsk(s_dom',h_alg',ipsk')],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
     id = mk_idpsk(s_dom,h_alg,ipsk);
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[id,id'']) ==> id' = id'';
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[id'',id']) ==> id = id'';
+
 
   (* -------------- *)
 

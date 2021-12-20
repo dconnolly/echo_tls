@@ -4,9 +4,11 @@ max_time=172800
 
 mkdir -p tests
 mkdir -p generated_configs
+mkdir -p generated_libraries
 
 fullname=""
 isequiv=0
+isror=0
 
 # Arguments:
 # 	$1: name of the query
@@ -31,7 +33,12 @@ function header() {
 	echo "      -lib libraries/tls_functions.pvl \\" >> $6
 	echo "      -lib libraries/ech_functions.pvl \\" >> $6
 	echo "      -lib libraries/main_processes.pvl \\" >> $6
-	echo "      -lib libraries/client.pvl \\" >> $6
+	if [ $isror -eq 0 ]; then
+		echo "      -lib generated_libraries/client.pvl \\" >> $6
+	else
+		echo "      -lib generated_libraries/client_psk_or_random.pvl \\" >> $6
+	fi
+	echo "      -lib generated_libraries/client.pvl \\" >> $6
 	echo "      -lib libraries/main_processes.pvl \\" >> $6
 	if [ $isequiv -eq 0 ]; then
 		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
@@ -104,6 +111,9 @@ function forbidden_options() {
 					echo 0
 				fi
 				;;
+			.PSKorR)
+				echo 0
+				;;
 		esac
 	fi
 }
@@ -142,9 +152,17 @@ function run_scenario() {
 		lib="${lib} -lib libraries/tls_functions.pvl"
 		lib="${lib} -lib libraries/ech_functions.pvl"
 		lib="${lib} -lib libraries/server.pvl"
-		lib="${lib} -lib libraries/client.pvl"
+		if [ $isror -eq 0 ]; then
+			lib="${lib} -lib generated_libraries/client.pvl"
+		else
+			lib="${lib} -lib generated_libraries/client_psk_or_random.pvl"
+		fi
 		lib="${lib} -lib libraries/main_processes.pvl"
-		lib="${lib} -lib libraries/proof_helper_reachability.pvl"
+		if [ $isequiv -eq 0 ]; then
+			lib="${lib} -lib libraries/proof_helper_reachability.pvl"
+		else
+			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
+		fi
 		command="proverif ${lib} security_properties/${1}/${1}.pv"
 		(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
 		if uname -a | egrep -q \(Darwin\)
@@ -233,21 +251,30 @@ function getfullname() {
 			isequiv=1
 			fullname="privacy_backend"
 			;;
+		.PSKorR)
+			isequiv=1
+			isror=1
+			fullname="psk_or_random"
+			;;
 	esac
 }
 
 case .$1 in
 	.one)
+		m4 libraries/client.m4.pvl > generated_configs/client.pvl
 		echo Verifying one scenario.
 		getfullname $2
 		run_scenario $fullname $3 $4 $5 $6
 		;;
 	.all)
+		m4 libraries/client.m4.pvl > generated_configs/client.pvl
 		echo Verifying all scenarios.
 		getfullname $2
 		doall $fullname
 		;;
 	.equiv)
+		m4 libraries/client.m4.pvl > generated_configs/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_configs/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
 		getfullname $2
 		doequiv $fullname

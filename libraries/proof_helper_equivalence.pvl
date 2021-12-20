@@ -1,6 +1,7 @@
 (* Force selection of channels *)
 
 set redundancyElim = no.
+(* set verboseRedundant = true. *)
 set verboseGoalReachable = false.
 set privateCommOnPublicTerms = false.
 
@@ -21,13 +22,12 @@ nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':pr
   table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) [ignoreAFewTimes]
 .
 
-
-nounif c_dom':domain,sk_d:privkey,pkr:pubkey,crt:certificate, idP:idProc;
-  table(long_term_keys( *c_dom', *sk_d, *pkr, *crt, *idP)) / -400000
+nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate, idP,idP':idProc;
+  table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'], diff[*idP,*idP'])) / -400000
 .
 
-nounif config:echConfig,skR:bitstring;
-  table(ech_configurations( *config, *skR)) / -400000
+nounif config,config':echConfig,skR,skR':bitstring;
+  table(ech_configurations( diff[*config,*config'], diff[*skR,*skR'])) / -400000
 .
 
 (* Axioms on Precise *)

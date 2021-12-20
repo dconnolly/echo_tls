@@ -1,3 +1,4 @@
+changequote(<!,!>)dnl
 (********************
   Client processes
 *********************)
@@ -29,6 +30,34 @@ let client_post_handshake(id_client:idProc,
     not deducible by the attacker. *)
     let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
 
+ifdef(<!PSK_or_random!>,<!dnl
+    new psk_rand:preSharedKey;
+    let new_diff_psk = diff[new_psk,psk_rand] in
+    let new_diff_ticket_id = mk_idpsk(s_dom,h_alg,new_diff_psk) in
+    (* We allow the client the "generate the new ID with the random even though it is normally
+    the server that does it. *)
+    if psk = NoPsk
+    then
+      if uncompromised_privkey(s_pkey)
+      then (
+        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,true);
+        if comp_psk then
+        out(io,(new_diff_psk,new_diff_ticket_id))
+      )
+      else
+        event CompromisedPsk(new_psk);
+        insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+    else
+      if safe_psk
+      then (
+        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,true);
+        if comp_psk then
+        out(io,(new_diff_psk,new_diff_ticket_id))
+      )
+      else
+        event CompromisedPsk(new_psk);
+        insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+!>,<!dnl
     if allow_compromised_ticket && comp_psk
     then
       event CompromisedPsk(new_psk);
@@ -51,6 +80,7 @@ let client_post_handshake(id_client:idProc,
         else
           event CompromisedPsk(new_psk);
           insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+!>)dnl
   ) | (
     (* Sending date if requested *)
     if allow_PH_data then

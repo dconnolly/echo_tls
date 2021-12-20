@@ -1,4 +1,6 @@
 all:
+	mkdir -p ../../generated_libraries
+	m4 ../../libraries/client.m4.pvl > ../../generated_libraries/client.pvl
 	proverif \
 	-lib config.m4.pvl \
 	-lib ../../libraries/primitives.pvl \
@@ -9,7 +11,7 @@ all:
 	-lib ../../libraries/tls_functions.pvl \
 	-lib ../../libraries/ech_functions.pvl \
 	-lib ../../libraries/server.pvl \
-	-lib ../../libraries/client.pvl \
+	-lib ../../generated_libraries/client.pvl \
 	-lib ../../libraries/main_processes.pvl \
 	-lib ../../libraries/proof_helper_reachability.pvl \
 	lemmas_reachability.pv
