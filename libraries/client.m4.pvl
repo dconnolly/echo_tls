@@ -181,7 +181,7 @@ let send_client_finished_message =
   new st[]:stamp;
   let args =
     if strong_PreciseMess_C_CFIN
-    then (c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,cur_log)
+    then (c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,comp_psk,cur_log)
     else if medium_PreciseMess_C_CFIN
     then cur_log
     else master_secret
