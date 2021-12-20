@@ -282,7 +282,7 @@ let receive_server_finished_message =
   )));
 
   new st[]:stamp;
-  event PreciseMess(ch_client_FIN,id_client,st,master_secret);
+  event PreciseMess(ch_client_FIN,id_client,st,(master_secret,s_pkey,psk,safe_psk,comp_psk));
 
   in(io,enc_finished_msg:bitstring);
   let m2b(finished_msg) = aead_dec(a_alg,shk,n2b(seq_srv),zero,enc_finished_msg) in
@@ -333,7 +333,7 @@ let process_server_certificate_message =
   )));
 
   new st[]:stamp;
-  event PreciseMess(ch_client_CRT,id_client,st,());
+  event PreciseMess(ch_client_CRT,id_client,st,(master_secret,comp_psk));
 
   (* Process the Certificate message *)
   let CRT(=zero,crt) = certificate_msg in
