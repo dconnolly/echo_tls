@@ -164,7 +164,7 @@ function run_scenario() {
 			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
 		fi
 		command="proverif ${lib} security_properties/${1}/${1}.pv"
-		if [ $6 == "PV" ]; then
+		if [ "$6" = "PV" ]; then
 			$command
 		else
 			(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
@@ -225,6 +225,23 @@ function doequiv() {
 	done
 }
 
+function specific() {
+	# No Post Handshake nor Early.
+	for F in 1 5 2 6 3 7 4 8
+	do
+		for S in 1 2
+		do
+			for B in 1 2
+			do
+				for A in 1 2 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
 function getfullname() {
 	case .$1 in
 		.secrecy)
@@ -275,6 +292,12 @@ case .$1 in
 		echo Verifying all scenarios.
 		getfullname $2
 		doall $fullname
+		;;
+	.specific)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specific $fullname
 		;;
 	.equiv)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
