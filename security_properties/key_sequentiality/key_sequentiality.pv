@@ -13,6 +13,7 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
 
 axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
     event(ServerNewTicket(old_psk,s_pkey,psk)) || event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
