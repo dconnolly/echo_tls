@@ -7,7 +7,7 @@ changequote(<!,!>)dnl
 
 let client_post_handshake(id_client:idProc,
     cr,sr:bytes32,h_alg:hash_alg,a_alg:aead_alg,
-    c_dom,s_dom:domain,s_pkey:pubkey,
+    c_dom,s_dom:domain,s_pkey,c_pkey:pubkey,
     psk:preSharedKey,safe_psk,comp_psk:bool,
     cak,sak:aead_key,cfkad:mac_key,rms:bitstring,
     cur_log:bitstring
@@ -17,11 +17,16 @@ let client_post_handshake(id_client:idProc,
     (* New Session Ticket *)
     if allow_PH_new_session_ticket then
 
+    !
     (* Reception of the new ticket *)
+    in(io,seq_srv:nat);
+    if is_nat(seq_srv) then
+
     in(io,enc_ticket_msg:bitstring);
-    let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(0),zero,enc_ticket_msg) in
+    let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_ticket_msg) in
     new st[]:stamp;
-    event ClientReceives(id_client,cr,sr,psk,s_pkey,st,0,zero,m2b(ticket_msg));
+    event ClientSequenceServerDataWriteKey(id_client,st,seq_srv); (* To model the sequence of messages using server write key *)
+    event ClientReceives(id_client,cr,sr,psk,s_pkey,c_pkey,seq_srv,zero,m2b(ticket_msg));
     let NST(ticket_nonce,ticket_id) = ticket_msg in
 
     (* Determine if the new PSK should be safe of not. This is only a proof helper
@@ -29,6 +34,7 @@ let client_post_handshake(id_client:idProc,
     We will show that if should_be_sake is true then the PSK is actually
     not deducible by the attacker. *)
     let new_psk = psk_from_ticket(h_alg,rms,ticket_nonce) in
+    event Client_new_PSK(id_client,new_psk);
 
 ifdef(<!PSK_or_random!>,<!dnl
     new psk_rand:preSharedKey;
@@ -90,7 +96,8 @@ ifdef(<!PSK_or_random!>,<!dnl
       if is_nat(seq_client) then
       new msgs[seq_client,ad]:bitstring;
       new st[]:stamp;
-      event ClientSends(id_client,cr,sr,psk,s_pkey,st,seq_client,ad,msgs);
+      event ClientSequenceClientDataWriteKey(id_client,st,seq_client); (* To model the sequence of messages using client write key *)
+      event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client,ad,msgs);
       out(io,aead_enc(a_alg,cak,n2b(seq_client),ad,msgs))
     ) | (
       !
@@ -98,7 +105,8 @@ ifdef(<!PSK_or_random!>,<!dnl
       if is_nat(seq_srv) then
       let msgs = aead_dec(a_alg,sak,n2b(seq_srv),ad,enc_msg) in
         new st[]:stamp;
-        event ClientReceives(id_client,cr,sr,psk,s_pkey,st,seq_srv,ad,msgs)
+        event ClientSequenceServerDataWriteKey(id_client,st,seq_srv); (* To model the sequence of messages using server write key *)
+        event ClientReceives(id_client,cr,sr,psk,s_pkey,c_pkey,seq_srv,ad,msgs)
       else out(io,bad_record_mac)
     )
   ) | (
@@ -113,28 +121,30 @@ ifdef(<!PSK_or_random!>,<!dnl
     in(io,enc_msg:bitstring) (*[precise]*);
     let m2b(CRTR(rand_crt)) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_msg) in
     new st[]:stamp;
-    event ClientReceives(id_client,cr,sr,psk,s_pkey,st,seq_srv,zero,m2b(CRTR(rand_crt)));
+    event ClientSequenceServerDataWriteKey(id_client,st,seq_srv); (* To model the sequence of messages using server write key *)
+    event ClientReceives(id_client,cr,sr,psk,s_pkey,c_pkey,seq_srv,zero,m2b(CRTR(rand_crt)));
     let cur_log_CRTR = (cur_log,CRTR(rand_crt)) in
 
-    let (sk:privkey,c_pkey:pubkey,crt:certificate) =
+    let (sk:privkey,c_pkey':pubkey,crt:certificate) =
       if select_client_certificate_by_restriction
       then (
-        get long_term_keys(c_dom',sk,c_pkey,crt,idP) in
-        let () = proof_helper_C_PH_get((c_dom',sk,c_pkey,crt,idP)) in
+        get long_term_keys(c_dom',sk,c_pkey',crt,idP) in
+        let () = proof_helper_C_PH_get((c_dom',sk,c_pkey',crt,idP)) in
         event Selected_ltk(c_dom,c_dom',idP);
-        (sk,c_pkey,crt)
+        (sk,c_pkey',crt)
       )
       else
-        get long_term_keys(=c_dom,sk,c_pkey,crt,idP) in
-        let () = proof_helper_C_PH_get((c_dom,sk,c_pkey,crt,idP)) in
-        (sk,c_pkey,crt)
+        get long_term_keys(=c_dom,sk,c_pkey',crt,idP) in
+        let () = proof_helper_C_PH_get((c_dom,sk,c_pkey',crt,idP)) in
+        (sk,c_pkey',crt)
     in
 
     (* The Certificate message *)
     let certificate_msg = CRT(rand_crt,crt) in
     let encrypted_certificate_msg = aead_enc(a_alg,cak,n2b(seq_client),zero,m2b(certificate_msg)) in
     new st1[]:stamp;
-    event ClientSends(id_client,cr,sr,psk,s_pkey,st1,seq_client,zero,m2b(certificate_msg));
+    event ClientSequenceClientDataWriteKey(id_client,st1,seq_client); (* To model the sequence of messages using client write key *)
+    event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client,zero,m2b(certificate_msg));
     out(io,encrypted_certificate_msg);
     let cur_log_CRT = (cur_log_CRTR,certificate_msg) in
 
@@ -143,7 +153,8 @@ ifdef(<!PSK_or_random!>,<!dnl
     let certificate_verify_msg = CV(signed_log) in
     let enc_verify_msg = aead_enc(a_alg,cak,n2b(seq_client+1),zero,m2b(certificate_verify_msg)) in
     new st2[]:stamp;
-    event ClientSends(id_client,cr,sr,psk,s_pkey,st2,seq_client+1,zero,m2b(certificate_verify_msg));
+    event ClientSequenceClientDataWriteKey(id_client,st2,seq_client); (* To model the sequence of messages using client write key *)
+    event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client+1,zero,m2b(certificate_verify_msg));
     out(io,enc_verify_msg);
     let cur_log_CV = (cur_log_CRT,certificate_verify_msg) in
 
@@ -151,8 +162,9 @@ ifdef(<!PSK_or_random!>,<!dnl
     let hash_msg = hmac(h_alg,cfkad,cur_log_CV) in
     let enc_fin = aead_enc(a_alg,cak,n2b(seq_client+2),zero,m2b(FIN(hash_msg))) in
     new st3[]:stamp;
-    event ClientSends(id_client,cr,sr,psk,s_pkey,st3,seq_client+2,zero,m2b(FIN(hash_msg)));
-    event ClientFinishedPH(id_client,cr,sr,psk,s_pkey,rand_crt,c_pkey);
+    event ClientSequenceClientDataWriteKey(id_client,st3,seq_client); (* To model the sequence of messages using client write key *)
+    event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client+2,zero,m2b(FIN(hash_msg)));
+    event ClientFinishedPH(id_client,cr,sr,psk,s_pkey,c_pkey,rand_crt,c_pkey);
     out(io,enc_fin)
   )
 .
@@ -162,7 +174,7 @@ ifdef(<!PSK_or_random!>,<!dnl
 free ch_client_CFIN:channel [private].
 fun ArgsClientCFIN(
   bytes32,bytes32,hash_alg,aead_alg,
-  domain,domain,pubkey,
+  domain,domain,pubkey,pubkey,
   preSharedKey,bool,bool,
   bitstring, aead_key, nat, aead_key, nat, mac_key,mac_key,
   bitstring
@@ -172,13 +184,28 @@ let send_client_finished_message =
   !
   in(ch_client_CFIN,(id_client:idProc,ArgsClientCFIN(
     cr,sr,h_alg,a_alg,
-    c_dom,s_dom,s_pkey,
+    c_dom,s_dom,s_pkey,c_pkey,
     psk,safe_psk,comp_psk,
     master_secret,chk,seq_client,shk,seq_srv,cfin,sfin,
     cur_log
   )));
 
+  (* Begin Proof Helper *)
   new st[]:stamp;
+  event PreciseIdProcess(ch_client_CFIN,id_client,st);
+  event Client_Rand_client(id_client,cr);
+  event Client_Rand_server(id_client,sr);
+  event Client_PSKChoosen(id_client,psk,safe_psk);
+  event Client_comp_psk(id_client,comp_psk);
+  event Client_chk(id_client,chk);
+  event Client_shk(id_client,shk);
+  event Client_cfin(id_client,cfin);
+  event Client_sfin(id_client,sfin);
+  event Client_Cert_server(id_client,s_pkey);
+  event Client_Cert_client(id_client,c_pkey);
+  (* End Proof Helper *)
+
+  new st1[]:stamp;
   let args =
     if strong_PreciseMess_C_CFIN
     then (c_dom,s_dom,psk,s_pkey,master_secret,safe_psk,comp_psk,cur_log)
@@ -186,9 +213,13 @@ let send_client_finished_message =
     then cur_log
     else master_secret
   in
-  event PreciseMess(ch_client_CFIN,id_client,st,args);
+  event PreciseMess(ch_client_CFIN,id_client,st1,args);
 
   let (cak:aead_key,sak:aead_key,cfkad:mac_key,ems:bitstring) = kdf_k(h_alg,master_secret,cur_log) in
+  event Client_cak(id_client,cak);
+  event Client_sak(id_client,sak);
+  event Client_cfkad(id_client,cfkad);
+
   let client_hash_msg = hmac(h_alg,cfin,cur_log) in
   let client_finished_msg = FIN(client_hash_msg) in
 
@@ -196,17 +227,18 @@ let send_client_finished_message =
 
   (* The resumption_master_secret in Key schedule *)
   let rms = kdf_psk(h_alg,master_secret,cur_log') in
+  event Client_rms(id_client,rms);
 
   let enc_client_finished_msg = aead_enc(a_alg,chk,n2b(seq_client),zero,m2b(client_finished_msg)) in
 
-  event ClientFinished(id_client,cr,sr,psk,s_pkey,cak,sak,ems,rms);
+  event ClientFinished(id_client,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms);
   out(io,enc_client_finished_msg);
 
   (* End of the 1-RTT Handshake *)
 
   client_post_handshake(id_client,
     cr,sr,h_alg,a_alg,
-    c_dom,s_dom,s_pkey,
+    c_dom,s_dom,s_pkey,c_pkey,
     psk,safe_psk,comp_psk,
     cak,sak,cfkad,rms,
     cur_log'
@@ -236,6 +268,7 @@ let send_client_certificate_message(id_client:idProc,
       let () = proof_helper_C_CertMess((c_dom,sk,c_pkey,crt,idP)) in
       (sk,c_pkey,crt)
   in
+  event Client_Cert_client(id_client,c_pkey);
 
   (* The Certificate message *)
   let certificate_msg = CRT(zero,crt) in
@@ -253,7 +286,7 @@ let send_client_certificate_message(id_client:idProc,
   (* The finished message *)
   out(ch_client_CFIN,(id_client,ArgsClientCFIN(
     cr,sr,h_alg,a_alg,
-    c_dom,s_dom,s_pkey,
+    c_dom,s_dom,s_pkey,c_pkey,
     NoPsk,false,comp_psk,
     master_secret,chk,seq_client+2,shk,seq_srv,cfin,sfin,
     cur_log3
@@ -281,8 +314,22 @@ let receive_server_finished_message =
     cur_log
   )));
 
+  (* Begin Proof Helper *)
   new st[]:stamp;
-  event PreciseMess(ch_client_FIN,id_client,st,(master_secret,s_pkey,psk,safe_psk,comp_psk));
+  event PreciseIdProcess(ch_client_FIN,id_client,st);
+  event Client_Rand_client(id_client,cr);
+  event Client_Rand_server(id_client,sr);
+  event Client_PSKChoosen(id_client,psk,safe_psk);
+  event Client_comp_psk(id_client,comp_psk);
+  event Client_chk(id_client,chk);
+  event Client_shk(id_client,shk);
+  event Client_cfin(id_client,cfin);
+  event Client_sfin(id_client,sfin);
+  event Client_Cert_server(id_client,s_pkey);
+  (* End Proof Helper *)
+
+  new st1[]:stamp;
+  event PreciseMess(ch_client_FIN,id_client,st1,(master_secret,s_pkey,psk,safe_psk,comp_psk));
 
   in(io,enc_finished_msg:bitstring);
   let m2b(finished_msg) = aead_dec(a_alg,shk,n2b(seq_srv),zero,enc_finished_msg) in
@@ -299,9 +346,10 @@ let receive_server_finished_message =
           master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
           cur_log2)
       else
+        event Client_Cert_client(id_client,NoPubKey);
         out(ch_client_CFIN,(id_client,ArgsClientCFIN(
           cr,sr,h_alg,a_alg,
-          c_dom,s_dom,s_pkey,
+          c_dom,s_dom,s_pkey,NoPubKey,
           psk,safe_psk,comp_psk,
           master_secret,chk,seq_client,shk,seq_srv+1,cfin,sfin,
           cur_log2
@@ -332,8 +380,17 @@ let process_server_certificate_message =
     cur_log
   )));
 
+  (* Begin Proof Helper *)
   new st[]:stamp;
-  event PreciseMess(ch_client_CRT,id_client,st,(master_secret,comp_psk));
+  event PreciseIdProcess(ch_client_CRT,id_client,st);
+  event Client_Rand_client(id_client,cr);
+  event Client_Rand_server(id_client,sr);
+  event Client_comp_psk(id_client,comp_psk);
+  event Client_chk(id_client,chk);
+  event Client_shk(id_client,shk);
+  event Client_cfin(id_client,cfin);
+  event Client_sfin(id_client,sfin);
+  (* End Proof Helper *)
 
   (* Process the Certificate message *)
   let CRT(=zero,crt) = certificate_msg in
@@ -347,6 +404,8 @@ let process_server_certificate_message =
   if verify(get_pkey(crt),hash(h_alg,cur_log2),signed_log) && get_domain(crt) = s_dom && verify_cert(crt) then
   let s_pkey = get_pkey(crt) in
   let cur_log3 = (cur_log2,certificate_verify_msg) in
+
+  event Client_Cert_server(id_client,s_pkey);
 
   (* Process the Finished message *)
   out(ch_client_FIN,(id_client,ArgsClientFIN(
@@ -379,8 +438,21 @@ let receive_after_encrypted_extension =
     cur_log
   )));
 
+  (* Begin Proof Helper *)
   new st[]:stamp;
-  event PreciseMess(ch_client_after_EE,id_client,st,master_secret);
+  event PreciseIdProcess(ch_client_after_EE,id_client,st);
+  event Client_Rand_client(id_client,cr);
+  event Client_Rand_server(id_client,sr);
+  event Client_PSKChoosen(id_client,psk,safe_psk);
+  event Client_comp_psk(id_client,comp_psk);
+  event Client_chk(id_client,chk);
+  event Client_shk(id_client,shk);
+  event Client_cfin(id_client,cfin);
+  event Client_sfin(id_client,sfin);
+  (* End Proof Helper *)
+
+  new st1[]:stamp;
+  event PreciseMess(ch_client_after_EE,id_client,st1,master_secret);
 
   if psk = NoPsk
   then (
@@ -414,6 +486,7 @@ let receive_after_encrypted_extension =
   )
   else
     (* If there is a PSK, no certificate shall be sent. Directly receive the finish message *)
+    event Client_Cert_server(id_client,NoPubKey);
     out(ch_client_FIN,(id_client,ArgsClientFIN(
       cr,sr,h_alg,a_alg,
       c_dom,s_dom,NoPubKey,false,
@@ -458,10 +531,15 @@ let generate_keys_after_server_hello (id_client:idProc,
 
   (* Compute the handshake secret *)
   let gxy = dh_decap(g,gy,x) in
+  event Client_DH_gxy(id_client,gxy);
   let handshake_secret = kdf_hs(h_alg,early_secret,gxy) in
   let (master_secret:bitstring,chk:aead_key,shk:aead_key,cfin:mac_key,sfin:mac_key) =
     kdf_ms(h_alg,handshake_secret,cur_log)
   in
+  event Client_chk(id_client,chk);
+  event Client_shk(id_client,shk);
+  event Client_cfin(id_client,cfin);
+  event Client_sfin(id_client,sfin);
 
   receive_encrypted_extension_message(id_client,
     cr,sr,h_alg,a_alg,
@@ -481,11 +559,22 @@ let process_server_hello(id_client:idProc,
   cur_log:bitstring, (* Last Server Hello excluded *)
   server_hello:msg)
   =
+  (* Begin Proof Helper *)
+  let (x:bitstring,g:group) = kex_data in
+  let (psk_offer:preSharedKey,id_offer:identityPsk,es_offer:bitstring,is_safe_offer:bool) = psk_data in
+  event Client_PSKOffer(id_client,psk_offer,id_offer,is_safe_offer);
+  event Client_Rand_client(id_client,cr);
+  event Client_DH_client(id_client,dh_pub(g,x));
+  (* End Proof Helper *)
 
   let SH(sr,mode) = server_hello in
-  let (x:bitstring,g:group) = kex_data in
+
+  event Client_Rand_server(id_client,sr);
+
   let nego(=TLS13,=h_alg,=a_alg,server_kex_ext(DHE_kex(=g,gy)),=empty_sni_ext,=empty_ech_ext,=empty_extra_ext,psk_ext) = mode in (
     let cur_log2 = (cur_log,server_hello) in
+
+    event Client_DH_server(id_client,gy);
 
     (* We retrieve the pre shared key if there is one. *)
     let (psk:preSharedKey,early_secret:bitstring,valid:bool,safe_psk:bool) =
@@ -498,6 +587,8 @@ let process_server_hello(id_client:idProc,
         let (psk:preSharedKey,id:identityPsk,es:bitstring,is_safe:bool) = psk_data in
         (psk,es,(psk <> NoPsk && (server_psk_ext(1) = psk_ext)),is_safe)
     in
+
+    event Client_PSKChoosen(id_client,psk,safe_psk);
 
     if valid
     then
@@ -550,7 +641,8 @@ let standard_client(id_client:idProc,
     new msg_ed[]:bitstring;
     let enc_ed = aead_enc(a_alg,wkc0,n2b(i),ad,msg_ed) in
     new st:stamp;
-    event ClientSends0(id_client,cr,psk,st,i,ad,msg_ed);
+    event ClientSequenceClient0RTTDataWriteKey(id_client,st,i);
+    event ClientSends0(id_client,cr,psk,i,ad,msg_ed);
     out(io,enc_ed)
   ) | (
     (* Retrieve Server Hello *)
@@ -660,7 +752,8 @@ let ech_client(id_client:idProc,
     new msg_ed[]:bitstring;
     let enc_ed = aead_enc(backend_a,wkc0,n2b(i),ad,msg_ed) in
     new st:stamp;
-    event ClientSends0(id_client,i_cr,psk,st,i,ad,msg_ed);
+    event ClientSequenceClient0RTTDataWriteKey(id_client,st,i);
+    event ClientSends0(id_client,i_cr,psk,i,ad,msg_ed);
     out(io,enc_ed)
   ) | (
     (* Retrieve Server Hello *)

@@ -36,6 +36,54 @@ axiom ch:channel,id,id1,id2,id1',id2':idProc,st,st1,st2,st1',st2':stamp, x1,x1',
 axiom st:stamp,x,x':bitstring;
   event(PreciseInput(st,x)) && event(PreciseInput(st,x')) ==> x = x'.
 
+axiom ch:channel,st,st':stamp,id,id':idProc;
+  event(PreciseIdProcess(ch,id,st)) && event(PreciseIdProcess(ch,id,st')) ==> st = st';
+  event(PreciseIdProcess(ch,id,st)) && event(PreciseIdProcess(ch,id',st)) ==> id = id'
+.
+
+axiom id:idProc,r,r':bytes32; event(Client_Rand_client(id,r)) && event(Client_Rand_client(id,r')) ==> r = r'.
+axiom id:idProc,r,r':bytes32; event(Client_Rand_server(id,r)) && event(Client_Rand_server(id,r')) ==> r = r'.
+axiom id:idProc,e,e':element; event(Client_DH_client(id,e)) && event(Client_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,e,e':element; event(Client_DH_server(id,e)) && event(Client_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,e,e':element; event(Client_DH_gxy(id,e)) && event(Client_DH_gxy(id,e')) ==> e = e'.
+axiom id:idProc,k,k':pubkey; event(Client_Cert_server(id,k)) && event(Client_Cert_server(id,k')) ==> k = k'.
+axiom id:idProc,k,k':pubkey; event(Client_Cert_client(id,k)) && event(Client_Cert_client(id,k')) ==> k = k'.
+axiom id:idProc,k,k':preSharedKey,idk,idk':identityPsk,is,is':bool;
+  event(Client_PSKOffer(id,k,idk,is)) && event(Client_PSKOffer(id,k',idk',is')) ==> (k,idk,is) = (k',idk',is').
+axiom id:idProc,k,k':preSharedKey,is,is':bool;
+  event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+axiom id:idProc,k,k':aead_key; event(Client_chk(id,k)) && event(Client_chk(id,k')) ==> k = k'.
+axiom id:idProc,k,k':aead_key; event(Client_shk(id,k)) && event(Client_shk(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Client_cfin(id,k)) && event(Client_cfin(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Client_sfin(id,k)) && event(Client_sfin(id,k')) ==> k = k'.
+(* axiom id:idProc,k,k':bitstring; event(Client_rms(id,k)) && event(Client_rms(id,k')) ==> k = k'. *)
+axiom id:idProc,k,k':aead_key; event(Client_cak(id,k)) && event(Client_cak(id,k')) ==> k = k'.
+axiom id:idProc,k,k':aead_key; event(Client_sak(id,k)) && event(Client_sak(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Client_cfkad(id,k)) && event(Client_cfkad(id,k')) ==> k = k'.
+axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
+(* axiom id:idProc,k,k':preSharedKey; event(Client_new_PSK(id,k)) && event(Client_new_PSK(id,k')) ==> k = k'. *)
+
+axiom id:idProc,r,r':bytes32; event(Server_Rand_client(id,r)) && event(Server_Rand_client(id,r')) ==> r = r'.
+axiom id:idProc,r,r':bytes32; event(Server_Rand_server(id,r)) && event(Server_Rand_server(id,r')) ==> r = r'.
+axiom id:idProc,e,e':element; event(Server_DH_client(id,e)) && event(Server_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,e,e':element; event(Server_DH_server(id,e)) && event(Server_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,e,e':element; event(Server_DH_gxy(id,e)) && event(Server_DH_gxy(id,e')) ==> e = e'.
+axiom id:idProc,k,k':pubkey; event(Server_Cert_server(id,k)) && event(Server_Cert_server(id,k')) ==> k = k'.
+axiom id:idProc,k,k':pubkey; event(Server_Cert_client(id,k)) && event(Server_Cert_client(id,k')) ==> k = k'.
+axiom id:idProc,k,k':preSharedKey; event(Server_PSKChoosen(id,k)) && event(Server_PSKChoosen(id,k')) ==> k = k'.
+axiom id:idProc,k,k':aead_key; event(Server_chk(id,k)) && event(Server_chk(id,k')) ==> k = k'.
+axiom id:idProc,k,k':aead_key; event(Server_shk(id,k)) && event(Server_shk(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Server_cfin(id,k)) && event(Server_cfin(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Server_sfin(id,k)) && event(Server_sfin(id,k')) ==> k = k'.
+(* axiom id:idProc,k,k':bitstring; event(Server_rms(id,k)) && event(Server_rms(id,k')) ==> k = k'. *)
+axiom id:idProc,k,k':aead_key; event(Server_cak(id,k)) && event(Server_cak(id,k')) ==> k = k'.
+axiom id:idProc,k,k':aead_key; event(Server_sak(id,k)) && event(Server_sak(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Server_cfkad(id,k)) && event(Server_cfkad(id,k')) ==> k = k'.
+(* axiom id:idProc,k,k':preSharedKey; event(Server_new_PSK(id,k)) && event(Server_new_PSK(id,k')) ==> k = k'. *)
+
+
+
+
 (* Secrecy assumotion *)
 
 not attacker(ch_client_CFIN).

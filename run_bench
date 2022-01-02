@@ -126,7 +126,7 @@ function run_scenario() {
 	if [ -f "security_properties/${1}/result.txt" ]; then
 		querydone="$(grep -c "${1} - Scenario F${2} S${3} B${4} A${5}" security_properties/${1}/result.txt)"
 	fi
-	if [[ $querydone -eq 0 && $forbidden -eq 0 ]]; then
+	if [[ ($querydone -eq 0 && $forbidden -eq 0) || "$6" = "PV" ]]; then
 		# Generation of the config file
 		cat m4_declarations.m4 > tmp.m4
 		cat libraries/config_script.m4.pvl >> tmp.m4

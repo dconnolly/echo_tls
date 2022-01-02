@@ -20,8 +20,7 @@ event ServerChoosesHash(
 ).
 
 event ServerChoosesGroup(
-  bytes32,        (* Client random *)
-  bytes32,        (* Server random *)
+  idProc,         (* Process Identity *)
   group           (* DH group *)
 ).
 
@@ -46,13 +45,50 @@ event CompromisedLtk(pubkey).
 event CompromisedPsk(preSharedKey).
 event CompromisedEchKey(echConfig).
 
+(* Modelisation of the sequence number for Per-Record Nonce (Section 5.3 of TLS RFC)*)
+
+event ServerSequenceClientDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ServerSequenceServerDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceClientDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceServerDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ServerSequenceClient0RTTDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceClient0RTTDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
 (* Application Data - 0-RTT *)
 event ServerReceives0(
   idProc,         (* Process identity *)
   domain,         (* Server domain *)
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
-  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -62,7 +98,6 @@ event ClientSends0(
   idProc,         (* Process identity *)
   bytes32,        (* Client random *)
   preSharedKey,   (* Pre shared key *)
-  stamp,          (* Time stamp *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -75,7 +110,7 @@ event ServerReceives(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
-  stamp,          (* Time stamp *)
+  pubkey,         (* Certificate public key of the client *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -87,7 +122,7 @@ event ServerSends(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
-  stamp,          (* Time stamp *)
+  pubkey,         (* Certificate public key of the client *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -99,7 +134,7 @@ event ClientReceives(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
-  stamp,          (* Time stamp *)
+  pubkey,         (* Certificate public key of the client *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -111,7 +146,7 @@ event ClientSends(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key *)
   pubkey,         (* Certificate public key of the server *)
-  stamp,          (* Time stamp *)
+  pubkey,         (* Certificate public key of the client *)
   nat,            (* Sequence number given as input to Aead *)
   bitstring,      (* Additional data given as input to Aead *)
   bitstring       (* Message *)
@@ -125,6 +160,7 @@ event ClientFinished(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
   aead_key,       (* client_write_key for Application Data record *)
   aead_key,       (* server_write_key for Application Data record *)
   bitstring,      (* exporter_master_secret *)
@@ -137,6 +173,7 @@ event ServerFinished(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
   aead_key,       (* client_write_key for Application Data record *)
   aead_key,       (* server_write_key for Application Data record *)
   bitstring,      (* exporter_master_secret *)
@@ -159,6 +196,7 @@ event ServerRequestPH(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
   bitstring       (* The random in request *)
 ).
 
@@ -168,6 +206,7 @@ event ClientFinishedPH(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
   bitstring,      (* The random in request *)
   pubkey          (* Certificate public key of the client *)
 ).
@@ -178,14 +217,18 @@ event ServerFinishedPH(
   bytes32,        (* Server random *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
   bitstring,      (* The random in request *)
   pubkey          (* Certificate public key of the client *)
 ).
 
 event ServerNewTicket(
+  idProc,         (* Process identity *)
   preSharedKey,   (* Pre shared key used in the session *)
   pubkey,         (* Certificate public key of the server *)
-  preSharedKey   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* The sequence number used when receiving the ticket *)
+  preSharedKey    (* Pre shared key used in the session *)
 ).
 
 (* Ech events *)
@@ -242,5 +285,44 @@ event CompromisedPskDiff(idProc).
 (*** Events for proof helpers *)
 
 event PreciseInput(stamp,bitstring).
+event PreciseIdProcess(channel,idProc,stamp).
 event PreciseMess(channel,idProc,stamp,bitstring).
 event Same(bitstring).
+
+event Client_Rand_client(idProc,bytes32).
+event Client_Rand_server(idProc,bytes32).
+event Client_DH_client(idProc,element).
+event Client_DH_server(idProc,element).
+event Client_DH_gxy(idProc,element).
+event Client_Cert_server(idProc,pubkey).
+event Client_Cert_client(idProc,pubkey).
+event Client_PSKOffer(idProc,preSharedKey,identityPsk,bool).
+event Client_PSKChoosen(idProc,preSharedKey,bool).
+event Client_chk(idProc,aead_key).
+event Client_shk(idProc,aead_key).
+event Client_cfin(idProc,mac_key).
+event Client_sfin(idProc,mac_key).
+event Client_rms(idProc,bitstring).
+event Client_cak(idProc,aead_key).
+event Client_sak(idProc,aead_key).
+event Client_cfkad(idProc,mac_key).
+event Client_comp_psk(idProc,bool).
+event Client_new_PSK(idProc,preSharedKey).
+
+event Server_Rand_client(idProc,bytes32).
+event Server_Rand_server(idProc,bytes32).
+event Server_DH_client(idProc,element).
+event Server_DH_server(idProc,element).
+event Server_DH_gxy(idProc,element).
+event Server_Cert_server(idProc,pubkey).
+event Server_Cert_client(idProc,pubkey).
+event Server_PSKChoosen(idProc,preSharedKey).
+event Server_chk(idProc,aead_key).
+event Server_shk(idProc,aead_key).
+event Server_cfin(idProc,mac_key).
+event Server_sfin(idProc,mac_key).
+event Server_rms(idProc,bitstring).
+event Server_cak(idProc,aead_key).
+event Server_sak(idProc,aead_key).
+event Server_cfkad(idProc,mac_key).
+event Server_new_PSK(idProc,preSharedKey).

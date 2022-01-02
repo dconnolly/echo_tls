@@ -96,6 +96,15 @@ fun client_psk_ext(identityPsk,bitstring):preSharedKeyExt [data].
 fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk offered
   by the client currently so the server is always suppose to send 1. *)
 
+fun ProofHelperPSK(
+  element,      (* The client public share *)
+  element,      (* The server public share *)
+  element,      (* The g^x^y *)
+  pubkey,       (* The client public key *)
+  pubkey,       (* The server public key *)
+  preSharedKey (* The pre shared key *)
+  ):bitstring [data].
+
 (* The global table storing the pre shared key on the client side. *)
 table pre_shared_keys(
   domain (* Client domain *),
