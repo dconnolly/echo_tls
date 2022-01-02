@@ -57,9 +57,9 @@ axiom id:idProc,k,k':aead_key; event(Client_shk(id,k)) && event(Client_shk(id,k'
 axiom id:idProc,k,k':mac_key; event(Client_cfin(id,k)) && event(Client_cfin(id,k')) ==> k = k'.
 axiom id:idProc,k,k':mac_key; event(Client_sfin(id,k)) && event(Client_sfin(id,k')) ==> k = k'.
 (* axiom id:idProc,k,k':bitstring; event(Client_rms(id,k)) && event(Client_rms(id,k')) ==> k = k'. *)
-axiom id:idProc,k,k':aead_key; event(Client_cak(id,k)) && event(Client_cak(id,k')) ==> k = k'.
+(* axiom id:idProc,k,k':aead_key; event(Client_cak(id,k)) && event(Client_cak(id,k')) ==> k = k'.
 axiom id:idProc,k,k':aead_key; event(Client_sak(id,k)) && event(Client_sak(id,k')) ==> k = k'.
-axiom id:idProc,k,k':mac_key; event(Client_cfkad(id,k)) && event(Client_cfkad(id,k')) ==> k = k'.
+axiom id:idProc,k,k':mac_key; event(Client_cfkad(id,k)) && event(Client_cfkad(id,k')) ==> k = k'. *)
 axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
 (* axiom id:idProc,k,k':preSharedKey; event(Client_new_PSK(id,k)) && event(Client_new_PSK(id,k')) ==> k = k'. *)
 
@@ -76,10 +76,10 @@ axiom id:idProc,k,k':aead_key; event(Server_shk(id,k)) && event(Server_shk(id,k'
 axiom id:idProc,k,k':mac_key; event(Server_cfin(id,k)) && event(Server_cfin(id,k')) ==> k = k'.
 axiom id:idProc,k,k':mac_key; event(Server_sfin(id,k)) && event(Server_sfin(id,k')) ==> k = k'.
 (* axiom id:idProc,k,k':bitstring; event(Server_rms(id,k)) && event(Server_rms(id,k')) ==> k = k'. *)
-axiom id:idProc,k,k':aead_key; event(Server_cak(id,k)) && event(Server_cak(id,k')) ==> k = k'.
+(* axiom id:idProc,k,k':aead_key; event(Server_cak(id,k)) && event(Server_cak(id,k')) ==> k = k'.
 axiom id:idProc,k,k':aead_key; event(Server_sak(id,k)) && event(Server_sak(id,k')) ==> k = k'.
-axiom id:idProc,k,k':mac_key; event(Server_cfkad(id,k)) && event(Server_cfkad(id,k')) ==> k = k'.
-(* axiom id:idProc,k,k':preSharedKey; event(Server_new_PSK(id,k)) && event(Server_new_PSK(id,k')) ==> k = k'. *)
+axiom id:idProc,k,k':mac_key; event(Server_cfkad(id,k)) && event(Server_cfkad(id,k')) ==> k = k'. *)
+axiom id:idProc,k,k':preSharedKey; event(Server_new_PSK(id,k)) && event(Server_new_PSK(id,k')) ==> k = k'.
 
 
 

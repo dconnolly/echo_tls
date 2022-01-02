@@ -10,11 +10,11 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) [ignoreAFewTimes]
 .
 
-lemma c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
+query c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP,id_s,id_c:idProc,is_safe:bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
-    event(ServerNewTicket(old_psk,s_pkey,psk)) || event(CompromisedPsk(psk));
+    event(ServerNewTicket(idP,old_psk,s_pkey,c_pkey,i,psk)) || event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
@@ -69,11 +69,14 @@ lemma c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
   let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
   let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
-  attacker(server_fk)
-  [fullSat,induction]
-.
+  attacker(server_fk);
 
-query attacker(()).
+  event(Server_new_PSK(id_s,psk)) &&
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,id_c,true)) &&
+  event(Server_DH_client(id_s,dh_pub(g,x))) &&
+  event(ServerChoosesGroup(id_s,g)) && attacker(x)
+  [fullSat,induction,proveAll]
+.
 
 expand macro_ech_client(true,false,run_ech_client).
 expand macro_standard_client(true,run_tls_client).
