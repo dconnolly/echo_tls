@@ -32,7 +32,7 @@ let server_post_handshake(id_server:idProc,
     if allow_PH_new_session_ticket then
 
     (* Generate of a new ticket for the client *)
-    in(io,seq_srv:nat);
+    in(io,seq_srv:nat) [precise];
     if is_nat(seq_srv) then
 
     new ticket_nonce[seq_srv]:bitstring;

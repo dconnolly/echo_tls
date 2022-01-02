@@ -18,14 +18,11 @@ let client_post_handshake(id_client:idProc,
     if allow_PH_new_session_ticket then
 
     (* Reception of the new ticket *)
-    in(io,seq_srv:nat);
-    if is_nat(seq_srv) then
-
     in(io,enc_ticket_msg:bitstring);
-    let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_ticket_msg) in
+    let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(0),zero,enc_ticket_msg) in
     new st[]:stamp;
-    event ClientSequenceServerDataWriteKey(id_client,st,seq_srv); (* To model the sequence of messages using server write key *)
-    event ClientReceives(id_client,cr,sr,psk,s_pkey,c_pkey,seq_srv,zero,m2b(ticket_msg));
+    event ClientSequenceServerDataWriteKey(id_client,st,0); (* To model the sequence of messages using server write key *)
+    event ClientReceives(id_client,cr,sr,psk,s_pkey,c_pkey,0,zero,m2b(ticket_msg));
     let NST(ticket_nonce,ticket_id) = ticket_msg in
 
     (* Determine if the new PSK should be safe of not. This is only a proof helper
