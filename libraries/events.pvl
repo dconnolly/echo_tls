@@ -308,6 +308,7 @@ event Client_sak(idProc,aead_key).
 event Client_cfkad(idProc,mac_key).
 event Client_comp_psk(idProc,bool).
 event Client_new_PSK(idProc,preSharedKey).
+event Client_rand_PSK(idProc,preSharedKey,preSharedKey,bool).
 
 event Server_Rand_client(idProc,bytes32).
 event Server_Rand_server(idProc,bytes32).

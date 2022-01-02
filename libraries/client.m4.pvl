@@ -18,7 +18,7 @@ let client_post_handshake(id_client:idProc,
     if allow_PH_new_session_ticket then
 
     (* Reception of the new ticket *)
-    in(io,enc_ticket_msg:bitstring);
+    in(io,enc_ticket_msg:bitstring) [precise];
     let m2b(ticket_msg) = aead_dec(a_alg,sak,n2b(0),zero,enc_ticket_msg) in
     new st[]:stamp;
     event ClientSequenceServerDataWriteKey(id_client,st,0); (* To model the sequence of messages using server write key *)
@@ -33,7 +33,7 @@ let client_post_handshake(id_client:idProc,
     event Client_new_PSK(id_client,new_psk);
 
 ifdef(<!PSK_or_random!>,<!dnl
-    new psk_rand:preSharedKey;
+    new psk_rand[]:preSharedKey;
     let new_diff_psk = diff[new_psk,psk_rand] in
     let new_diff_ticket_id = mk_idpsk(s_dom,h_alg,new_diff_psk) in
     (* We allow the client the "generate the new ID with the random even though it is normally
@@ -42,21 +42,27 @@ ifdef(<!PSK_or_random!>,<!dnl
     then
       if uncompromised_privkey(s_pkey)
       then (
-        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,true);
+        event Client_rand_PSK(id_client,new_psk,psk_rand,true);
+        let safe' = if comp_psk then false else true in
+        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,safe');
         if comp_psk then
         out(io,(new_diff_psk,new_diff_ticket_id))
       )
       else
+        event Client_rand_PSK(id_client,new_psk,psk_rand,false);
         event CompromisedPsk(new_psk);
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
     else
       if safe_psk
       then (
-        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,true);
+        event Client_rand_PSK(id_client,new_psk,psk_rand,true);
+        let safe' = if comp_psk then false else true in
+        insert pre_shared_keys(c_dom,s_dom,h_alg,new_diff_ticket_id,new_diff_psk,id_client,safe');
         if comp_psk then
         out(io,(new_diff_psk,new_diff_ticket_id))
       )
       else
+        event Client_rand_PSK(id_client,new_psk,psk_rand,false);
         event CompromisedPsk(new_psk);
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
 !>,<!dnl

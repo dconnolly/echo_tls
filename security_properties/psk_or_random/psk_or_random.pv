@@ -1,5 +1,5 @@
 set removeEventsForLemma = true.
-
+(* set verboseRules = true. *)
 (* Restriction for equivalence *)
 
 restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
@@ -9,7 +9,9 @@ restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,id',id'':identityPsk,ipsk,ipsk':preSharedKey,s:seed,
   c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom3,s_dom3',s_dom4,s_dom4':domain,
   h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
-  safe,safe',safe1,safe2:bool, i,i':nat;
+  safe,safe',safe1,safe2:bool, i,i':nat,
+  id_c,id_s:idProc, new_psk1,new_psk1',new_psk2,new_psk2',psk,psk':preSharedKey,cr,sr:bytes32, is_rand:bool
+  ;
   attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom',h_alg',ipsk')]) ==>
     s_dom = s_dom' &&
     h_alg = h_alg' && ipsk <> NoPsk && ipsk <> b2psk(zero) && ipsk' <> NoPsk && ipsk' <> b2psk(zero)
@@ -72,7 +74,7 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   attacker(diff[ipsk,ipsk'']) ==>  ipsk' = ipsk'' && safe <> true && safe' <> true;
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
-  attacker(diff[ipsk'',ipsk']) ==>  ipsk = ipsk'' && safe <> true && safe' <> true
+  attacker(diff[ipsk'',ipsk']) ==>  ipsk = ipsk'' && safe <> true && safe' <> true;
 
   (* Insertion with id_client_diff cannot be be deducible *)
   (* table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) ==> safe = true;
@@ -84,7 +86,90 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) &&
   attacker(diff[ipsk'',ipsk']) *)
 
+  (* Psk or random specific *)
+(*
+  event(Server_Rand_client(id_s,cr)) &&
+  event(Server_Rand_server(id_s,sr)) &&
+  event(Client_Rand_client(id_c,cr)) &&
+  event(Client_Rand_server(id_c,sr)) &&
+
+  event(Server_new_PSK(id_s,diff[new_psk1,new_psk1'])) &&
+  event(Server_PSKChoosen(id_s,diff[psk,psk'])) &&
+  event(Client_PSKChoosen(id_c,diff[psk,psk'],true)) &&
+
+  event(Client_new_PSK(id_c,diff[new_psk2,new_psk2'])) ==>
+
+  new_psk1 = new_psk2 && new_psk1' = new_psk2'; *)
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',psk],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,is_rand))
+   ==>
+    new_psk1 = new_psk1' && idP = id_c && is_rand = true;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1,new_psk2'],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,true))
+   ==>
+    psk = new_psk2' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1,new_psk2'],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,false))
+   ==>
+    new_psk2 = new_psk2' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',new_psk2],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,false))
+   ==>
+    new_psk1 = new_psk1' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',new_psk2],idP,safe)) &&
+  event(Server_new_PSK(id_s,diff[new_psk1,new_psk2]))
+   ==>
+    new_psk1 = new_psk1'
   [induction,fullSat]
+.
+
+axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
+  event(Client_Rand_client(diff[id,id1],diff[r,r1])) && event(Client_Rand_client(diff[id,id2],diff[r',r2])) ==> r = r';
+  event(Client_Rand_client(diff[id1,id],diff[r1,r])) && event(Client_Rand_client(diff[id2,id],diff[r2,r'])) ==> r = r'
+.
+
+axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
+  event(Client_Rand_server(diff[id,id1],diff[r,r1])) && event(Client_Rand_server(diff[id,id2],diff[r',r2])) ==> r = r';
+  event(Client_Rand_server(diff[id1,id],diff[r1,r])) && event(Client_Rand_server(diff[id2,id],diff[r2,r'])) ==> r = r'
+.
+
+axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
+  event(Server_Rand_client(diff[id,id1],diff[r,r1])) && event(Server_Rand_client(diff[id,id2],diff[r',r2])) ==> r = r';
+  event(Server_Rand_client(diff[id1,id],diff[r1,r])) && event(Server_Rand_client(diff[id2,id],diff[r2,r'])) ==> r = r'
+.
+
+axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
+  event(Server_Rand_server(diff[id,id1],diff[r,r1])) && event(Server_Rand_server(diff[id,id2],diff[r',r2])) ==> r = r';
+  event(Server_Rand_server(diff[id1,id],diff[r1,r])) && event(Server_Rand_server(diff[id2,id],diff[r2,r'])) ==> r = r'
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
+  event(Server_PSKChoosen(diff[id,id1],diff[k,k1])) && event(Server_PSKChoosen(diff[id,id2],diff[k',k2])) ==> k = k';
+  event(Server_PSKChoosen(diff[id1,id],diff[k1,k])) && event(Server_PSKChoosen(diff[id2,id],diff[k2,k'])) ==> k = k'
+.
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey,is,is',is1,is2:bool;
+  event(Client_PSKChoosen(diff[id,id1],diff[k,k1],diff[is,is1])) && event(Client_PSKChoosen(diff[id,id2],diff[k',k2],diff[is',is2])) ==> (k,is) = (k',is');
+  event(Client_PSKChoosen(diff[id1,id],diff[k1,k],diff[is1,is])) && event(Client_PSKChoosen(diff[id2,id],diff[k2,k'],diff[is2,is'])) ==> (k,is) = (k',is')
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
+  event(Server_new_PSK(diff[id,id1],diff[k,k1])) && event(Server_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
+  event(Server_new_PSK(diff[id1,id],diff[k1,k])) && event(Server_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
+  event(Client_new_PSK(diff[id,id1],diff[k,k1])) && event(Client_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
+  event(Client_new_PSK(diff[id1,id],diff[k1,k])) && event(Client_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey, r,r',r1,r2:preSharedKey,is,is',is1,is2:bool;
+  event(Client_rand_PSK(diff[id,id1],diff[k,k1],diff[r,r1],diff[is,is1])) && event(Client_rand_PSK(diff[id,id2],diff[k',k2],diff[r',r2],diff[is',is2])) ==> (k,r,is) = (k',r',is');
+  event(Client_rand_PSK(diff[id1,id],diff[k1,k],diff[r1,r],diff[is1,is])) && event(Client_rand_PSK(diff[id2,id],diff[k2,k'],diff[r2,r'],diff[is2,is'])) ==> (k,r,is) = (k',r',is')
 .
 
 expand macro_ech_client(false,false,run_ech_client).
