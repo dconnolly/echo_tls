@@ -1,5 +1,6 @@
 
 set removeEventsForLemma = true.
+set verboseRedundant = true.
 
 nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
 
@@ -72,7 +73,7 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* 1-RTT handshake : secrecy and authentication queries *)
 
-axiom id_c,id_s:idProc,chk,shk:aead_key,cfin,sfin:mac_key,x:bitstring,gx,gxy:element,psk:preSharedKey,is_safe:bool,g:group,s:seed,m:bitstring;
+(* axiom id_c,id_s:idProc,chk,shk:aead_key,cfin,sfin:mac_key,x:bitstring,gx,gxy:element,psk:preSharedKey,is_safe:bool,g:group,s:seed,m:bitstring;
   event(Client_chk(id_c,chk)) && attacker(chk) ==>
     let x' = dh_k(s) in
     event(Client_DH_client(id_c,dh_pub(g,x'))) &&
@@ -157,9 +158,9 @@ axiom id_c,id_s:idProc,chk,shk:aead_key,cfin,sfin:mac_key,x:bitstring,gx,gxy:ele
     event(Server_PSKChoosen(id_s,psk)) &&
     (psk = NoPsk || (attacker(psk) && psk <> NoPsk))
   [induction,fullSat]
-.
+. *)
 
-lemma id_c,id_s:idProc,k:aead_key,mk:mac_key,s_pkey:pubkey,s:seed,x,m:bitstring,gx,gxy:element,psk:preSharedKey,is_safe:bool,g:group;
+(* lemma id_c,id_s:idProc,k:aead_key,mk:mac_key,s_pkey:pubkey,s:seed,x,m:bitstring,gx,gxy:element,psk:preSharedKey,is_safe:bool,g:group;
   event(Client_cak(id_c,k)) && attacker(k) ==>
     event(Client_DH_client(id_c,dh_pub(g,x))) &&
     event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
@@ -235,9 +236,9 @@ lemma id_c,id_s:idProc,k:aead_key,mk:mac_key,s_pkey:pubkey,s:seed,x,m:bitstring,
       (psk <> NoPsk && attacker(psk))
     )
   [induction,fullSat]
-  .
+  . *)
 
-query id_c,id_s:idProc,k:bitstring,s_pkey,c_pkey:pubkey,s:seed,x,m:bitstring,gx,gxy:element,psk,new_psk:preSharedKey,is_safe:bool,g:group;
+(* query id_c,id_s:idProc,k:bitstring,s_pkey,c_pkey:pubkey,s:seed,x,m:bitstring,gx,gxy:element,psk,new_psk:preSharedKey,is_safe:bool,g:group;
   event(Client_rms(id_c,k)) && attacker(k) ==>
     event(Client_DH_client(id_c,dh_pub(g,x))) &&
     event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
@@ -303,7 +304,7 @@ query id_c,id_s:idProc,k:bitstring,s_pkey,c_pkey:pubkey,s:seed,x,m:bitstring,gx,
       ) ||
       (psk <> NoPsk && attacker(psk))
     )
-  .
+  . *)
 
 query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring;
   (* Secrecy *)

@@ -639,3 +639,40 @@ axiom
   event(Server_DH_client(diff[id_s_2,id_s],diff[e,dh_pub(g,x)])) &&
   event(ServerChoosesGroup(diff[id_s_3,id_s],diff[g',g])) && attacker(diff[x',x])
 .
+
+axiom c_dom,c_dom',s_dom,s_dom',s_dom'':domain, h_alg,h_alg',h_alg'':hash_alg, psk,psk',psk'':preSharedKey, id':identityPsk, idP,idP':idProc, safe,safe':bool;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[mk_idpsk(s_dom'',h_alg'',psk''),id'],diff[psk,psk'],diff[idP,idP'],diff[safe,safe'])) ==>
+    s_dom = s_dom'' && h_alg = h_alg'' && psk = psk'';
+
+  table(pre_shared_keys(diff[c_dom',c_dom],diff[s_dom',s_dom],diff[h_alg',h_alg],diff[id',mk_idpsk(s_dom'',h_alg'',psk'')],diff[psk',psk],diff[idP',idP],diff[safe',safe])) ==>
+    s_dom = s_dom'' && h_alg = h_alg'' && psk = psk''
+.
+
+axiom c_dom,c_dom',s_dom,s_dom':domain, h_alg,h_alg':hash_alg, psk,psk':preSharedKey, id,id':identityPsk, idP,idP':idProc, safe':bool;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[psk,psk'],diff[idP,idP'],diff[true,safe'])) ==>
+    id = mk_idpsk(s_dom,h_alg,psk);
+
+  table(pre_shared_keys(diff[c_dom',c_dom],diff[s_dom',s_dom],diff[h_alg',h_alg],diff[id',id],diff[psk',psk],diff[idP',idP],diff[safe',true])) ==>
+    id = mk_idpsk(s_dom,h_alg,psk)
+.
+
+axiom c_dom,c_dom',c_dom1,c_dom2,s_dom,s_dom',s_dom1,s_dom2:domain, h_alg,h_alg',h_alg1,h_alg2:hash_alg, id,id',id1,id2:identityPsk,
+  psk,psk',psk1,psk2:preSharedKey, idP,idP',idP1,idP2:idProc, safe,safe',safe1,safe2:bool;
+  (* Same idP implie same psk *)
+  table(pre_shared_keys(diff[c_dom,c_dom1],diff[s_dom,s_dom1],diff[h_alg,h_alg1],diff[id,id1],diff[psk,psk1],diff[idP,idP1],diff[safe,safe1])) &&
+  table(pre_shared_keys(diff[c_dom',c_dom2],diff[s_dom',s_dom2],diff[h_alg',h_alg2],diff[id',id2],diff[psk',psk2],diff[idP,idP2],diff[safe',safe2])) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && psk = psk' && safe = safe';
+
+  table(pre_shared_keys(diff[c_dom1,c_dom],diff[s_dom1,s_dom],diff[h_alg1,h_alg],diff[id1,id],diff[psk1,psk],diff[idP1,idP],diff[safe1,safe])) &&
+  table(pre_shared_keys(diff[c_dom2,c_dom'],diff[s_dom2,s_dom'],diff[h_alg2,h_alg'],diff[id2,id'],diff[psk2,psk'],diff[idP2,idP],diff[safe2,safe'])) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && psk = psk' && safe = safe';
+
+  (* Same psk implies same idP *)
+  table(pre_shared_keys(diff[c_dom,c_dom1],diff[s_dom,s_dom1],diff[h_alg,h_alg1],diff[id,id1],diff[psk,psk1],diff[idP,idP1],diff[safe,safe1])) &&
+  table(pre_shared_keys(diff[c_dom',c_dom2],diff[s_dom',s_dom2],diff[h_alg',h_alg2],diff[id',id2],diff[psk,psk2],diff[idP',idP2],diff[safe',safe2])) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && idP = idP' && safe = safe';
+
+  table(pre_shared_keys(diff[c_dom1,c_dom],diff[s_dom1,s_dom],diff[h_alg1,h_alg],diff[id1,id],diff[psk1,psk],diff[idP1,idP],diff[safe1,safe])) &&
+  table(pre_shared_keys(diff[c_dom2,c_dom'],diff[s_dom2,s_dom'],diff[h_alg2,h_alg'],diff[id2,id'],diff[psk2,psk],diff[idP2,idP'],diff[safe2,safe'])) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && idP = idP' && safe = safe'
+.

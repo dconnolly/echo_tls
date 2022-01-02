@@ -10,7 +10,7 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) [ignoreAFewTimes]
 .
 
-query c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP,id_s,id_c:idProc,is_safe:bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
+query c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
@@ -74,7 +74,21 @@ query c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   event(Server_new_PSK(id_s,psk)) &&
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,id_c,true)) &&
   event(Server_DH_client(id_s,dh_pub(g,x))) &&
-  event(ServerChoosesGroup(id_s,g)) && attacker(x)
+  event(ServerChoosesGroup(id_s,g)) && attacker(x);
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,mk_idpsk(s_dom',h_alg',psk'),psk,idP,is_safe)) ==>
+    s_dom = s_dom' && h_alg = h_alg' && psk = psk';
+
+  (* Same idP implie same psk *)
+  table(pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,is_safe)) &&
+  table(pre_shared_keys(c_dom',s_dom',h_alg',id',psk',idP,is_safe')) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && psk = psk' && is_safe = is_safe';
+
+  (* Same psk implies same idP *)
+  table(pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,is_safe)) &&
+  table(pre_shared_keys(c_dom',s_dom',h_alg',id',psk,idP',is_safe')) ==>
+    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && idP = idP' && is_safe = is_safe'
+
   [fullSat,induction,proveAll]
 .
 
