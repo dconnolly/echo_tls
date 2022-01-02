@@ -17,7 +17,6 @@ let client_post_handshake(id_client:idProc,
     (* New Session Ticket *)
     if allow_PH_new_session_ticket then
 
-    !
     (* Reception of the new ticket *)
     in(io,seq_srv:nat);
     if is_nat(seq_srv) then
