@@ -624,3 +624,18 @@ axiom
   attacker(diff[x,server_fk])
   [fullSat]
 .
+
+axiom
+  c_dom,c_dom',s_dom,s_dom':domain,
+  h,h':hash_alg, id,id':identityPsk,
+  id_c,id_s,id_c',id_s_1,id_s_2,id_s_3:idProc,x,x':bitstring,new_psk,new_psk',new_psk'':preSharedKey,e:element,is_safe,is_safe':bool,g,g':group;
+  event(Server_new_PSK(diff[id_s,id_s_1],diff[new_psk,new_psk'])) &&
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h,h'],diff[id,id'],diff[new_psk,new_psk''],diff[id_c,id_c'],diff[true,is_safe])) &&
+  event(Server_DH_client(diff[id_s,id_s_2],diff[dh_pub(g,x),e])) &&
+  event(ServerChoosesGroup(diff[id_s,id_s_3],diff[g,g'])) && attacker(diff[x,x']);
+
+  event(Server_new_PSK(diff[id_s_1,id_s],diff[new_psk',new_psk])) &&
+  table(pre_shared_keys(diff[c_dom',c_dom],diff[s_dom',s_dom],diff[h',h],diff[id',id],diff[new_psk'',new_psk],diff[id_c',id_c],diff[is_safe,true])) &&
+  event(Server_DH_client(diff[id_s_2,id_s],diff[e,dh_pub(g,x)])) &&
+  event(ServerChoosesGroup(diff[id_s_3,id_s],diff[g',g])) && attacker(diff[x',x])
+.

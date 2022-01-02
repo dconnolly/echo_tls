@@ -100,8 +100,6 @@ let swap_pre_shared_keys =
 
 (* Lemma to help the proof *)
 
-event Dishonest(preSharedKey).
-
 lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,id',id'':identityPsk,ipsk,ipsk':preSharedKey,s:seed,
   c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom3,s_dom3',s_dom4,s_dom4':domain,
   h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
