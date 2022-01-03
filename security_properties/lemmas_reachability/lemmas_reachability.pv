@@ -1,8 +1,4 @@
-
 set removeEventsForLemma = true.
-(* set verboseLemmas = true. *)
-(* set nounifIgnoreAFewTimes = auto. *)
-(* set preciseActions = true. *)
 
 nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)) [ignoreAFewTimes].
 
