@@ -79,14 +79,14 @@ ifdef(<!PSK_or_random!>,<!dnl
         then
           insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,true)
         else
-          event CompromisedPsk(new_psk);
+          event UnsafePsk(new_psk);
           insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
       else
         if safe_psk
         then
           insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,safe_psk)
         else
-          event CompromisedPsk(new_psk);
+          event UnsafePsk(new_psk);
           insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
 !>)dnl
   ) | (

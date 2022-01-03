@@ -15,13 +15,6 @@ nounif x,x':bitstring; mess(ch_server_FIN,diff[*x,*x']) / -300000.
 nounif x,x':bitstring; mess(ch_server_CRT,diff[*x,*x']) / -300000.
 nounif x,x':bitstring; mess(ch_server_SH,diff[*x,*x']) / -300000.
 
-nounif s_dom,s_dom':domain, h_alg,h_alg':hash_alg, psk,psk':preSharedKey;
-  attacker(mk_idpsk(diff[*s_dom,*s_dom'],diff[*h_alg,*h_alg'],diff[*psk,*psk'])) [ignoreAFewTimes].
-
-nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) [ignoreAFewTimes]
-.
-
 nounif c_dom,c_dom':domain,sk_d,sk_d':privkey,pkr,pkr':pubkey,crt,crt':certificate, idP,idP':idProc;
   table(long_term_keys( diff[*c_dom,*c_dom'], diff[*sk_d,*sk_d'], diff[*pkr,*pkr'], diff[*crt,*crt'], diff[*idP,*idP'])) / -400000
 .

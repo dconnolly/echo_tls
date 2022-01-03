@@ -43,6 +43,11 @@ function header() {
 	if [ $isequiv -eq 0 ]; then
 		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
 	else
+		if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+			echo "      -lib libraries/proof_helper_equiv_no_ticket.pvl \\" >> $6
+		else
+			echo "      -lib libraries/proof_helper_equiv_ticket.pvl \\" >> $6
+		fi
 		echo "      -lib libraries/proof_helper_equivalence.pvl \\" >> $6
 	fi
 	echo "      security_properties/${1}/${1}.pv" >> $6
@@ -68,7 +73,7 @@ function forbidden_options() {
 				echo 0
 				;;
 			.early)
-				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 5 || $2 -eq 6 || $2 -eq 7 ]]; then
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 4 || $2 -eq 6 || $2 -eq 7 || $2 -eq 8 || $2 -eq 9 ]]; then
 					echo 1
 				else
 					echo 0
@@ -88,14 +93,14 @@ function forbidden_options() {
 				echo 0
 				;;
 			.PHauth)
-				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 5 || $2 -eq 6 ]]; then
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 6 || $2 -eq 7 || $2 -eq 8 ]]; then
 					echo 1
 				else
 					echo 0
 				fi
 				;;
 			.PHdata)
-				if [[ $2 -eq 1 || $2 -eq 5 ]]; then
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 6 || $2 -eq 7 ]]; then
 					echo 1
 				else
 					echo 0
@@ -112,7 +117,11 @@ function forbidden_options() {
 				fi
 				;;
 			.PSKorR)
-				echo 0
+				if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
 				;;
 		esac
 	fi
@@ -161,6 +170,11 @@ function run_scenario() {
 		if [ $isequiv -eq 0 ]; then
 			lib="${lib} -lib libraries/proof_helper_reachability.pvl"
 		else
+			if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+				lib="${lib} -lib libraries/proof_helper_equiv_no_ticket.pvl"
+			else
+				lib="${lib} -lib libraries/proof_helper_equiv_ticket.pvl"
+			fi
 			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
 		fi
 		command="proverif ${lib} security_properties/${1}/${1}.pv"
@@ -193,7 +207,7 @@ function run_scenario() {
 
 function doall() {
 	# NoHRR
-	for F in 1 2 3 4 5 6 7 8
+	for F in 1 2 3 4 5 6 7 8 9 10
 	do
 		for S in 1 2 3
 		do
@@ -210,7 +224,7 @@ function doall() {
 
 function doequiv() {
 	# No Post Handshake nor Early.
-	for F in 1 5
+	for F in 1 2 6 7
 	do
 		for S in 1 2 3
 		do
@@ -227,11 +241,11 @@ function doequiv() {
 
 function specific() {
 	# No Post Handshake nor Early.
-	for F in 1 5 2 6 3 7 4 8
+	for F in 2 7 3 8 4 9
 	do
-		for S in 1 2
+		for S in 2
 		do
-			for B in 1 2
+			for B in 2 3
 			do
 				for A in 1 2 4
 				do

@@ -8,12 +8,11 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe))
 .
 
-axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
+axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
-  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> psk <> NoPsk && psk <> b2psk(zero);
   (* ------ *)
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
@@ -306,12 +305,15 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
     )
   . *)
 
-query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring;
+query config:echConfig, g:group, x:bitstring, gxy:element, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring;
   (* Secrecy *)
   event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) && attacker(cak) ==>
+    event(Client_DH_client(id_c,dh_pub(g,x))) &&
+    event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
+    attacker(gxy) &&
     (
       event(CompromisedLtk(s_pkey)) ||
-      event(CompromisedPsk(psk))
+      (attacker(psk) && event(Client_PSKChoosen(id_c,psk,false)))
     ) && (
       event(ClientEchAcceptance(id_c,false)) ||
       (
@@ -320,19 +322,19 @@ query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,psk,psk':preShare
       )
     );
 
-  (* Authentication *)
+  (* Synchronisation *)
 
   event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ServerFinished(id_s,cr',sr',psk',s_pkey',c_pkey',cak',sak',ems,rms')) ==>
-    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey';
+    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey' && psk = psk' ;
 
   event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ServerFinished(id_s,cr',sr',psk',s_pkey',c_pkey',cak',sak',ems',rms)) ==>
-    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey';
+    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey' && psk = psk';
 
   event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ServerFinished(id_s,cr',sr',psk',s_pkey',c_pkey',cak,sak,ems',rms')) ==>
-    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey'
+    cr = cr' && sr = sr' && s_pkey = s_pkey' && c_pkey = c_pkey' && psk = psk'
 .
 
 expand macro_ech_client(true,false,run_ech_client).

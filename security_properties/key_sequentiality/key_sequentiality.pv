@@ -5,20 +5,24 @@ set removeEventsForLemma = true.
 (* set preciseActions = true. *)
 (* set verboseRules = true. *)
 
-nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
+nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)) .
 
 nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe))
 .
 
-axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:preSharedKey,idP:idProc,is_safe:bool,i:nat,e:element,s:seed,log:bitstring, s_pkey:pubkey;
+axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
-    event(ServerNewTicket(old_psk,s_pkey,psk)) || event(CompromisedPsk(psk));
+    event(ServerNewTicket(idP,old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk));
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==>
+    (id = mk_idpsk(s_dom,h,psk) &&
+    (event(ServerNewTicket(idP',old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk))))
+    ||
+    (id <> mk_idpsk(s_dom,h,psk) && (event(UnsafePsk(psk)) || event(CompromisedPsk(psk))));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
-  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> psk <> NoPsk && psk <> b2psk(zero);
   (* ------ *)
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
@@ -78,12 +82,48 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* Sequentiallity of compromised psk. *)
 
-query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
-  event(ServerNewTicket(psk,s_pkey,new_psk))@j && attacker(new_psk) ==>
+query config:echConfig, gxy:element, x:bitstring, g:group,id_c,id_s,id_s':idProc,cr,cr',sr,sr':bytes32,old_psk,old_psk',new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
+  event(ServerNewTicket(id_s,psk,s_pkey,c_pkey,i,new_psk))@j && attacker(new_psk) ==>
     event(CompromisedPsk(new_psk)) ||
-    event(CompromisedPsk(psk)) ||
+    (
+      event(Server_DH_client(id_s,dh_pub(g,x))) &&
+      event(ServerChoosesGroup(id_s,g)) &&
+      attacker(x) &&
+      event(Server_PSKChoosen(id_s,psk)) &&
+      (
+        (psk = NoPsk && (c_pkey = NoPubKey || event(CompromisedLtk(c_pkey)))) ||
+        event(CompromisedPsk(psk)) ||
+        (event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk))@j' && attacker(psk) && j > j')
+      )
+    );
+
+  event(Client_PSKChoosen(id_c,psk,false)) && attacker(psk) ==>
     psk = NoPsk ||
-    (event(ServerNewTicket(old_psk,s_pkey',psk))@j' && attacker(psk) && j > j')
+    event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk)) ||
+    event(CompromisedPsk(psk)) ||
+    event(UnsafePsk(psk))
+  ;
+
+  event(UnsafePsk(psk)) && attacker(psk) ==>
+    event(Client_DH_client(id_c,dh_pub(g,x))) &&
+    event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
+    event(Client_new_PSK(id_c,psk)) &&
+
+    event(Client_Cert_server(id_c,s_pkey)) &&
+    attacker(gxy) &&
+    (
+      event(CompromisedLtk(s_pkey)) ||
+      (
+        old_psk <> NoPsk && event(Client_PSKChoosen(id_c,old_psk,false)) && attacker(old_psk)
+      )
+    )
+    && (
+      event(ClientEchAcceptance(id_c,false)) ||
+      (
+        event(ClientOffersEchConfig(id_c,config)) &&
+        event(CompromisedEchKey(config))
+      )
+    )
 .
 
 expand macro_ech_client(false,false,run_ech_client).

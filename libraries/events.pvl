@@ -45,6 +45,8 @@ event CompromisedLtk(pubkey).
 event CompromisedPsk(preSharedKey).
 event CompromisedEchKey(echConfig).
 
+event UnsafePsk(preSharedKey).
+
 (* Modelisation of the sequence number for Per-Record Nonce (Section 5.3 of TLS RFC)*)
 
 event ServerSequenceClientDataWriteKey(
