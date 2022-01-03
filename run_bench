@@ -241,7 +241,7 @@ function doequiv() {
 
 function specific() {
 	# No Post Handshake nor Early.
-	for F in 2 7 3 8 4 9
+	for F in 2 7 3 8 4 9 5 10
 	do
 		for S in 2
 		do
