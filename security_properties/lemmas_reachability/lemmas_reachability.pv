@@ -88,17 +88,7 @@ query c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
   attacker(x);
 
   table(pre_shared_keys(c_dom,s_dom,h_alg,mk_idpsk(s_dom',h_alg',psk'),psk,idP,true)) ==>
-    s_dom = s_dom' && h_alg = h_alg' && psk = psk';
-
-  (* Same idP implie same psk *)
-  table(pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,is_safe)) &&
-  table(pre_shared_keys(c_dom',s_dom',h_alg',id',psk',idP,is_safe')) ==>
-    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && psk = psk' && is_safe = is_safe';
-
-  (* Same psk implies same idP *)
-  table(pre_shared_keys(c_dom,s_dom,h_alg,id,psk,idP,is_safe)) &&
-  table(pre_shared_keys(c_dom',s_dom',h_alg',id',psk,idP',is_safe')) ==>
-    c_dom = c_dom' && s_dom = s_dom' && h_alg = h_alg' && id = id' && idP = idP' && is_safe = is_safe'
+    s_dom = s_dom' && h_alg = h_alg' && psk = psk'
 
   [fullSat,induction,proveAll]
 .
