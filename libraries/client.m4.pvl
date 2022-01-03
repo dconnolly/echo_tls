@@ -94,7 +94,7 @@ ifdef(<!PSK_or_random!>,<!dnl
     if allow_PH_data then
     (
       !
-      in(io,(seq_client:nat,ad:bitstring)) (*[precise]*);
+      in(io,(seq_client:nat,ad:bitstring)) [precise];
       if is_nat(seq_client) then
       new msgs[seq_client,ad]:bitstring;
       new st[]:stamp;
@@ -103,7 +103,7 @@ ifdef(<!PSK_or_random!>,<!dnl
       out(io,aead_enc(a_alg,cak,n2b(seq_client),ad,msgs))
     ) | (
       !
-      in(io,(seq_srv:nat,ad:bitstring, enc_msg:bitstring));
+      in(io,(seq_srv:nat,ad:bitstring, enc_msg:bitstring)) ;
       if is_nat(seq_srv) then
       let msgs = aead_dec(a_alg,sak,n2b(seq_srv),ad,enc_msg) in
         new st[]:stamp;
@@ -116,7 +116,7 @@ ifdef(<!PSK_or_random!>,<!dnl
     if allow_PH_authentication then
     !
     (* Selection of the sequence numbers *)
-    in(io,(seq_srv:nat,seq_client:nat)) (*[precise]*);
+    in(io,(seq_srv:nat,seq_client:nat)) [precise];
     if is_nat(seq_srv) && is_nat(seq_client) then
 
     (* Reception of a certificate request *)
@@ -155,7 +155,7 @@ ifdef(<!PSK_or_random!>,<!dnl
     let certificate_verify_msg = CV(signed_log) in
     let enc_verify_msg = aead_enc(a_alg,cak,n2b(seq_client+1),zero,m2b(certificate_verify_msg)) in
     new st2[]:stamp;
-    event ClientSequenceClientDataWriteKey(id_client,st2,seq_client); (* To model the sequence of messages using client write key *)
+    event ClientSequenceClientDataWriteKey(id_client,st2,seq_client+1); (* To model the sequence of messages using client write key *)
     event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client+1,zero,m2b(certificate_verify_msg));
     out(io,enc_verify_msg);
     let cur_log_CV = (cur_log_CRT,certificate_verify_msg) in
@@ -164,9 +164,9 @@ ifdef(<!PSK_or_random!>,<!dnl
     let hash_msg = hmac(h_alg,cfkad,cur_log_CV) in
     let enc_fin = aead_enc(a_alg,cak,n2b(seq_client+2),zero,m2b(FIN(hash_msg))) in
     new st3[]:stamp;
-    event ClientSequenceClientDataWriteKey(id_client,st3,seq_client); (* To model the sequence of messages using client write key *)
+    event ClientSequenceClientDataWriteKey(id_client,st3,seq_client+2); (* To model the sequence of messages using client write key *)
     event ClientSends(id_client,cr,sr,psk,s_pkey,c_pkey,seq_client+2,zero,m2b(FIN(hash_msg)));
-    event ClientFinishedPH(id_client,cr,sr,psk,s_pkey,c_pkey,rand_crt,c_pkey);
+    event ClientFinishedPH(id_client,cr,sr,psk,s_pkey,c_pkey,rand_crt,c_pkey');
     out(io,enc_fin)
   )
 .

@@ -99,7 +99,7 @@ let server_post_handshake(id_server:idProc,
     in(io,enc_cert_verif_msg:bitstring);
     let m2b(cert_verify_msg) = aead_dec(a_alg,cak,n2b(seq_client+1),zero,enc_cert_verif_msg) in
     new st2[]:stamp;
-    event ServerSequenceClientDataWriteKey(id_server,st2,seq_client); (* To model the sequence of messages using server write key *)
+    event ServerSequenceClientDataWriteKey(id_server,st2,seq_client+1); (* To model the sequence of messages using server write key *)
     event ServerReceives(id_server,cr,sr,psk,s_pkey,c_pkey,seq_client+1,zero,m2b(cert_verify_msg));
     let CV(signed_log) = cert_verify_msg in
 
@@ -110,7 +110,7 @@ let server_post_handshake(id_server:idProc,
     in(io,enc_fin:bitstring);
     let m2b(fin_msg) = aead_dec(a_alg,cak,n2b(seq_client+2),zero,enc_fin) in
     new st3[]:stamp;
-    event ServerSequenceClientDataWriteKey(id_server,st3,seq_client); (* To model the sequence of messages using server write key *)
+    event ServerSequenceClientDataWriteKey(id_server,st3,seq_client+2); (* To model the sequence of messages using server write key *)
     event ServerReceives(id_server,cr,sr,psk,s_pkey,c_pkey,seq_client+2,zero,m2b(fin_msg));
     let FIN(hash_msg) = fin_msg in
 

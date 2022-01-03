@@ -71,22 +71,37 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   [fullSat]
 .
 
+(* GsVerif like axioms *)
+
+axiom id:idProc,e,e':element; event(Server_DH_client(id,e)) && event(Server_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
+axiom id:idProc,e,e':element; event(Client_DH_server(id,e)) && event(Client_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey,is,is':bool; event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+
 (* Security properties *)
 
-restriction idP,idP':idProc,s_dom:domain,cr,cr',sr,sr':bytes32,psk,psk':preSharedKey,pk_srv,pk_srv':pubkey,st,st':stamp,n:nat,ad,ad',msg,msg':bitstring;
-  event(ServerSends(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ServerSends(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg';
-  event(ClientReceives(idP,cr,sr,psk,pk_srv,st,n,ad,msg)) && event(ClientReceives(idP,cr',sr',psk',pk_srv',st',n,ad',msg')) ==> st = st' && cr = cr' && sr = sr' && psk = psk' && pk_srv = pk_srv' && ad = ad' && msg = msg'
+restriction idP:idProc,st,st':stamp, i:nat;
+  event(ClientSequenceClientDataWriteKey(idP,st,i)) && event(ClientSequenceClientDataWriteKey(idP,st',i)) ==> st = st';
+  event(ClientSequenceServerDataWriteKey(idP,st,i)) && event(ClientSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceServerDataWriteKey(idP,st,i)) && event(ServerSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClientDataWriteKey(idP,st,i)) && event(ServerSequenceClientDataWriteKey(idP,st',i)) ==> st = st'
 .
 
 (* Post Handshake Authentication *)
 
-query id_c,id_s:idProc,config:echConfig, cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg':bitstring,req_rand:bitstring,st,st':stamp;
-  inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
-    inj-event(ServerRequestPH(id_s,cr,sr,psk,s_pkey,req_rand)) ||
+query id_c,id_s,id_s':idProc,config:echConfig, gxy:element,g:group,x:bitstring,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey',s_pkey,c_pkey',c_pkey,new_c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg':bitstring,req_rand:bitstring,st,st':stamp;
+  inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,c_pkey,req_rand,new_c_pkey)) ==>
+    inj-event(ServerRequestPH(id_s,cr,sr,psk,s_pkey,c_pkey,req_rand)) ||
     (
+      event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
+      attacker(gxy) &&
       (
         event(CompromisedLtk(s_pkey)) ||
-        event(CompromisedPsk(psk))
+        (attacker(psk) && event(Client_PSKChoosen(id_c,psk,false)))
       ) && (
         event(ClientEchAcceptance(id_c,false)) ||
         (
@@ -96,10 +111,18 @@ query id_c,id_s:idProc,config:echConfig, cr,sr:bytes32,psk:preSharedKey,s_pkey,c
       )
     );
 
-  inj-event(ServerFinishedPH(id_s,cr,sr,psk,s_pkey,req_rand,c_pkey)) ==>
-    inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,req_rand,c_pkey)) ||
-    event(CompromisedLtk(c_pkey)) ||
-    event(CompromisedPsk(psk))
+  inj-event(ServerFinishedPH(id_s,cr,sr,psk,s_pkey,c_pkey,req_rand,new_c_pkey)) ==>
+    inj-event(ClientFinishedPH(id_c,cr,sr,psk,s_pkey,c_pkey,req_rand,new_c_pkey)) ||
+    (
+      event(CompromisedLtk(new_c_pkey)) &&
+      event(Server_DH_client(id_s,dh_pub(g,x))) &&
+      attacker(x) &&
+      (
+        event(CompromisedPsk(psk)) ||
+        (event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk)) && attacker(psk)) ||
+        (psk = NoPsk && (c_pkey = NoPubKey || event(CompromisedLtk(c_pkey))))
+      )
+    )
 .
 
 expand macro_ech_client(false,false,run_ech_client).
