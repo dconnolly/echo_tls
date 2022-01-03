@@ -385,7 +385,7 @@ let process_client_hello_noHRR =
         (
           if allow_early_data && no_HRR && psk <> NoPsk then
           !
-          in(io,(i:nat,ad:bitstring,enc_early_data:bitstring)) (*[precise]*);
+          in(io,(i:nat,ad:bitstring,enc_early_data:bitstring)) [precise];
           let (wkc0:aead_key,ems0:bitstring) = kdf_k0(tls_h,early_secret,cur_log_CH) in
           let early_data:bitstring = aead_dec(tls_a,wkc0,n2b(i),ad,enc_early_data) in (
             new st1[]:stamp;

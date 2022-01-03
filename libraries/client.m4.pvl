@@ -638,7 +638,7 @@ let standard_client(id_client:idProc,
     if allow_early_data && psk <> NoPsk then
     let (wkc0:aead_key,ems0:bitstring) = kdf_k0(h_alg,es,(zero,client_hello)) in
     !
-    in(io,(i:nat,ad:bitstring)) (*[precise]*);
+    in(io,(i:nat,ad:bitstring)) [precise];
     if is_nat(i) then
     new msg_ed[]:bitstring;
     let enc_ed = aead_enc(a_alg,wkc0,n2b(i),ad,msg_ed) in
