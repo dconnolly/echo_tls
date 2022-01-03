@@ -50,7 +50,6 @@ ifdef(<!PSK_or_random!>,<!dnl
       )
       else
         event Client_rand_PSK(id_client,new_psk,psk_rand,false);
-        event CompromisedPsk(new_psk);
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
     else
       if safe_psk
@@ -63,7 +62,6 @@ ifdef(<!PSK_or_random!>,<!dnl
       )
       else
         event Client_rand_PSK(id_client,new_psk,psk_rand,false);
-        event CompromisedPsk(new_psk);
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
 !>,<!dnl
     if allow_compromised_ticket && comp_psk

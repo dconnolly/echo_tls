@@ -43,14 +43,17 @@ function header() {
 	if [ $isequiv -eq 0 ]; then
 		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
 	else
-		if [[ $2 -eq 1 || $2 -eq 6 ]]; then
-			echo "      -lib libraries/proof_helper_equiv_no_ticket.pvl \\" >> $6
-		else
-			echo "      -lib libraries/proof_helper_equiv_ticket.pvl \\" >> $6
-		fi
 		echo "      -lib libraries/proof_helper_equivalence.pvl \\" >> $6
 	fi
-	echo "      security_properties/${1}/${1}.pv" >> $6
+	if [ $isequiv -eq 0 ]; then
+		echo "      security_properties/${1}/${1}.pv" >> $6
+	else
+		if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+			echo "      security_properties/${1}/${1}_no_ticket.pv" >> $6
+		else
+			echo "      security_properties/${1}/${1}.pv" >> $6
+		fi
+	fi
 	echo "" >> $6
 	echo "---------------------------------------------------------------------" >> $6
 	echo "" >> $6
@@ -170,14 +173,18 @@ function run_scenario() {
 		if [ $isequiv -eq 0 ]; then
 			lib="${lib} -lib libraries/proof_helper_reachability.pvl"
 		else
-			if [[ $2 -eq 1 || $2 -eq 6 ]]; then
-				lib="${lib} -lib libraries/proof_helper_equiv_no_ticket.pvl"
-			else
-				lib="${lib} -lib libraries/proof_helper_equiv_ticket.pvl"
-			fi
 			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
 		fi
-		command="proverif ${lib} security_properties/${1}/${1}.pv"
+		if [ $isequiv -eq 0 ]; then
+			lib="${lib} security_properties/${1}/${1}.pv"
+		else
+			if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+				lib="${lib} security_properties/${1}/${1}_no_ticket.pv"
+			else
+				lib="${lib} security_properties/${1}/${1}.pv"
+			fi
+		fi
+		command="proverif ${lib}"
 		if [ "$6" = "PV" ]; then
 			$command
 		else
@@ -224,13 +231,13 @@ function doall() {
 
 function doequiv() {
 	# No Post Handshake nor Early.
-	for F in 1 2 6 7
+	for A in 1 2 4
 	do
-		for S in 1 2 3
+		for F in 1 2 6 7
 		do
-			for B in 1 2 3
+			for S in 1 2
 			do
-				for A in 1 2 4
+				for B in 1 2 3
 				do
 					run_scenario $1 $F $S $B $A
 				done
