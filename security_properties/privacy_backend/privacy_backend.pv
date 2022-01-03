@@ -1,6 +1,4 @@
 set removeEventsForLemma = true.
-(* set verboseRules = true. *)
-(* set verboseLemmas = true. *)
 
 (* Restriction for equivalence *)
 
@@ -39,7 +37,7 @@ restriction
     dom1' = dom2' &&
     (
       (* If the requested domains on the left and on the right are the same, we use the same
-         idProc to match them. No condition when the requested domains are different *)
+         idProc to match them unless one of them is idClientDiff. No condition when the requested domains are different *)
       (dom1 <> dom1') ||
       (dom1 = dom1' &&
         (
@@ -57,9 +55,9 @@ restriction
 .
 
 (* We request for the matching that when the requested server is the same on both side,
-  and that we already used a psk "ipskL" and "ipskR" respectively to match them then
-  if a new session want to use the psk "ipskL" on the left (resp. "ipskR" on the right),
-  we should match it again with the psk "ipskR" on the right (resp. "ipskL" on the left).
+  and that we already used a psk "pskL" and "pskR" respectively to match them then
+  if a new session want to use the psk "pskL" on the left (resp. "pskR" on the right),
+  we should match it again with the psk "pskR" on the right (resp. "pskL" on the left).
 
   Otherwise the attacker would be able to distinguish two session of a client using
   the same psk vs two sessions of the same client using different psk just by looking
@@ -83,7 +81,9 @@ restriction dom:domain,idP,idP',idP'':idProc,safe,safe',safe'':bool;
 let swap_long_term_keys =
   !
   get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
+  event Same(id2b(idP1));
   get long_term_keys(dom2,sk2,pk2,cert2,idP2) in
+  event Same(id2b(idP2));
   insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2],diff[idP1,idP2]);
   insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1],diff[idP2,idP1])
 .
@@ -203,46 +203,22 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   [induction,fullSat]
 .
 
-axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
-  event(Client_Rand_client(diff[id,id1],diff[r,r1])) && event(Client_Rand_client(diff[id,id2],diff[r',r2])) ==> r = r';
-  event(Client_Rand_client(diff[id1,id],diff[r1,r])) && event(Client_Rand_client(diff[id2,id],diff[r2,r'])) ==> r = r'
+nounif s_dom,s_dom':domain, h_alg,h_alg':hash_alg, psk,psk':preSharedKey;
+  attacker(mk_idpsk(diff[*s_dom,*s_dom'],diff[*h_alg,*h_alg'],diff[*psk,*psk'])) [ignoreAFewTimes]
 .
 
-axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
-  event(Client_Rand_server(diff[id,id1],diff[r,r1])) && event(Client_Rand_server(diff[id,id2],diff[r',r2])) ==> r = r';
-  event(Client_Rand_server(diff[id1,id],diff[r1,r])) && event(Client_Rand_server(diff[id2,id],diff[r2,r'])) ==> r = r'
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) [ignoreAFewTimes]
 .
 
-axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
-  event(Server_Rand_client(diff[id,id1],diff[r,r1])) && event(Server_Rand_client(diff[id,id2],diff[r',r2])) ==> r = r';
-  event(Server_Rand_client(diff[id1,id],diff[r1,r])) && event(Server_Rand_client(diff[id2,id],diff[r2,r'])) ==> r = r'
-.
-
-axiom id,id1,id2:idProc,r,r',r1,r2:bytes32;
-  event(Server_Rand_server(diff[id,id1],diff[r,r1])) && event(Server_Rand_server(diff[id,id2],diff[r',r2])) ==> r = r';
-  event(Server_Rand_server(diff[id1,id],diff[r1,r])) && event(Server_Rand_server(diff[id2,id],diff[r2,r'])) ==> r = r'
-.
-
-axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
-  event(Server_PSKChoosen(diff[id,id1],diff[k,k1])) && event(Server_PSKChoosen(diff[id,id2],diff[k',k2])) ==> k = k';
-  event(Server_PSKChoosen(diff[id1,id],diff[k1,k])) && event(Server_PSKChoosen(diff[id2,id],diff[k2,k'])) ==> k = k'
-.
-axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey,is,is',is1,is2:bool;
-  event(Client_PSKChoosen(diff[id,id1],diff[k,k1],diff[is,is1])) && event(Client_PSKChoosen(diff[id,id2],diff[k',k2],diff[is',is2])) ==> (k,is) = (k',is');
-  event(Client_PSKChoosen(diff[id1,id],diff[k1,k],diff[is1,is])) && event(Client_PSKChoosen(diff[id2,id],diff[k2,k'],diff[is2,is'])) ==> (k,is) = (k',is')
-.
-
-axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
-  event(Server_new_PSK(diff[id,id1],diff[k,k1])) && event(Server_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
-  event(Server_new_PSK(diff[id1,id],diff[k1,k])) && event(Server_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
-.
+(* Axioms GSVerif like *)
 
 axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
   event(Client_new_PSK(diff[id,id1],diff[k,k1])) && event(Client_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
   event(Client_new_PSK(diff[id1,id],diff[k1,k])) && event(Client_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
 .
 
-free BackendA,BackendB,HonestServer:domain.
+free BackendA,BackendB:domain.
 
 
 expand macro_ech_client(false,false,run_ech_client).

@@ -497,6 +497,18 @@ not x:bitstring, s,s':seed, info:bitstring, m:hpkeRole,i:nat;
   attacker(diff[key,x])
 .
 
+(* Axioms GSVerif like *)
+
+axiom id,id1,id2:idProc,e,e',e1,e2:element;
+  event(Server_DH_client(diff[id,id1],diff[e,e1])) && event(Server_DH_client(diff[id,id2],diff[e',e2])) ==> e = e';
+  event(Server_DH_client(diff[id1,id],diff[e1,e])) && event(Server_DH_client(diff[id2,id],diff[e2,e'])) ==> e = e'
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
+  event(Server_new_PSK(diff[id,id1],diff[k,k1])) && event(Server_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
+  event(Server_new_PSK(diff[id1,id],diff[k1,k])) && event(Server_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
+.
+
 (* Axioms derived from the reachability query *)
 
 axiom

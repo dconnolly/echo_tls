@@ -104,11 +104,6 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   [induction,fullSat]
 .
 
-axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
-  event(Server_new_PSK(diff[id,id1],diff[k,k1])) && event(Server_new_PSK(diff[id,id2],diff[k',k2])) ==> k = k';
-  event(Server_new_PSK(diff[id1,id],diff[k1,k])) && event(Server_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
-.
-
 axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey, r,r',r1,r2:preSharedKey,is,is',is1,is2:bool;
   event(Client_rand_PSK(diff[id,id1],diff[k,k1],diff[r,r1],diff[is,is1])) && event(Client_rand_PSK(diff[id,id2],diff[k',k2],diff[r',r2],diff[is',is2])) ==> (k,r,is) = (k',r',is');
   event(Client_rand_PSK(diff[id1,id],diff[k1,k],diff[r1,r],diff[is1,is])) && event(Client_rand_PSK(diff[id2,id],diff[k2,k'],diff[r2,r'],diff[is2,is'])) ==> (k,r,is) = (k',r',is')
