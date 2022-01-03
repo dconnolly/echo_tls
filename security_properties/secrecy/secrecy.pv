@@ -66,6 +66,11 @@ axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
   [fullSat]
 .
 
+(* GsVerif like axioms *)
+
+axiom id:idProc,e,e':element; event(Client_DH_server(id,e)) && event(Client_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey,is,is':bool; event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+
 (* Secrecy properties *)
 
 (* 1-RTT handshake : secrecy and authentication queries *)
@@ -73,7 +78,6 @@ axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
 query config:echConfig, g:group, x:bitstring, gxy:element, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring;
   (* Secrecy *)
   event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) && attacker(cak) ==>
-    event(Client_DH_client(id_c,dh_pub(g,x))) &&
     event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
     attacker(gxy) &&
     (

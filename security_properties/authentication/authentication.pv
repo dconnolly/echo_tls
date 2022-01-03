@@ -68,6 +68,16 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   [fullSat]
 .
 
+(* GsVerif like axioms *)
+
+axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
+axiom id:idProc,e,e':element; event(Client_DH_client(id,e)) && event(Client_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey,is,is':bool; event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+
 (* Security properties *)
 
 (* 1-RTT handshake : secrecy and authentication queries *)
@@ -77,7 +87,6 @@ query config:echConfig, gxy:element, x:bitstring, g:group, id_c,id_s,id_s':idPro
   inj-event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) ==>
     inj-event(PreServerFinished(id_s,cr,sr,psk,s_pkey)) ||
     (
-      event(Client_DH_client(id_c,dh_pub(g,x))) &&
       event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
       attacker(gxy) &&
       (

@@ -6,6 +6,17 @@ nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,i
   table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe)) [ignoreAFewTimes]
 .
 
+(* GsVerif like axioms *)
+
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+axiom id:idProc,k,k':preSharedKey; event(Server_new_PSK(id,k)) && event(Server_new_PSK(id,k')) ==> k = k'.
+axiom id:idProc,e,e':element; event(Server_DH_client(id,e)) && event(Server_DH_client(id,e')) ==> e = e'.
+
+(* The query *)
+
 query c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
@@ -74,7 +85,7 @@ query c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
   event(Server_new_PSK(id_s,psk)) &&
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,id_c,is_safe)) &&
   event(Server_DH_client(id_s,dh_pub(g,x))) &&
-  event(ServerChoosesGroup(id_s,g)) && attacker(x);
+  attacker(x);
 
   table(pre_shared_keys(c_dom,s_dom,h_alg,mk_idpsk(s_dom',h_alg',psk'),psk,idP,true)) ==>
     s_dom = s_dom' && h_alg = h_alg' && psk = psk';

@@ -73,6 +73,20 @@ axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
   [fullSat]
 .
 
+(* GsVerif like axioms *)
+
+axiom id:idProc,e,e':element; event(Server_DH_client(id,e)) && event(Server_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey; event(Server_PSKChoosen(id,k)) && event(Server_PSKChoosen(id,k')) ==> k = k'.
+axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
+axiom id:idProc,e,e':element; event(Client_DH_server(id,e)) && event(Client_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey; event(Client_new_PSK(id,k)) && event(Client_new_PSK(id,k')) ==> k = k'.
+axiom id:idProc,k,k':pubkey; event(Client_Cert_server(id,k)) && event(Client_Cert_server(id,k')) ==> k = k'.
+axiom id:idProc,k,k':preSharedKey,is,is':bool; event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+
 (* Security properties *)
 
 (* Sequentiallity of compromised psk. *)
@@ -82,7 +96,6 @@ query config:echConfig, gxy:element, x:bitstring, g:group,id_c,id_s,id_s':idProc
     event(CompromisedPsk(new_psk)) ||
     (
       event(Server_DH_client(id_s,dh_pub(g,x))) &&
-      event(ServerChoosesGroup(id_s,g)) &&
       attacker(x) &&
       event(Server_PSKChoosen(id_s,psk)) &&
       (
@@ -100,12 +113,10 @@ query config:echConfig, gxy:element, x:bitstring, g:group,id_c,id_s,id_s':idProc
   ;
 
   event(UnsafePsk(psk)) && attacker(psk) ==>
-    event(Client_DH_client(id_c,dh_pub(g,x))) &&
     event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
-    event(Client_new_PSK(id_c,psk)) &&
-
-    event(Client_Cert_server(id_c,s_pkey)) &&
     attacker(gxy) &&
+    event(Client_new_PSK(id_c,psk)) &&
+    event(Client_Cert_server(id_c,s_pkey)) &&
     (
       event(CompromisedLtk(s_pkey)) ||
       (
