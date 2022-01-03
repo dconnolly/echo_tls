@@ -295,8 +295,6 @@ process
     !
     new id_client:idProc;
     (* Domains *)
-    in(io,backend_dom:domain) [precise];
-    event Same(d2b(backend_dom));
     in(io,frontend_dom:domain) [precise];
     event Same(d2b(frontend_dom));
     in(io,c_dom:domain) [precise];
