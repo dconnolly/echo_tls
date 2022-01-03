@@ -1,8 +1,4 @@
-
 set removeEventsForLemma = true.
-(* set verboseLemmas = true. *)
-(* set nounifIgnoreAFewTimes = auto. *)
-(* set preciseActions = true. *)
 
 nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
 
@@ -15,7 +11,6 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
-  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,false)) ==> event(CompromisedPsk(psk));
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> psk <> NoPsk && psk <> b2psk(zero);
   (* ------ *)
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
@@ -73,10 +68,10 @@ axiom c_dom,s_dom:domain,h:hash_alg,id:identityPsk,cr,sr:bytes32,old_psk,psk:pre
 
 (* Security properties *)
 
-query config:echConfig, id_c,id_s:idProc,cr,cr',sr,sr':bytes32,old_psk,new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
+query config:echConfig, id_c,id_s:idProc,cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring;
   (* Downgrade resilient *)
-  event(ServerFinished(id_s,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,pk_srv,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ServerChoosesEchConfig(id_s,config,true)) &&
   event(ClientOffersEchConfig(id_c,config)) ==>
     (event(ClientEchAcceptance(id_c,true)) && event(ServerEchAcceptance(id_s,true)))
