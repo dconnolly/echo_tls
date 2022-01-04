@@ -145,7 +145,7 @@ letfun generate_initial_client_hello_ech(
     make_pre_shared_key_extension(id_client,zero,use_psk,c_dom,dom_psk,cr_psk,h_psk,a_psk,kex_ext_psk,ech_inner_or_grease,extra_psk,zero)
   in
 
-  (* The innner client hello *)
+  (* The inner client hello *)
   let i_offer = nego(TLS13,backend_h,backend_a,i_kex_ext,SNI(i_dom),ECHClientHelloInner,i_extra,psk_ext) in
   let i_client_hello = CH(i_cr,i_offer) in
 
@@ -202,7 +202,7 @@ letfun generate_second_client_hello_for_backend(
     make_pre_shared_key_extension(id_client,old_psk_data,use_psk,c_dom,i_dom,i_cr,backend_h,backend_a,i_kex_ext,ECHClientHelloInner,i_extra,cur_log)
   in
 
-  (* The innner client hello *)
+  (* The inner client hello *)
   let i_offer = nego(TLS13,backend_h,backend_a,i_kex_ext,SNI(i_dom),ECHClientHelloInner,i_extra,psk_ext) in
   let i_client_hello = CH(i_cr,i_offer) in
 

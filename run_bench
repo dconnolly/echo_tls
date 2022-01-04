@@ -143,6 +143,13 @@ function forbidden_options() {
 					echo 0
 				fi
 				;;
+			.anonymityECH)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
 		esac
 	fi
 }
@@ -326,6 +333,10 @@ function getfullname() {
 		.anonymityTLS)
 			isequiv=1
 			fullname="anonymity_unlinkability_TLS_client"
+			;;
+		.anonymityECH)
+			isequiv=1
+			fullname="anonymity_unlinkability_ECH_client"
 			;;
 	esac
 }

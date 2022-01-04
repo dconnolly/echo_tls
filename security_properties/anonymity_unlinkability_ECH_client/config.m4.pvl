@@ -1,0 +1,90 @@
+(*************************)
+(*    Functionnalities   *)
+(*************************)
+
+(* When `false`, an honest client will always send its key share with the group.
+  Moreover, an honest server will never send a HRR request.*)
+letfun allow_HRR = false.
+
+(* When `false`, honest clients and servers are not expecting and sending a new
+  session ticket respectively. *)
+letfun allow_PH_new_session_ticket = true.
+
+(* When `false`, honest clients and servers will never send or try to receive
+  Post Handshake Application Data. *)
+letfun allow_PH_data = false.
+
+(* When `false`, honest servers will request post handshake authentication
+  and honest clients will never wait for one. *)
+letfun allow_PH_authentication = false.
+
+(* When `false`, honest clients and servers will never send or try to receive
+  early data. *)
+letfun allow_early_data = false.
+
+(************************************************)
+(*    Safety of Keys, Cipher suite and group    *)
+(************************************************)
+
+(* When `true`, private keys of Ech configuration can be compromised. *)
+letfun allow_compromised_Ech_keys = true.
+
+(* When `false`, the client never leak the pre shared keys derived from the tickets.
+  Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
+letfun allow_compromised_ticket = true.
+
+(* When `true`, external pre shared keys can be compromised. *)
+letfun allow_compromised_ext_PSK = true.
+
+(* When `true`, certificate long term keys can be compromised. *)
+letfun allow_compromised_long_term_keys = false.
+
+(* When `true`, the attacker can choose different ciphersuites and DH groups for
+  honest clients and servers. When `false`, the ciphersuite and DH group is
+  fixed and the same for all sessions. *)
+letfun allow_multiple_ciphersuite_and_group = false.
+
+(* When `true`, the honest client and server can use weak hash algorithm,
+  weak aead algorithm and weak DH group.
+  Note that by ECH RFC, the hash algorithm, aead algorithm and DH group used in
+  the ECH configuration of frontend MUST be strong.
+  This option does nothing when allow_multiple_ciphersuite_and_group = false. *)
+letfun allow_weak_ciphersuite_and_group = false.
+
+(*******************)
+(*    Behaviors    *)
+(*******************)
+
+(* Each behavior parameters has two variables. When `set_p` is `true` then
+  the attacker chooses the value of `p`for each single session. When `set_p`
+  is `false` then the value of `p` is set to `default_p` for all sessions. *)
+
+(* Determine if client send their key share. *)
+letfun set_send_kex = false.
+letfun default_send_kex = true.
+
+(* Determine if client and server want to use a psk. *)
+letfun set_use_psk = false.
+letfun default_use_psk = false.
+
+(* Determine if the client uses grease *)
+letfun set_use_grease = true.
+letfun default_use_grease = false.
+
+(* Determine if the server request a certificate from the client. *)
+letfun set_req_cert = true.
+letfun default_req_cert = false.
+
+(*****************************)
+(*     Scenario of agents    *)
+(*****************************)
+
+(* Determine if the servers uses ECH *)
+letfun set_use_ech = false.
+letfun default_use_ech = true.
+
+(* TLS client  *)
+letfun clients_with_tls = false.
+
+(* Ech client *)
+letfun clients_with_ech = true.
