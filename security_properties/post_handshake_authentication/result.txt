@@ -1,0 +1,5 @@
+post_handshake_authentication - Scenario F4 S2 B2 A1 - 2 true queries - Time 4:17.37 - Memory 4923940k 
+post_handshake_authentication - Scenario F4 S2 B2 A2 - 2 true queries - Time 1:51:51 - Memory 39983244k 
+post_handshake_authentication - Scenario F4 S2 B2 A4 - 2 true queries - Time 2:35:46 - Memory 60667232k 
+post_handshake_authentication - Scenario F4 S2 B3 A1 - 2 true queries - Time 17:07.35 - Memory 17310696k 
+post_handshake_authentication - Scenario F4 S2 B3 A2 - 0 true queries - Time 5:21:19 - Memory 161706108k Command terminated by signal 9

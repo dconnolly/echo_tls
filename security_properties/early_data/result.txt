@@ -1,0 +1,12 @@
+early_data - Scenario F5 S2 B2 A1 - 2 true queries - Time 0:34.97 - Memory 1405440k 
+early_data - Scenario F5 S2 B2 A2 - 2 true queries - Time 6:07.25 - Memory 9891708k 
+early_data - Scenario F5 S2 B2 A4 - 2 true queries - Time 8:52.73 - Memory 15004556k 
+early_data - Scenario F5 S2 B3 A1 - 2 true queries - Time 1:36.55 - Memory 4286716k 
+early_data - Scenario F5 S2 B3 A2 - 2 true queries - Time 15:36.61 - Memory 30168352k 
+early_data - Scenario F5 S2 B3 A4 - 2 true queries - Time 26:49.70 - Memory 52789780k 
+early_data - Scenario F10 S2 B2 A1 - 2 true queries - Time 1:52.58 - Memory 3716648k 
+early_data - Scenario F10 S2 B2 A2 - 2 true queries - Time 49:30.89 - Memory 30168348k 
+early_data - Scenario F10 S2 B2 A4 - 2 true queries - Time 55:09.94 - Memory 39983340k 
+early_data - Scenario F10 S2 B3 A1 - 2 true queries - Time 5:11.43 - Memory 11363964k 
+early_data - Scenario F10 S2 B3 A2 - 2 true queries - Time 1:55:02 - Memory 92387708k 
+early_data - Scenario F10 S2 B3 A4 - 0 true queries - Time 2:04:08 - Memory 140755664k Command terminated by signal 9

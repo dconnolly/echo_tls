@@ -1,0 +1,10 @@
+strong_secrecy_inner - Scenario F1 S1 B1 A2 - 1 true queries - Time 0:37.78 - Memory 885776k 
+strong_secrecy_inner - Scenario F1 S1 B2 A2 - 1 true queries - Time 3:59.86 - Memory 2817528k 
+strong_secrecy_inner - Scenario F1 S1 B3 A2 - 1 true queries - Time 7:27.37 - Memory 4287472k 
+strong_secrecy_inner - Scenario F1 S2 B1 A2 - 1 true queries - Time 1:08.59 - Memory 1225240k 
+strong_secrecy_inner - Scenario F1 S2 B2 A2 - 1 true queries - Time 9:06.97 - Memory 4287460k 
+strong_secrecy_inner - Scenario F1 S2 B3 A2 - 1 true queries - Time 25:22.38 - Memory 9892452k 
+strong_secrecy_inner - Scenario F2 S1 B1 A2 - 39 true queries - Time 2:24.61 - Memory 1690620k 
+strong_secrecy_inner - Scenario F2 S1 B2 A2 - 39 true queries - Time 50:21.13 - Memory 11250100k 
+strong_secrecy_inner - Scenario F2 S1 B3 A2 - 39 true queries - Time 1:58:54 - Memory 29232460k 
+strong_secrecy_inner - Scenario F2 S2 B1 A2 - 39 true queries - Time 22:43.32 - Memory 6206836k 

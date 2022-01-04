@@ -1,0 +1,10 @@
+lemmas_reachability - Scenario F2 S2 B2 A1 - 32 true queries - Time 2:31.41 - Memory 1281808k 
+lemmas_reachability - Scenario F2 S2 B2 A2 - 32 true queries - Time 21:40.37 - Memory 7465140k 
+lemmas_reachability - Scenario F2 S2 B2 A4 - 32 true queries - Time 29:42.20 - Memory 11211616k 
+lemmas_reachability - Scenario F2 S2 B3 A1 - 32 true queries - Time 4:18.81 - Memory 2236480k 
+lemmas_reachability - Scenario F2 S2 B3 A2 - 32 true queries - Time 42:02.27 - Memory 14724584k 
+lemmas_reachability - Scenario F2 S2 B3 A4 - 32 true queries - Time 1:09:58 - Memory 23121720k 
+lemmas_reachability - Scenario F7 S2 B2 A1 - 32 true queries - Time 8:37.26 - Memory 3235428k 
+lemmas_reachability - Scenario F7 S2 B2 A2 - 3 true queries - Time 3:49:07 - Memory 251810772k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S2 B2 A4 - 3 true queries - Time 4:07:16 - Memory 214330936k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S2 B3 A1 - 32 true queries - Time 14:34.27 - Memory 5155368k 
