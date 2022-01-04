@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd compute_results
+ocamlopt -o compute str.cmxa compute.ml
+cd ..
+compute_results/compute $1
