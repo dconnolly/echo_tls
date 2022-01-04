@@ -136,6 +136,13 @@ function forbidden_options() {
 			.ee)
 				echo 0
 				;;
+			.anonymityTLS)
+				if [[ $5 -eq 2 || $5 -eq 3 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
 		esac
 	fi
 }
@@ -315,6 +322,10 @@ function getfullname() {
 		.ee)
 			isequiv=1
 			fullname="strong_secrecy_ee"
+			;;
+		.anonymityTLS)
+			isequiv=1
+			fullname="anonymity_unlinkability_TLS_client"
 			;;
 	esac
 }

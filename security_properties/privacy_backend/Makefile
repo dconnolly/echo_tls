@@ -13,6 +13,5 @@ all:
 	-lib ../../libraries/server.pvl \
 	-lib ../../generated_libraries/client.pvl \
 	-lib ../../libraries/main_processes.pvl \
-	-lib ../../libraries/proof_helper_equiv_ticket.pvl \
 	-lib ../../libraries/proof_helper_equivalence.pvl \
 	privacy_backend.pv
