@@ -25,3 +25,4 @@ lemmas_reachability - Scenario F4 S2 B3 A1 - 32 true queries - Time 5:10.75 - Me
 lemmas_reachability - Scenario F4 S3 B2 A1 - 32 true queries - Time 3:58.14 - Memory 2452692k 
 lemmas_reachability - Scenario F4 S3 B3 A1 - 32 true queries - Time 8:06.34 - Memory 7465100k 
 lemmas_reachability - Scenario F9 S2 B2 A1 - 32 true queries - Time 9:32.00 - Memory 3389752k 
+lemmas_reachability - Scenario F9 S2 B3 A1 - 32 true queries - Time 17:26.45 - Memory 9891572k 
