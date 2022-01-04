@@ -321,6 +321,23 @@ function specificgroup() {
 	done
 }
 
+function specificABFS() {
+	# No Post Handshake nor Early.
+	for A in 1 2 4
+	do
+		for B in 2 3
+		do
+			for F in 2 3 4 5 7 8 9 10
+			do
+				for S in 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
 function specifictls() {
 	# No Post Handshake nor Early.
 	for F in 2 7 3 8 4 9 5 10
@@ -423,6 +440,12 @@ case .$1 in
 		echo Verifying specific scenarios.
 		getfullname $2
 		specificgroup $fullname
+		;;
+	.specificABFS)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specificABFS $fullname
 		;;
 	.equiv)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
