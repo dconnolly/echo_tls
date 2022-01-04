@@ -45,3 +45,10 @@ secrecy - Scenario F8 S3 B2 A1 - 4 true queries - Time 1:54.09 - Memory 3235288k
 secrecy - Scenario F8 S3 B3 A1 - 4 true queries - Time 4:59.42 - Memory 9891440k 
 secrecy - Scenario F4 S3 B2 A1 - 4 true queries - Time 1:02.95 - Memory 2816540k 
 secrecy - Scenario F4 S3 B3 A1 - 4 true queries - Time 2:58.83 - Memory 7464688k 
+secrecy - Scenario F9 S3 B2 A1 - 4 true queries - Time 3:32.85 - Memory 7465032k 
+secrecy - Scenario F9 S3 B3 A1 - 4 true queries - Time 9:48.31 - Memory 22845936k 
+secrecy - Scenario F5 S2 B3 A1 - 4 true queries - Time 1:49.84 - Memory 4286492k 
+secrecy - Scenario F5 S3 B2 A1 - 4 true queries - Time 1:01.27 - Memory 2452816k 
+secrecy - Scenario F5 S3 B3 A1 - 4 true queries - Time 3:01.06 - Memory 7465064k 
+secrecy - Scenario F10 S2 B2 A1 - 4 true queries - Time 2:09.80 - Memory 3235256k 
+secrecy - Scenario F10 S2 B3 A1 - 4 true queries - Time 5:40.05 - Memory 11364112k 

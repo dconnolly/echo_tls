@@ -11,3 +11,5 @@ post_handshake_data - Scenario F8 S2 B3 A1 - 5 true queries - Time 14:15.54 - Me
 post_handshake_data - Scenario F3 S3 B2 A1 - 5 true queries - Time 1:17.67 - Memory 2136080k 
 post_handshake_data - Scenario F3 S3 B3 A1 - 5 true queries - Time 5:01.79 - Memory 6496708k 
 post_handshake_data - Scenario F8 S3 B2 A1 - 5 true queries - Time 4:42.72 - Memory 5655088k 
+post_handshake_data - Scenario F8 S3 B3 A1 - 5 true queries - Time 20:33.85 - Memory 19884212k 
+post_handshake_data - Scenario F4 S2 B2 A1 - 5 true queries - Time 11:33.09 - Memory 17310420k 

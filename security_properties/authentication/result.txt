@@ -31,3 +31,9 @@ authentication - Scenario F7 S3 B2 A1 - 2 true queries - Time 3:21.81 - Memory 6
 authentication - Scenario F7 S3 B3 A1 - 2 true queries - Time 8:31.70 - Memory 19884544k 
 authentication - Scenario F3 S3 B2 A1 - 2 true queries - Time 1:01.75 - Memory 2816756k 
 authentication - Scenario F3 S3 B3 A1 - 2 true queries - Time 2:50.87 - Memory 8611036k 
+authentication - Scenario F8 S3 B2 A1 - 2 true queries - Time 3:46.67 - Memory 7465196k 
+authentication - Scenario F8 S3 B3 A1 - 2 true queries - Time 9:50.29 - Memory 22846316k 
+authentication - Scenario F4 S2 B3 A1 - 2 true queries - Time 3:23.31 - Memory 8611424k 
+authentication - Scenario F4 S3 B2 A1 - 2 true queries - Time 1:51.44 - Memory 5655192k 
+authentication - Scenario F4 S3 B3 A1 - 2 true queries - Time 5:03.95 - Memory 17309268k 
+authentication - Scenario F9 S2 B2 A1 - 2 true queries - Time 4:13.23 - Memory 6497232k 
