@@ -8,3 +8,6 @@ post_handshake_data - Scenario F8 S2 B2 A1 - 5 true queries - Time 3:18.86 - Mem
 post_handshake_data - Scenario F8 S2 B2 A2 - 5 true queries - Time 3:37:28 - Memory 34803460k 
 post_handshake_data - Scenario F8 S2 B2 A4 - 5 true queries - Time 5:01:42 - Memory 39979756k 
 post_handshake_data - Scenario F8 S2 B3 A1 - 5 true queries - Time 14:15.54 - Memory 8610996k 
+post_handshake_data - Scenario F3 S3 B2 A1 - 5 true queries - Time 1:17.67 - Memory 2136080k 
+post_handshake_data - Scenario F3 S3 B3 A1 - 5 true queries - Time 5:01.79 - Memory 6496708k 
+post_handshake_data - Scenario F8 S3 B2 A1 - 5 true queries - Time 4:42.72 - Memory 5655088k 

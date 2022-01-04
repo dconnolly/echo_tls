@@ -20,3 +20,10 @@ key_sequentiality - Scenario F8 S2 B2 A1 - 3 true queries - Time 1:39.62 - Memor
 key_sequentiality - Scenario F8 S2 B2 A2 - 3 true queries - Time 1:39:18 - Memory 22846120k 
 key_sequentiality - Scenario F8 S2 B2 A4 - 3 true queries - Time 1:45:35 - Memory 30168408k 
 key_sequentiality - Scenario F8 S2 B3 A1 - 3 true queries - Time 4:21.02 - Memory 6497008k 
+key_sequentiality - Scenario F2 S3 B2 A1 - 3 true queries - Time 0:43.97 - Memory 1613324k 
+key_sequentiality - Scenario F2 S3 B3 A1 - 3 true queries - Time 2:06.01 - Memory 4922616k 
+key_sequentiality - Scenario F7 S3 B2 A1 - 3 true queries - Time 2:25.83 - Memory 4286552k 
+key_sequentiality - Scenario F7 S3 B3 A1 - 3 true queries - Time 6:47.91 - Memory 13056744k 
+key_sequentiality - Scenario F3 S3 B2 A1 - 3 true queries - Time 0:48.71 - Memory 1852888k 
+key_sequentiality - Scenario F3 S3 B3 A1 - 3 true queries - Time 2:20.21 - Memory 4922916k 
+key_sequentiality - Scenario F8 S3 B2 A1 - 3 true queries - Time 2:36.33 - Memory 4286240k 
