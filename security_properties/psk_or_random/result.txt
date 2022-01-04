@@ -9,3 +9,5 @@ psk_or_random - Scenario F7 S1 B2 A1 - 41 true queries - Time 30:00.31 - Memory 
 psk_or_random - Scenario F7 S1 B3 A1 - 41 true queries - Time 1:17:31 - Memory 12302332k 
 psk_or_random - Scenario F7 S2 B1 A1 - 41 true queries - Time 3:10.80 - Memory 1299068k 
 psk_or_random - Scenario F7 S2 B2 A1 - 41 true queries - Time 1:09:31 - Memory 10497180k 
+psk_or_random - Scenario F7 S2 B3 A1 - 41 true queries - Time 4:49:15 - Memory 34095408k 
+psk_or_random - Scenario F2 S1 B1 A2 - 41 true queries - Time 7:13.28 - Memory 2602336k 

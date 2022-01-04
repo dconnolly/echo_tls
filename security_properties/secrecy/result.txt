@@ -33,3 +33,5 @@ secrecy - Scenario F9 S2 B2 A2 - 4 true queries - Time 55:04.89 - Memory 3016844
 secrecy - Scenario F9 S2 B2 A4 - 4 true queries - Time 1:03:55 - Memory 45939732k 
 secrecy - Scenario F9 S2 B3 A1 - 4 true queries - Time 5:39.74 - Memory 11364372k 
 secrecy - Scenario F9 S2 B3 A2 - 4 true queries - Time 2:16:59 - Memory 106162516k 
+secrecy - Scenario F2 S3 B2 A1 - 4 true queries - Time 0:32.34 - Memory 1224416k 
+secrecy - Scenario F9 S2 B3 A4 - 4 true queries - Time 2:48:27 - Memory 161707128k 

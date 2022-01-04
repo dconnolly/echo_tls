@@ -21,3 +21,12 @@ strong_secrecy_ee - Scenario F7 S1 B2 A1 - 39 true queries - Time 21:53.42 - Mem
 strong_secrecy_ee - Scenario F7 S1 B3 A1 - 39 true queries - Time 49:20.42 - Memory 10406460k 
 strong_secrecy_ee - Scenario F7 S2 B1 A1 - 39 true queries - Time 3:50.71 - Memory 1471972k 
 strong_secrecy_ee - Scenario F7 S2 B2 A1 - 39 true queries - Time 1:25:17 - Memory 10222640k 
+strong_secrecy_ee - Scenario F7 S2 B3 A1 - 39 true queries - Time 4:05:36 - Memory 37835740k 
+strong_secrecy_ee - Scenario F1 S1 B1 A2 - 1 true queries - Time 0:40.96 - Memory 927024k 
+strong_secrecy_ee - Scenario F1 S1 B2 A2 - 1 true queries - Time 5:42.96 - Memory 3236228k 
+strong_secrecy_ee - Scenario F1 S1 B3 A2 - 1 true queries - Time 13:30.55 - Memory 6494988k 
+strong_secrecy_ee - Scenario F1 S2 B1 A2 - 1 true queries - Time 1:08.73 - Memory 1374872k 
+strong_secrecy_ee - Scenario F1 S2 B2 A2 - 1 true queries - Time 11:02.77 - Memory 5002232k 
+strong_secrecy_ee - Scenario F1 S2 B3 A2 - 1 true queries - Time 38:02.57 - Memory 13058348k 
+strong_secrecy_ee - Scenario F2 S1 B1 A2 - 39 true queries - Time 2:41.19 - Memory 1941284k 
+strong_secrecy_ee - Scenario F2 S1 B2 A2 - 39 true queries - Time 1:01:32 - Memory 13764052k 

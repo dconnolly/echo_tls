@@ -17,3 +17,6 @@ anonymity_unlinkability_TLS_client - Scenario F6 S2 B1 A1 - 1 true queries - Tim
 anonymity_unlinkability_TLS_client - Scenario F6 S2 B2 A1 - 1 true queries - Time 3:16.34 - Memory 2453588k 
 anonymity_unlinkability_TLS_client - Scenario F6 S2 B3 A1 - 1 true queries - Time 11:46.89 - Memory 5655972k 
 anonymity_unlinkability_TLS_client - Scenario F7 S1 B1 A1 - 49 true queries - Time 1:30.04 - Memory 970112k 
+anonymity_unlinkability_TLS_client - Scenario F7 S1 B2 A1 - 49 true queries - Time 1:17:01 - Memory 13310816k 
+anonymity_unlinkability_TLS_client - Scenario F7 S1 B3 A1 - 49 true queries - Time 3:00:53 - Memory 29078376k 
+anonymity_unlinkability_TLS_client - Scenario F7 S2 B1 A1 - 49 true queries - Time 5:21.34 - Memory 1828760k 
