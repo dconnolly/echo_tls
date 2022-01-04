@@ -263,13 +263,13 @@ process
   ) | (
     !
     (* Server *)
+    new id_server:idProc;
     in(io,s_dom:domain);
     event Same(d2b(s_dom));
-    run_server(s_dom,empty_extra_ext)
+    run_server(id_server,s_dom,empty_extra_ext)
   ) | (
     (* ECH client with Diff *)
     !
-    new id_client:idProc;
     (* Domains *)
     in(io,frontend_dom:domain) [precise];
     event Same(d2b(frontend_dom));

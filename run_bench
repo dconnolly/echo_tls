@@ -126,6 +126,16 @@ function forbidden_options() {
 					echo 0
 				fi
 				;;
+			.inner)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.ee)
+				echo 0
+				;;
 		esac
 	fi
 }
@@ -297,6 +307,14 @@ function getfullname() {
 			isequiv=1
 			isror=1
 			fullname="psk_or_random"
+			;;
+		.inner)
+			isequiv=1
+			fullname="strong_secrecy_inner"
+			;;
+		.ee)
+			isequiv=1
+			fullname="strong_secrecy_ee"
 			;;
 	esac
 }

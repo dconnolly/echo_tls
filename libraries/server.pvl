@@ -612,15 +612,12 @@ let ech_HRR_check(id_server:idProc,
 (* The main server *)
 
 let server(
-  use_ech,use_psk,req_cert:bool,
+  id_server:idProc,use_ech,use_psk,req_cert:bool,
   s_dom:domain,
   tls_g:group,tls_h:hash_alg,tls_a:aead_alg, (* The group and cipher suite accepted by the standard TLS server or frontend *)
   backend_g:group,backend_h:hash_alg,backend_a:aead_alg, (* The group and cipher suite accepted by the backend server *)
   ee_extra:extraExt (* Some extensions to be sent in the EncryptedExtension message *)
   ) =
-
-  (* Identifier process *)
-  new id_server[]:idProc;
 
   (* Receive a client hello *)
   in(io,o_client_hello:msg);

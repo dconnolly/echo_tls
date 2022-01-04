@@ -111,7 +111,8 @@ process
     run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   ) | (
     !
+    new id_server:idProc;
     (* Server *)
     in(io,s_dom:domain) [precise];
-    run_server(s_dom,empty_extra_ext)
+    run_server(id_server,s_dom,empty_extra_ext)
   )

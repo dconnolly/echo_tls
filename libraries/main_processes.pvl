@@ -279,46 +279,46 @@ def macro_standard_client(do_precise,run_standard_client) {
 
 (* Generic Server  *)
 
-let run_server_req_cert(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech,use_psk:bool) =
+let run_server_req_cert(id_server:idProc,s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech,use_psk:bool) =
   if set_req_cert
   then (
     let req_cert = default_req_cert in
-    server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
+    server(id_server,use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
   )
   else
     in(io,req_cert:bool);
     let () = proof_helper_server(bool2b(req_cert)) in
     event Same(bool2b(req_cert));
-    server(use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
+    server(id_server,use_ech,use_psk,req_cert,s_dom,tls_g,tls_h,tls_a,backend_g,backend_h,backend_a,extra_ext)
 .
 
-let run_server_use_psk(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech:bool) =
+let run_server_use_psk(id_server:idProc,s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg,use_ech:bool) =
   if set_use_psk
   then (
     let use_psk = default_use_psk in
-    run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
+    run_server_req_cert(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
   )
   else
     in(io,use_psk:bool);
     let () = proof_helper_server(bool2b(use_psk)) in
     event Same(bool2b(use_psk));
-    run_server_req_cert(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
+    run_server_req_cert(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech,use_psk)
 .
 
-let run_server_use_ech(s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
+let run_server_use_ech(id_server:idProc,s_dom:domain,extra_ext:extraExt,tls_a,backend_a:aead_alg,tls_g,backend_g:group,tls_h,backend_h:hash_alg) =
   if set_use_ech
   then (
     let use_ech = default_use_ech in
-    run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
+    run_server_use_psk(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
   )
   else
     in(io,use_ech:bool);
     let () = proof_helper_server(bool2b(use_ech)) in
     event Same(bool2b(use_ech));
-    run_server_use_psk(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
+    run_server_use_psk(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h,use_ech)
 .
 
-let run_server(s_dom:domain,extra_ext:extraExt) =
+let run_server(id_server:idProc,s_dom:domain,extra_ext:extraExt) =
   if allow_multiple_ciphersuite_and_group
   then (
     in(io,(tls_g:group,backend_g:group,tls_h:hash_alg,backend_h:hash_alg,tls_a:aead_alg,backend_a:aead_alg));
@@ -335,7 +335,7 @@ let run_server(s_dom:domain,extra_ext:extraExt) =
     event Same(g2b(backend_g));
     event Same(h2b(backend_h));
     event Same(a2b(backend_a));
-    run_server_use_ech(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+    run_server_use_ech(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
   ) else
     let tls_h = id_hash(StrongHash,1) in
     let tls_a = id_aead(StrongAE,1) in
@@ -343,7 +343,7 @@ let run_server(s_dom:domain,extra_ext:extraExt) =
     let backend_h = id_hash(StrongHash,1) in
     let backend_a = id_aead(StrongAE,1) in
     let backend_g = id_g(StrongDH,1) in
-    run_server_use_ech(s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
+    run_server_use_ech(id_server,s_dom,extra_ext,tls_a,backend_a,tls_g,backend_g,tls_h,backend_h)
 .
 
 (* Generic ECH client *)
