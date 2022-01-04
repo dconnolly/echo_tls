@@ -3,14 +3,21 @@
 *************************)
 
 set preciseActions = true.
-set verboseRedundant = true.
 set redundancyElim = no.
 set removeEventsForLemma = true.
-(* set verboseRules = true. *)
 
 (* The queries in this file ensures that all valid scenarios are possible.
   We consider a single session of a client and a server with uncompromised
   keys. *)
+
+restriction id_s,id_c:idProc,s,s':seed,x,x':bitstring,g:group,gxy:element,psk:preSharedKey,safe:bool;
+  (* We enforce that the attacker does not try to interact as we are only interested
+    to see that the process executes correctly. *)
+  event(Server_DH_client(id_s,dh_pub(g,x))) ==> x = dh_k(s);
+  event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) ==> x = dh_k(s) && gxy = dh_xy(s',x');
+  event(Client_PSKChoosen(id_c,psk,safe)) ==> psk = NoPsk || psk = uc_psk(s);
+  event(Server_PSKChoosen(id_s,psk)) ==> psk = NoPsk || psk = uc_psk(s)
+.
 
 (* Addtional events used for sanaity checks *)
 
@@ -24,166 +31,166 @@ event ServerReqCert(bool).
 
 (* The queries *)
 
-query id_c,id_s:idProc, cr,sr:bytes32,psk:preSharedKey,s_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,msg_ed:bitstring,log:bitstring;
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+query id_c,id_s:idProc, cr,sr:bytes32,psk:preSharedKey,s_pkey,c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,msg_ed:bitstring,log:bitstring;
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(true));
 
   (*-------*)
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(true)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(true)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(true)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(true)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(false));
 
-  event(ServerFinished(id_s,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
-  event(ClientFinished(id_c,cr,sr,psk,s_pkey,cak,sak,ems,rms)) &&
+  event(ServerFinished(id_s,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
+  event(ClientFinished(id_c,cr,sr,psk,s_pkey,c_pkey,cak,sak,ems,rms)) &&
   event(ClientUsePsk(false)) && event(ServerUsePsk(false)) &&
   event(ClientSendKex(false)) && event(ServerReqCert(false)) && event(ServerUseEch(false))
 .
@@ -248,6 +255,7 @@ process
     )
   ) | (
     (* Server *)
+    new id_server:idProc;
     in(io,use_ech:bool);
     event ServerUseEch(use_ech);
     in(io,use_psk:bool);
@@ -255,7 +263,7 @@ process
     in(io,req_cert:bool);
     event ServerReqCert(req_cert);
 
-    server(use_ech,use_psk,req_cert,
+    server(id_server,use_ech,use_psk,req_cert,
       s_dom,
       tls_g,tls_h,tls_a,
       tls_g,tls_h,tls_a,

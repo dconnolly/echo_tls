@@ -1,7 +1,0 @@
-nounif s_dom,s_dom':domain, h_alg,h_alg':hash_alg, psk,psk':preSharedKey;
-  attacker(mk_idpsk(diff[*s_dom,*s_dom'],diff[*h_alg,*h_alg'],diff[*psk,*psk'])) [ignoreAFewTimes]
-.
-
-nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
-  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) [ignoreAFewTimes]
-.
