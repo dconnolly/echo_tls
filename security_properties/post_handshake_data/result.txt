@@ -16,3 +16,6 @@ post_handshake_data - Scenario F4 S2 B2 A1 - 5 true queries - Time 11:33.09 - Me
 post_handshake_data - Scenario F4 S2 B3 A1 - 5 true queries - Time 41:59.41 - Memory 69991068k 
 post_handshake_data - Scenario F4 S3 B2 A1 - 5 true queries - Time 15:15.90 - Memory 19885412k 
 post_handshake_data - Scenario F4 S3 B3 A1 - 5 true queries - Time 58:18.98 - Memory 80408780k 
+post_handshake_data - Scenario F9 S2 B2 A1 - 5 true queries - Time 39:01.25 - Memory 50861524k 
+post_handshake_data - Scenario F9 S2 B3 A1 - 4 true queries - Time 2:09:46 - Memory 177133480k Command terminated by signal 9
+post_handshake_data - Scenario F9 S3 B2 A1 - 5 true queries - Time 54:59.11 - Memory 60666780k 

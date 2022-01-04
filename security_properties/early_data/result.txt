@@ -17,3 +17,5 @@ early_data - Scenario F10 S3 B3 A1 - 2 true queries - Time 9:08.15 - Memory 2284
 early_data - Scenario F5 S3 B2 A2 - 2 true queries - Time 22:47.03 - Memory 45939372k 
 early_data - Scenario F5 S3 B2 A4 - 2 true queries - Time 29:18.66 - Memory 60667156k 
 early_data - Scenario F5 S3 B3 A2 - 2 true queries - Time 1:21:21 - Memory 161709936k 
+early_data - Scenario F5 S3 B3 A4 - 0 true queries - Time 1:33:44 - Memory 213519708k Command terminated by signal 9
+early_data - Scenario F10 S3 B2 A2 - 0 true queries - Time 1:51:53 - Memory 122006260k Command terminated by signal 9

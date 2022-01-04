@@ -48,3 +48,5 @@ authentication - Scenario F10 S2 B2 A1 - 2 true queries - Time 4:10.60 - Memory 
 authentication - Scenario F10 S2 B3 A1 - 2 true queries - Time 10:31.40 - Memory 22846088k 
 authentication - Scenario F10 S3 B2 A1 - 2 true queries - Time 6:41.45 - Memory 15004372k 
 authentication - Scenario F10 S3 B3 A1 - 2 true queries - Time 18:11.92 - Memory 45939544k 
+authentication - Scenario F4 S2 B3 A2 - 2 true queries - Time 42:28.20 - Memory 80406840k 
+authentication - Scenario F4 S2 B3 A4 - 2 true queries - Time 1:09:13 - Memory 122006684k 

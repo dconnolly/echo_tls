@@ -9,3 +9,11 @@ post_handshake_authentication - Scenario F4 S3 B2 A1 - 2 true queries - Time 6:3
 post_handshake_authentication - Scenario F4 S3 B3 A1 - 2 true queries - Time 25:58.37 - Memory 34803248k 
 post_handshake_authentication - Scenario F9 S2 B3 A1 - 2 true queries - Time 51:23.83 - Memory 45942720k 
 post_handshake_authentication - Scenario F9 S3 B2 A1 - 2 true queries - Time 21:40.79 - Memory 26251748k 
+post_handshake_authentication - Scenario F9 S3 B3 A1 - 2 true queries - Time 1:26:04 - Memory 92387276k 
+post_handshake_authentication - Scenario F5 S2 B2 A1 - 2 true queries - Time 4:33.41 - Memory 4923036k 
+post_handshake_authentication - Scenario F5 S2 B3 A1 - 2 true queries - Time 17:51.01 - Memory 17309192k 
+post_handshake_authentication - Scenario F5 S3 B2 A1 - 2 true queries - Time 6:55.05 - Memory 9891468k 
+post_handshake_authentication - Scenario F5 S3 B3 A1 - 2 true queries - Time 27:08.03 - Memory 34802992k 
+post_handshake_authentication - Scenario F10 S2 B2 A1 - 2 true queries - Time 14:04.80 - Memory 11360496k 
+post_handshake_authentication - Scenario F10 S2 B3 A1 - 2 true queries - Time 53:33.17 - Memory 45939468k 
+post_handshake_authentication - Scenario F10 S3 B2 A1 - 2 true queries - Time 21:56.64 - Memory 26248376k 
