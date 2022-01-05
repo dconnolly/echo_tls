@@ -299,7 +299,7 @@ function doreach() {
 		do
 			for B in 1 2 3
 			do
-				for A in 1 2 3 4
+				for A in 1 2 4
 				do
 					run_scenario $1 $F $S $B $A
 				done
