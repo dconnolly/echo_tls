@@ -1,3 +1,43 @@
+# Verification of TLS 1.3 with ECH extension
+
+### File structure
+
+The folder `librairies` contains all files describing the protocol. They are all
+Proverif librairies and so must be call with the option `-lib xxx`.
+- `primitives.pvl`: Description of the cryptographic primitives.
+- `format.pvl`: Description of the message format and different element used in the protocol (DH key shares, pre shared keys, certificates, ECH configurations, Handshake messages and extensions)
+- `key_schedule.pvl`: Functions generating the keys used in the TLS handshake (section 7.1 of TLS RFC).
+- `tls_functions.pvl`: Some functions used by the client and server during the TLS handshake (e.g. generation of `client_hello`, pre shared key extension)
+- `ech_functions.pvl`: Some functions specifically used by ECH client and server (e.g. generation of `AAD`, `accept_confirmation`, `encrypted_client_hello`)
+
+The main processes are defined in the following 3 files.
+- `client.m4.pvl`: The client process.
+- `server.pvl`: The server process
+- `main_process.pvl`: Processes generating the honest and dishonest (i.e. compromised) keys and the main processes to call, i.e. `all_internal_processes`, `run_ech_client`, `run_standard_client`, `run_server`.
+
+The files `proof_helper_reachability.pvl` and `proof_helper_equivalence.pvl` contains declarations of some axioms and ProVerif declarations that helps ProVerif terminate and avoid false attacks. The axioms are properties that are true for all traces of the protocols (hence they are not restrictions). More details in `proof_helper.md`.
+
+All the security properties we prove are defined in the folder `security_properties`, each security property having its own folder that contains the following files:
+- `Makefile`: To run the verification
+- `config.pvl`: Contains all the different configurations options (e.g. allow HRR, Post handshake new session, early data, compromised keys, ...)
+- `config_proof_helper.pvl`: Additional proof helpers specific to the security property. The variables `select_client_certificate_by_restriction`, `select_server_certificate_by_restriction`, `select_client_pre_shared_key_by_restriction` and `select_server_pre_shared_key_by_restriction` should not be modified. The other booleans may be modified but it may make ProVerif slower or yield a false attack. Intuitively, when the variables for precision are set to true, it increases the precision (hence yielding less false attacks) but slows down ProVerif.
+- `my_security_property.pv`: the main file for the security property `my_security_property`. It contains the main process as well as the query. The file also contains some axioms that are properties proved in the security properties folder `lemmas_reachability`. As ProVerif needed different proof settings to handle these particular properties, we separated them from the main properties.
+
+For equivalence properties, there is an additional main file for the case where the server does not generates new ticket (faster verification).
+
+### Some notes of the structure of `client.m4.pvl` and `server.pvl`
+
+To simplify the writing, we split the client and server processes into several subprocesses. For instance, in `client.m4.pvl`, the subprocess `process_server_certificate_message` handles the `server_hello` message, the subprocess handles the `finished_message` of the server, etc.
+
+A naive way to encode the main process of the client would have been to call the subprocess directly. However, due to the different scenarios we consider, this would yield a gigantic process due to the numerous conditional branching. To speedup the verification time, some of the processes at not called directly but their arguments are passed through a private channel. For example, the process `process_server_certificate_message` inputs its arguments on the private channel `ch_client_CRT` and outputs its results on the private channel `ch_client_FIN`.
+
+Semantically, both encoding are completely equivalent but passing the arguments through private channels decreases significantly the verification time.
+
+It has however a drawback due to ProVerif internal abstraction: There is a loss of precision which may lead to false attacks. We use ProVerif axioms to avoid such false attacks. More details in `proof_helper.md`.
+
+### Verifying the security properties
+
+
 To run the different scenarios, use the executable run_bench. It will generates files in the two folder generated_models and generated_librairies. The folder generated_models will contain the main proverif file that is executed (it also contain the full proverif command that is run).
 
 The model follow https://datatracker.ietf.org/doc/html/draft-ietf-tls-esni-13
