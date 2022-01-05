@@ -19,3 +19,12 @@ post_handshake_data - Scenario F4 S3 B3 A1 - 5 true queries - Time 58:18.98 - Me
 post_handshake_data - Scenario F9 S2 B2 A1 - 5 true queries - Time 39:01.25 - Memory 50861524k 
 post_handshake_data - Scenario F9 S2 B3 A1 - 4 true queries - Time 2:09:46 - Memory 177133480k Command terminated by signal 9
 post_handshake_data - Scenario F9 S3 B2 A1 - 5 true queries - Time 54:59.11 - Memory 60666780k 
+post_handshake_data - Scenario F9 S3 B3 A1 - 0 true queries - Time 1:06:31 - Memory 106161244k Command terminated by signal 9
+post_handshake_data - Scenario F5 S2 B2 A1 - 5 true queries - Time 11:38.89 - Memory 17310456k 
+post_handshake_data - Scenario F5 S2 B3 A1 - 5 true queries - Time 45:17.56 - Memory 69988176k 
+post_handshake_data - Scenario F5 S3 B2 A1 - 5 true queries - Time 15:31.74 - Memory 19885436k 
+post_handshake_data - Scenario F5 S3 B3 A1 - 5 true queries - Time 57:50.62 - Memory 80405836k 
+post_handshake_data - Scenario F10 S2 B2 A1 - 5 true queries - Time 39:51.60 - Memory 50294368k 
+post_handshake_data - Scenario F10 S2 B3 A1 - 4 true queries - Time 2:12:16 - Memory 185809204k Command terminated by signal 9
+post_handshake_data - Scenario F10 S3 B2 A1 - 5 true queries - Time 54:26.69 - Memory 60669616k 
+post_handshake_data - Scenario F10 S3 B3 A1 - 0 true queries - Time 54:11.88 - Memory 92383168k Command terminated by signal 9

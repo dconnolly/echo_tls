@@ -3,3 +3,5 @@ anonymity_unlinkability_ECH_client - Scenario F1 S1 B2 A2 - 1 true queries - Tim
 anonymity_unlinkability_ECH_client - Scenario F1 S1 B3 A2 - 1 true queries - Time 1:19:55 - Memory 13058632k 
 anonymity_unlinkability_ECH_client - Scenario F1 S2 B1 A2 - 1 true queries - Time 2:45.86 - Memory 2137000k 
 anonymity_unlinkability_ECH_client - Scenario F1 S2 B2 A2 - 1 true queries - Time 1:08:51 - Memory 11365428k 
+anonymity_unlinkability_ECH_client - Scenario F1 S2 B3 A2 - 1 true queries - Time 5:25:45 - Memory 30167456k 
+anonymity_unlinkability_ECH_client - Scenario F6 S1 B1 A2 - 1 true queries - Time 23:17.29 - Memory 4920936k 
