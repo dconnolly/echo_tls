@@ -4,3 +4,5 @@ downgrade_resilient_ech - Scenario F2 S2 B3 A2 - 1 true queries - Time 1:24:56 -
 downgrade_resilient_ech - Scenario F2 S2 B3 A4 - 1 true queries - Time 1:53:51 - Memory 45940272k 
 downgrade_resilient_ech - Scenario F3 S2 B2 A2 - 1 true queries - Time 33:43.84 - Memory 9891728k 
 downgrade_resilient_ech - Scenario F3 S2 B2 A4 - 1 true queries - Time 43:36.09 - Memory 15004564k 
+downgrade_resilient_ech - Scenario F3 S2 B3 A2 - 1 true queries - Time 1:45:33 - Memory 30168668k 
+downgrade_resilient_ech - Scenario F3 S2 B3 A4 - 1 true queries - Time 2:21:24 - Memory 52787108k 
