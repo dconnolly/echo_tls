@@ -291,11 +291,11 @@ function run_scenario() {
 	fi
 }
 
-function doall() {
+function doreach() {
 	# NoHRR
 	for F in 1 2 3 4 5 6 7 8 9 10
 	do
-		for S in 1 2 3
+		for S in 2 3
 		do
 			for B in 1 2 3
 			do
@@ -468,15 +468,15 @@ case .$1 in
 	.one)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
-		echo Verifying one scenario.
 		getfullname $2
+		echo Verifying the property $fullname for the scenario F=$3, S=$4, B=$5, A=$6.
 		run_scenario $fullname $3 $4 $5 $6 $7
 		;;
-	.all)
+	.reach)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
-		echo Verifying all scenarios.
 		getfullname $2
-		doall $fullname
+		echo Verifying all reachbility scenarios for the property $fullname
+		doreach $fullname
 		;;
 	.specific)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
@@ -505,8 +505,8 @@ case .$1 in
 	.equiv)
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
-		echo Verifying scenarios for equivalence queries.
 		getfullname $2
+		echo Verifying all equivalence scenarios for the property $fullname
 		doequiv $fullname
 		;;
 	.equivnoticket)
