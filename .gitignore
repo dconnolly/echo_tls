@@ -10,3 +10,4 @@ tmp.*
 **/*.o
 **/*.cmx
 **/compute
+ongoing.txt
