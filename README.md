@@ -18,7 +18,7 @@ The main processes are defined in the following 3 files.
 - `server.pvl`: The server process
 - `main_process.pvl`: Processes generating the honest and dishonest (i.e. compromised) keys and the main processes to call, i.e. `all_internal_processes`, `run_ech_client`, `run_standard_client`, `run_server`.
 
-The files `proof_helper_reachability.pvl` and `proof_helper_equivalence.pvl` contains declarations of some axioms and ProVerif declarations that helps ProVerif terminate and avoid false attacks. The axioms are properties that are true for all traces of the protocols (hence they are not restrictions). More details in `proof_helper.md`.
+The files `proof_helper_reachability.pvl` and `proof_helper_equivalence.pvl` contains declarations of some axioms and ProVerif declarations that helps ProVerif terminate and avoid false attacks. The axioms are properties that are true for all traces of the protocols (hence they are not restrictions). More details in `modelisation_details.md`.
 
 All the security properties we prove are defined in the folder `security_properties`, each security property having its own folder that contains the following files:
 - `Makefile`: To run the verification
