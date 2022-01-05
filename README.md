@@ -28,16 +28,6 @@ All the security properties we prove are defined in the folder `security_propert
 
 For equivalence properties, there is an additional main file for the case where the server does not generates new ticket (faster verification).
 
-### Some notes of the structure of `client.m4.pvl` and `server.pvl`
-
-To simplify the writing, we split the client and server processes into several subprocesses. For instance, in `client.m4.pvl`, the subprocess `process_server_certificate_message` handles the `server_hello` message, the subprocess handles the `finished_message` of the server, etc.
-
-A naive way to encode the main process of the client would have been to call the subprocess directly. However, due to the different scenarios we consider, this would yield a gigantic process due to the numerous conditional branching. To speedup the verification time, some of the processes at not called directly but their arguments are passed through a private channel. For example, the process `process_server_certificate_message` inputs its arguments on the private channel `ch_client_CRT` and outputs its results on the private channel `ch_client_FIN`.
-
-Semantically, both encoding are completely equivalent but passing the arguments through private channels decreases significantly the verification time.
-
-It has however a drawback due to ProVerif internal abstraction: There is a loss of precision which may lead to false attacks. We use ProVerif axioms to avoid such false attacks. More details in `proof_helper.md`.
-
 ### Verifying the security properties
 
 To verify a security property, run the `Makefile` contained in the folder of the corresponding property. You can modify the file `config.pvl` in the folder to enable or disable some functionalities. An explanation for each variable setting is given as comment in `config.pvl`.
@@ -67,107 +57,99 @@ where:
   - `anonymityECH`: Anonymity and unlinkability of ECH clients.
 - `<type>` can be `reach` or `equiv`. The type `reach` should only be used with `secrecy`, `early`, `auth`, `downgrade`, `key`, `PHauth`, `PHdata` and `Rlemma`. The type `equiv` should be only be used with `backend`, `PSKorR`, `inner`, `ee`, `anonymityTLS` and `anonymityECH`.
 - `<F>` is a number from 1 to 10 corresponding to the functionalities
-- `<S>` is a number from 1 to 3 corresponding to the safety of keys, the groups and ciphersuites
+- `<S>` is a number from 1 to 3 corresponding to the compromised keys, the groups and ciphersuites
 - `<B>` is a number from 1 to 4 corresponding to the behavior of the clients and servers
 - `<A>` is a number from 1 to 4 corresponding to the agents considered.
 
 When the option `PV` is given, ProVerif will run and its output is given in the standard output. When the option `PV` is omitted, the output of ProVerif is recorded in the folder `tests`. It will also record a short summary of the memory consumption and execution time in a file `result.txt` inside the folder of the corresponding security property.
 
+###### Functionalities scenarios
+
 The functionalities (parameter `<F>` above) are as follows:
 
 | `<F>` | HRR | Tickets | PH Data | PH Auth | Early Data |
 | - | --- | ------- | ------- | ------- | ---------- |
-| 1 | no | no | no | no | no |
-| 2 | no | yes | no | no | no |
-| 3 | no | yes | yes | no | no |
-| 4 | no | yes | yes | yes | no |
-| 5 | no | yes | yes | yes | yes |
-| 6 | yes | no | no | no | no |
-| 7 | yes | yes | no | no | no |
-| 8 | yes | yes | yes | no | no |
-| 9 | yes | yes | yes | yes | no |
-| 10 | yes | yes | yes | yes | yes |
+| 1 | *no* | *no* | *no* | *no* | *no* |
+| 2 | *no* | **yes** | *no* | *no* | *no* |
+| 3 | *no* | **yes** | **yes** | *no* | *no* |
+| 4 | *no* | **yes** | **yes** | **yes** | *no* |
+| 5 | *no* | **yes** | **yes** | **yes** | **yes** |
+| 6 | **yes** | *no* | *no* | *no* | *no* |
+| 7 | **yes** | **yes** | *no* | *no* | *no* |
+| 8 | **yes** | **yes** | **yes** | *no* | *no* |
+| 9 | **yes** | **yes** | **yes** | **yes** | *no* |
+| 10 | **yes** | **yes** | **yes** | **yes** | **yes** |
 
-![Testing](img/functionalities.png)
+In the above table, when **HRR** is set to *no* then clients send their DH key share with the DH group and servers do not send Hello Retry Request and abort instead. When set to **yes**, the attacker chooses if clients send their DH key share with the DH group and servers send Hello Retry Request if clients do not send their DH key share.
 
-In the above table, when <!HRR!> is
+When **Tickets** is set to **true**, the server generates a new ticket at the end of each handshake, and clients can reused the PSK obtained from a ticket in another session. When set to *no*, server never generates tickets and clients are not expecting to receive a ticket.
 
-| 1 | Content Cell  |
-| 2 | Content Cell  |
+When **PH Data** is set to **true**, clients and Servers can send/receive Post Handshake Data. When set to *no*, they do not send nor expect Post Handshake Data.
 
+When **PH Auth** is set to **true**, servers can request Post Handshake Authentication and clients reply accordingly by sending a certificate. When set to *no*, servers do not request Post Handshake Authentication and clients are not expecting it.
 
+When **Early Data** is set to **true**, clients and servers can send/receive 0-RTT early data. When set to *no*, clients and servers do not send nor expect 0-RTT early data.
 
+###### Compromised Keys, Cipher suites and groups scenarios
 
-#### Syntax to follow:
+| `<S>` | Ech Config | External PSK | Ticket PSK | Certificate | Group, CS |
+| - | --- | ------- | ------- | ------- | ---------- |
+| 1 | **choice** | **choice** | **choice** | *no* | *fixed* |
+| 2 | **choice** | **choice** | **choice** | **choice** | *fixed* |
+| 3 | **choice** | **choice** | **choice** | **choice** | **choice** |
 
-In the following, the optional PV run proverif and display its output. Without it, it only check that the value corresponds to the expected output.
+When the parameter of a key is set to **choice**, then the attacker is allowed to compromise keys of this type. When set to *no*, all keys of this type is uncompromised (hence not directly known by the attacker). For the DH group and cipher suite, when set to *fixed*, the ciphersuites and DH groups are not choosen by the attacker. They are the same for all TLS handshake. The ciphersuites and groups in ECH configurations differs from the ones used in the TLS handshake. When set to **choice**, the ciphersuites and DH groups are choosen by the attacker for each session.
 
-<n> represents the scenario and be equal to 1 up to 5.
+###### Agent behaviors
 
--- To run the sanity check:
+| `<B>` | PSK | Req Client Cert | Grease | Send DH key share |
+| - | --- | ------- | ------- | ------- |
+| 1 | *no* | *no* | *no* | **choice** |
+| 2 | **choice** | *no* | *no* | **choice** |
+| 3 | **choice** | **choice** | *no* | **choice** |
+| 4 | **choice** | **choice** | **choice** | **choice** |
 
-./run_bench sanity [PV]
-./run_bench sanity_nohrr [PV]
+When **PSK** is set to **choice**, the attackers choose whether clients and servers send and accept pre shared keys respectively. When set to *no*, clients and servers never send nor accept pre shared keys.
 
--- To run the privacy of the backend
+Similar meaning for the other parameters where **Req Client Cert** refers to servers requesting client certificate during the main handshake, **Grease** refers to ECH clients using GREASE and **Send DH key share** refers to clients sending their key share in the first client hello (if they don't it will trigger an HRR reply by the server, unless the parameter **HRR** is set to *no*).
 
-* With PSK not reinjected
+###### Agent behaviors
 
-./run_bench backend <n> [PV]
-./run_bench backend_nohrr <n> [PV]
+| `<A>` | TLS Clients | ECH Clients | TLS Server | ECH Server |
+| - | --- | ------- | ------- | ------- |
+| 1 | **yes** | *no* | **yes** | *no* |
+| 2 | *no* | **yes** | *no* | **yes** |
+| 3 | *no* | **yes** | **yes** | **yes** |
+| 4 | **yes** | **yes** | **yes** | **yes** |
 
-* With PSK reinjected
+The parameter specify where the property is proved in the presence of specific agents. When set to **yes**, we always consider an unbounded number of sessions.
 
-./run_bench backend_full <n> [PV]
-./run_bench backend_full_nohrr <n> [PV]
+### Verification results
 
--- To run the strong secrecy of the extension in the inner client hello
+The details for all of verification results can be found in the files `result.txt` of each security property. For example, in the result file of the `authentication` folder:
 
-* With PSK not reinjected
+> authentication - Scenario F4 S2 B3 A2 - 2 true queries - Time 42:28.20 - Memory 80406840k
+>
+> authentication - Scenario F4 S2 B3 A4 - 2 true queries - Time 1:09:13 - Memory 122006684k
+>
+> authentication - Scenario F9 S2 B2 A2 - 2 true queries - Time 1:58:52 - Memory 69985712k
+>
+> authentication - Scenario F9 S2 B2 A4 - 0 true queries - Time 1:32:41 - Memory 92383056k Command terminated by signal 9
 
-./run_bench inner <n> [PV]
-./run_bench inner_nohrr <n> [PV]
+Each line corresponds to a scenario with the execution time, `1:32:41` means 1h 32min and 41s, whereas `42:28.20` means 42min 28s and 20 ms. Memory is given in kilo bytes. Note that when the line contains `Command terminated`, then it indicates that it was terminated either by running out of time (48h max) or by running out of memory. As we ran several script in parallel, file that had been terminating due to lack of memory was usually using between 100GB to 300GB of RAM. As the scenarios are mostly defined in increasing order of difficulties in term of verification, we avoided running more complex scenario than the one that were already timing/memory out.
 
-* With PSK reinjected
-
-./run_bench inner_full <n> [PV]
-./run_bench inner_full_nohrr <n> [PV]
-
--- To run the privacy / unlinkability of the TLS client
-
-* With PSK not reinjected
-
-./run_bench client <n> [PV]
-./run_bench client_nohrr <n> [PV]
-
-* With PSK reinjected
-
-./run_bench client_full <n> [PV]
-./run_bench client_full_nohrr <n> [PV]
-
--- To run the privacy / unlinkability of the ECHO client
-
-* With PSK not reinjected
-
-./run_bench client_ech <n> [PV]
-./run_bench client_ech_nohrr <n> [PV]
-
-* With PSK reinjected
-
-./run_bench client_ech_full <n> [PV]
-./run_bench client_ech_full_nohrr <n> [PV]
-
--- To run the real or random secrecy of the generated PSK
-
-./run_bench ror <n> [PV]
-./run_bench ror_nohrr <n> [PV]
-
-
-
-There is after the files for the scenario that Karthik requested (the one that start with main_):
-
-./run_bench main_client [PV]         (Privacy client TLS only)
-./run_bench main_ror [PV]            (Real or random PSK client TLS only)
-./run_bench main_backend [PV]        (Privacy of the backend server, ECH client only)
-./run_bench main_inner [PV]          (Strong secrecy of the extension in the inner client hello, ECH client only)
-./run_bench main_client_ech [PV]     (Privacy client ECH only)
+Here is the summary of the best scenarios we proved for each property:
+- Secrecy:
+- Authentication:
+- Early Data:
+- Downgrade resilience:
+- Key sequentiality:
+- Post Handshake Authentication:
+- Post Handshake Data:
+- Reachbility lemmas:
+- Backend Privacy:
+- PreSharedKey or Random:
+- Strong secrecy of Inner Extension:
+- Strong secrecy of Encrypted Extension:
+- Anonymity and Unlinkability of TLS Clients:
+- Anonymity and Unlinkability of ECH Clients:
