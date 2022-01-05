@@ -338,7 +338,7 @@ function doequivnoticket() {
 
 function specific() {
 	# No Post Handshake nor Early.
-	for F in 2 7 3 8 4 9 5 10
+	for F in 2 3 4 5 7 8 9 10
 	do
 		for S in 2
 		do
@@ -355,7 +355,7 @@ function specific() {
 
 function specificgroup() {
 	# No Post Handshake nor Early.
-	for F in 2 7 3 8 4 9 5 10
+	for F in 2 3 4 5 7 8 9 10
 	do
 		for S in 3
 		do
