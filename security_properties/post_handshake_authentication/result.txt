@@ -19,3 +19,4 @@ post_handshake_authentication - Scenario F10 S2 B3 A1 - 2 true queries - Time 53
 post_handshake_authentication - Scenario F10 S3 B2 A1 - 2 true queries - Time 21:56.64 - Memory 26248376k 
 post_handshake_authentication - Scenario F10 S3 B3 A1 - 2 true queries - Time 1:27:38 - Memory 92383656k 
 post_handshake_authentication - Scenario F4 S3 B2 A2 - 0 true queries - Time 6:54:43 - Memory 80404416k Command terminated by signal 9
+post_handshake_authentication - Scenario F5 S2 B2 A2 - 2 true queries - Time 1:54:35 - Memory 39979776k 

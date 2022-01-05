@@ -25,3 +25,5 @@ anonymity_unlinkability_TLS_client - Scenario F1 S1 B2 A4 - 1 true queries - Tim
 anonymity_unlinkability_TLS_client - Scenario F1 S1 B3 A4 - 1 true queries - Time 3:06:41 - Memory 19882660k 
 anonymity_unlinkability_TLS_client - Scenario F1 S2 B1 A4 - 1 true queries - Time 3:01.39 - Memory 2137084k 
 anonymity_unlinkability_TLS_client - Scenario F1 S2 B2 A4 - 1 true queries - Time 2:20:00 - Memory 17307728k 
+anonymity_unlinkability_TLS_client - Scenario F1 S2 B3 A4 - 1 true queries - Time 11:15:57 - Memory 45939216k 
+anonymity_unlinkability_TLS_client - Scenario F6 S1 B1 A4 - 1 true queries - Time 13:15.89 - Memory 3717604k 

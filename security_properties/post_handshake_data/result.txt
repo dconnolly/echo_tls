@@ -28,3 +28,4 @@ post_handshake_data - Scenario F10 S2 B2 A1 - 5 true queries - Time 39:51.60 - M
 post_handshake_data - Scenario F10 S2 B3 A1 - 4 true queries - Time 2:12:16 - Memory 185809204k Command terminated by signal 9
 post_handshake_data - Scenario F10 S3 B2 A1 - 5 true queries - Time 54:26.69 - Memory 60669616k 
 post_handshake_data - Scenario F10 S3 B3 A1 - 0 true queries - Time 54:11.88 - Memory 92383168k Command terminated by signal 9
+post_handshake_data - Scenario F3 S3 B2 A2 - 5 true queries - Time 1:18:52 - Memory 34803328k 
