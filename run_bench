@@ -159,7 +159,7 @@ function check_previous_fail() {
 	file="security_properties/${1}/result.txt"
 	isFail=0
 	test=$(($2-5))
-	Fseq1=$(seq 5 1 $2)
+	Fseq1=$(seq 6 1 $2)
 	Fseq2=$(seq 1 1 $test)
 	for F in $Fseq1 $Fseq2
 	do

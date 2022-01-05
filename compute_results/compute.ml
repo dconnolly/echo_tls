@@ -113,6 +113,22 @@ let list_security_properties =
     ("strong_secrecy_inner","Inner Secrecy")
   ]
 
+let display_if_fail file for_time scF scS scB scA =
+  let matchF f =
+    if scF <= 5
+    then f <= scF
+    else (5 < f && f <= scF) || (f <= (scF - 5))
+  in
+  if List.exists (fun entry -> entry.file = file &&
+      matchF entry.sc_F && entry.sc_S <= scS && entry.sc_B <= scB && entry.sc_A <= scA &&
+      entry.memory < 0
+    ) !database
+  then
+    if for_time
+    then "-2880:0"
+    else "-500000"
+  else ""
+
 let display_one_line for_time scF scS scB scA =
   let lookup file =
     try
@@ -120,7 +136,7 @@ let display_one_line for_time scF scS scB scA =
       if for_time
       then display_time entry
       else display_memory entry
-    with Not_found -> ""
+    with Not_found -> display_if_fail file for_time scF scS scB scA
   in
   Printf.printf "%d;%d;%d;%d" scF scS scB scA;
   List.iter (fun (secu_prop,_) -> Printf.printf ";%s" (lookup secu_prop)) list_security_properties;
