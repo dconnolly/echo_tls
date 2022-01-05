@@ -75,7 +75,7 @@ When the option `PV` is given, ProVerif will run and its output is given in the 
 
 The functionalities (parameter `<F>` above) are as follows:
 
-|   | HRR | Tickets | PH Data | PH Auth | Early Data |
+| `<F>` | HRR | Tickets | PH Data | PH Auth | Early Data |
 | - | --- | ------- | ------- | ------- | ---------- |
 | 1 | no | no | no | no | no |
 | 2 | no | yes | no | no | no |
@@ -87,6 +87,10 @@ The functionalities (parameter `<F>` above) are as follows:
 | 8 | yes | yes | yes | no | no |
 | 9 | yes | yes | yes | yes | no |
 | 10 | yes | yes | yes | yes | yes |
+
+![Testing](img/functionalities.png)
+
+In the above table, when <!HRR!> is
 
 | 1 | Content Cell  |
 | 2 | Content Cell  |
