@@ -154,15 +154,52 @@ function forbidden_options() {
 	fi
 }
 
+# Tests if a previous option got terminated
+function check_previous_fail() {
+	file="security_properties/${1}/result.txt"
+	isFail=0
+	test=$(($2-5))
+	Fseq1=$(seq 5 1 $2)
+	Fseq2=$(seq 1 1 $test)
+	for F in $Fseq1 $Fseq2
+	do
+		for S in $(seq 1 1 $3)
+		do
+			for B in $(seq 1 1 $4)
+			do
+				for A in $(seq 1 1 $5)
+				do
+					nbFail="$(cat $file | grep 'Command terminated by signal' | grep -c "Scenario F${F} S${S} B${B} A${A}")"
+					if [ $nbFail -eq 1 ]; then
+						isFail=1
+					fi
+				done
+			done
+		done
+	done
+	echo $isFail
+}
+
 # Arguments:
 # 	$1: name of the query
 function run_scenario() {
 	forbidden="$(forbidden_options $1 $2 $3 $4 $5)"
+	isFail=0
 	querydone=0
+	ongoing=0
 	if [ -f "security_properties/${1}/result.txt" ]; then
 		querydone="$(grep -c "${1} - Scenario F${2} S${3} B${4} A${5}" security_properties/${1}/result.txt)"
+		isFail="$(check_previous_fail $1 $2 $3 $4 $5)"
 	fi
-	if [[ ($querydone -eq 0 && $forbidden -eq 0) || "$6" = "PV" ]]; then
+	if [ -f "ongoing.txt" ]; then
+		ongoing="$(grep -c "Starting ${1} - Scenario F${2} S${3} B${4} A${5}" ongoing.txt)"
+	fi
+	if [[ ($querydone -eq 0 && $forbidden -eq 0 && $isFail -eq 0 && $ongoing -eq 0) || "$6" = "PV" ]]; then
+		if [ "$6" = "PV" ]; then
+			echo "Starting ${1} - Scenario F${2} S${3} B${4} A${5}"
+		else
+			echo "Starting ${1} - Scenario F${2} S${3} B${4} A${5}" >> ongoing.txt
+		fi
 		# Generation of the config file
 		cat m4_declarations.m4 > tmp.m4
 		cat libraries/config_script.m4.pvl >> tmp.m4
@@ -229,7 +266,15 @@ function run_scenario() {
 		fi
 	else
 		if [ $querydone -eq 0 ]; then
-			echo "Scenario ignored: ${1} - Scenario F${2} S${3} B${4} A${5}"
+			if [ $isFail -eq 1 ]; then
+				echo "Scenario ignored (OOM): ${1} - Scenario F${2} S${3} B${4} A${5}"
+			else
+				if [ $ongoing -eq 0 ]; then
+					echo "Scenario ignored: ${1} - Scenario F${2} S${3} B${4} A${5}"
+				else
+					echo "Scenario ongoing: ${1} - Scenario F${2} S${3} B${4} A${5}"
+				fi
+			fi
 		else
 			echo "Already verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
 		fi
@@ -460,6 +505,9 @@ case .$1 in
 		echo Verifying scenarios for equivalence queries.
 		getfullname $2
 		doequivnoticket $fullname
+		;;
+	.test)
+		check_previous_fail $2 $3 $4 $5 $6
 		;;
 	.clean)
 		echo Removing all generated files

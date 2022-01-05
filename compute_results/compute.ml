@@ -3,7 +3,7 @@ let scenario_regex_str = "\\([0-9]+\\)"
 let memory_regex_str = "\\([0-9]+\\)"
 let time_regex_str = "\\([0-9:\\.]+\\)"
 let path_regex_str = "\\([a-zA-Z_0-9]+\\)"
-let time_memory_regex_str = Printf.sprintf "%s - Scenario F%s S%s B%s A%s - [0-9]+ true queries - Time %s - Memory %sk \\(Command terminated by signal 9\\)?"
+let time_memory_regex_str = Printf.sprintf "%s - Scenario F%s S%s B%s A%s - [0-9]+ true queries - Time %s - Memory %sk\\( Command terminated by signal 9\\)?"
   path_regex_str
   scenario_regex_str
   scenario_regex_str
@@ -55,7 +55,7 @@ let memory_of str =
 
 let database = ref []
 
-let add path sc_F sc_S sc_B sc_A time memory =
+let add path sc_F sc_S sc_B sc_A time memory error =
   let tm_entry =
     {
       file = path;
@@ -63,16 +63,18 @@ let add path sc_F sc_S sc_B sc_A time memory =
       sc_S = int_of_string sc_S;
       sc_B = int_of_string sc_B;
       sc_A = int_of_string sc_A;
-      time = second_of time;
-      memory = memory_of memory
+      time = if error then - second_of time else second_of time;
+      memory = if error then - memory_of memory else memory_of memory
     } in
 
   database := tm_entry :: !database
 
 let display_time e =
-      let mins = e.time/60 in
-      let sec = e.time - mins * 60 in
-      Printf.sprintf "%d:%d" mins sec
+  let e_display = if e.time < 0 then -e.time else e.time in
+  let e_neg = if e.time < 0 then "-" else "" in
+      let mins = e_display/60 in
+      let sec = e_display - mins * 60 in
+      Printf.sprintf "%s%d:%d" e_neg mins sec
 
 let display_memory e = string_of_int e.memory
 
@@ -130,11 +132,10 @@ let read_file path_file =
   let channel_in = open_in path_file in
 
   begin
-    print_string "Found file\n";
     try
       while true do
         let l = input_line channel_in in
-        if l <> "" && Str.string_match regex_time_memory_result l 0 && String.length (Str.matched_string l) = String.length l
+        if l <> "" && Str.string_match regex_time_memory_result l 0
         then
           let path = Str.matched_group 1 l in
           let sc_F =  Str.matched_group 2 l in
@@ -143,11 +144,15 @@ let read_file path_file =
           let sc_A =  Str.matched_group 5 l in
           let time = Str.matched_group 6 l in
           let memory = Str.matched_group 7 l in
-          try
-            let _ = Str.matched_group 8 l in
-            ()
-          with Not_found ->
-            add path sc_F sc_S sc_B sc_A time memory
+          let error =
+            try
+              let _ = Str.matched_group 8 l in
+              true
+            with Not_found -> false
+          in
+          add path sc_F sc_S sc_B sc_A time memory error
+        else
+          Printf.printf "Not recognized: %s\n" l
       done
     with End_of_file -> ()
   end
