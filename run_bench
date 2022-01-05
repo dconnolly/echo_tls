@@ -297,7 +297,7 @@ function doreach() {
 	do
 		for S in 2 3
 		do
-			for B in 1 2 3
+			for B in 2 3
 			do
 				for A in 1 2 4
 				do
