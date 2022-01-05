@@ -57,3 +57,5 @@ key_sequentiality - Scenario F5 S2 B3 A2 - 3 true queries - Time 28:41.13 - Memo
 key_sequentiality - Scenario F5 S2 B3 A4 - 3 true queries - Time 46:24.41 - Memory 69988348k 
 key_sequentiality - Scenario F9 S2 B2 A4 - 3 true queries - Time 2:11:02 - Memory 52789904k 
 key_sequentiality - Scenario F9 S2 B3 A2 - 0 true queries - Time 1:24:35 - Memory 80402988k Command terminated by signal 9
+key_sequentiality - Scenario F10 S2 B2 A2 - 3 true queries - Time 2:05:09 - Memory 39982992k 
+key_sequentiality - Scenario F10 S2 B2 A4 - 3 true queries - Time 2:12:09 - Memory 52786368k 

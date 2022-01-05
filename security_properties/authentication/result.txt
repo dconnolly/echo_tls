@@ -68,3 +68,4 @@ authentication - Scenario F3 S3 B2 A4 - 2 true queries - Time 41:54.47 - Memory 
 authentication - Scenario F4 S3 B2 A2 - 2 true queries - Time 58:02.27 - Memory 106164848k 
 authentication - Scenario F4 S3 B2 A4 - 0 true queries - Time 52:36.89 - Memory 97754384k Command terminated by signal 9
 authentication - Scenario F5 S3 B2 A2 - 2 true queries - Time 1:00:15 - Memory 106161400k 
+authentication - Scenario F7 S3 B2 A2 - 0 true queries - Time 2:23:34 - Memory 122006072k Command terminated by signal 9

@@ -74,3 +74,7 @@ secrecy - Scenario F4 S3 B2 A2 - 4 true queries - Time 29:09.14 - Memory 4593942
 secrecy - Scenario F4 S3 B2 A4 - 4 true queries - Time 37:51.47 - Memory 60667012k 
 secrecy - Scenario F4 S3 B3 A2 - 0 true queries - Time 59:45.61 - Memory 122006040k Command terminated by signal 9
 secrecy - Scenario F5 S3 B2 A2 - 4 true queries - Time 30:21.64 - Memory 45936176k 
+secrecy - Scenario F5 S3 B2 A4 - 4 true queries - Time 38:08.11 - Memory 60667164k 
+secrecy - Scenario F7 S3 B2 A2 - 4 true queries - Time 1:12:50 - Memory 52789384k 
+secrecy - Scenario F7 S3 B2 A4 - 4 true queries - Time 1:19:28 - Memory 69984796k 
+secrecy - Scenario F7 S3 B3 A2 - 0 true queries - Time 1:44:15 - Memory 122009816k Command terminated by signal 9
