@@ -30,6 +30,14 @@ For equivalence properties, there is an additional main file for the case where 
 
 ### Verifying the security properties
 
+[ProVerif](https://bblanche.gitlabpages.inria.fr/proverif/) should be installed before using our script. Do **not** use the source package of ProVerif 2.04. Indeed, to run properly our models in ProVerif, we asked the developers of ProVerif to add some features, which they did. These new features are currently available only on the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma).
+
+To obtain the source code, you can either:
+- Go to the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma). Select the branch `improved_scope_lemma` and download the source code from the interface.
+- Clone the repo using `git clone https://gitlab.inria.fr/bblanche/proverif.git` (for HTTPS access) or `git clone git@gitlab.inria.fr:bblanche/proverif.git` (for SSH access)
+
+To install ProVerif, you need to run the script `./build` from the subfolder `proverif`. Finally, our script `run_bench` and our `Makefile` assumes that the executable `proverif` is accessible in your PATH.
+
 To verify a security property, run the `Makefile` contained in the folder of the corresponding property. You can modify the file `config.pvl` in the folder to enable or disable some functionalities. An explanation for each variable setting is given as comment in `config.pvl`.
 
 #### The `run_bench` script
