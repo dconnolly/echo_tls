@@ -9,3 +9,7 @@ downgrade_resilient_ech - Scenario F3 S2 B3 A4 - 1 true queries - Time 2:21:24 -
 downgrade_resilient_ech - Scenario F4 S2 B2 A2 - 1 true queries - Time 50:37.37 - Memory 19884652k 
 downgrade_resilient_ech - Scenario F4 S2 B2 A4 - 1 true queries - Time 1:07:15 - Memory 30164936k 
 downgrade_resilient_ech - Scenario F4 S2 B3 A2 - 1 true queries - Time 2:38:57 - Memory 69986300k 
+downgrade_resilient_ech - Scenario F4 S2 B3 A4 - 0 true queries - Time 2:42:25 - Memory 106162440k Command terminated by signal 9
+downgrade_resilient_ech - Scenario F5 S2 B2 A2 - 1 true queries - Time 51:23.36 - Memory 19884836k 
+downgrade_resilient_ech - Scenario F5 S2 B2 A4 - 1 true queries - Time 1:06:33 - Memory 30168616k 
+downgrade_resilient_ech - Scenario F5 S2 B3 A2 - 1 true queries - Time 2:42:56 - Memory 69986000k 

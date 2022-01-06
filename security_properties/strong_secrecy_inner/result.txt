@@ -26,3 +26,4 @@ strong_secrecy_inner - Scenario F6 S1 B2 A4 - 1 true queries - Time 1:14:11 - Me
 strong_secrecy_inner - Scenario F6 S1 B3 A4 - 1 true queries - Time 2:35:01 - Memory 26250348k 
 strong_secrecy_inner - Scenario F6 S2 B1 A4 - 1 true queries - Time 7:47.42 - Memory 3717616k 
 strong_secrecy_inner - Scenario F6 S2 B2 A4 - 1 true queries - Time 3:30:36 - Memory 30167856k 
+strong_secrecy_inner - Scenario F6 S2 B3 A4 - 1 true queries - Time 13:01:18 - Memory 69989432k 
