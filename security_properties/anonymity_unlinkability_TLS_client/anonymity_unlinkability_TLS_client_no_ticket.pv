@@ -128,10 +128,13 @@ process
     (* TLS client with Diff *)
     !
     (* Domains *)
+    in(io,ClientA:domain);
+    in(io,ClientB:domain);
+    let c_dom = diff[ClientA,ClientB] in
     in(io,s_dom:domain) [precise];
     event Same(d2b(s_dom));
     new s:seed;
     let id_client = idClientDiff(s) in
 
-    run_tls_client_diff(id_client,diff[ClientA,ClientB],s_dom)
+    run_tls_client_diff(id_client,c_dom,s_dom)
   )

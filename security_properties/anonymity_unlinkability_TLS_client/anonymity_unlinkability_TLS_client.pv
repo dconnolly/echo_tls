@@ -227,8 +227,6 @@ axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
   event(Client_new_PSK(diff[id1,id],diff[k1,k])) && event(Client_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
 .
 
-free ClientA,ClientB:domain.
-
 
 expand macro_ech_client(false,false,run_ech_client).
 expand macro_standard_client(false,run_tls_client).
@@ -280,10 +278,13 @@ process
     (* TLS client with Diff *)
     !
     (* Domains *)
+    in(io,ClientA:domain) [precise];
+    in(io,ClientB:domain) [precise];
+    let c_dom = diff[ClientA,ClientB] in
     in(io,s_dom:domain) [precise];
     event Same(d2b(s_dom));
     new s:seed;
     let id_client = idClientDiff(s) in
 
-    run_tls_client_diff(id_client,diff[ClientA,ClientB],s_dom)
+    run_tls_client_diff(id_client,c_dom,s_dom)
   )

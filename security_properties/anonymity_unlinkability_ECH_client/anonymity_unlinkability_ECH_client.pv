@@ -217,9 +217,6 @@ axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey;
   event(Client_new_PSK(diff[id1,id],diff[k1,k])) && event(Client_new_PSK(diff[id2,id],diff[k2,k'])) ==> k = k'
 .
 
-free ClientA,ClientB:domain.
-
-
 expand macro_ech_client(false,false,run_ech_client).
 expand macro_standard_client(false,run_tls_client).
 
@@ -270,6 +267,9 @@ process
     (* ECH client with Diff *)
     !
     (* Domains *)
+    in(io,ClientA:domain) [precise];
+    in(io,ClientB:domain) [precise];
+    let c_dom = diff[ClientA,ClientB] in
     in(io,frontend_dom:domain) [precise];
     event Same(d2b(frontend_dom));
     in(io,backend_dom:domain) [precise];
@@ -281,5 +281,5 @@ process
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
     event ConfigOffered(ech_conf);
 
-    run_ech_client_diff(id_client,empty_extra_ext,diff[ClientA,ClientB],backend_dom,ech_conf)
+    run_ech_client_diff(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   )

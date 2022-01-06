@@ -64,10 +64,6 @@ let swap_pre_shared_keys =
   insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
 .
 
-
-free ClientA,ClientB:domain.
-
-
 expand macro_ech_client(false,false,run_ech_client).
 expand macro_standard_client(false,run_tls_client).
 
@@ -110,6 +106,7 @@ process
   ) | (
     !
     (* Server *)
+
     new id_server:idProc;
     in(io,s_dom:domain);
     event Same(d2b(s_dom));
@@ -118,6 +115,9 @@ process
     (* ECH client with Diff *)
     !
     (* Domains *)
+    in(io,ClientA:domain);
+    in(io,ClientB:domain);
+    let c_dom = diff[ClientA,ClientB] in
     in(io,frontend_dom:domain) [precise];
     event Same(d2b(frontend_dom));
     in(io,backend_dom:domain) [precise];
@@ -129,5 +129,5 @@ process
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
     event ConfigOffered(ech_conf);
 
-    run_ech_client_diff(id_client,empty_extra_ext,diff[ClientA,ClientB],backend_dom,ech_conf)
+    run_ech_client_diff(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   )
