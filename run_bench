@@ -325,6 +325,24 @@ function doequiv() {
 	done
 }
 
+function doequivticket() {
+	# No Post Handshake nor Early.
+	for F in 2 7
+	do
+		for A in 1 2 4
+		do
+			for S in 1 2
+			do
+				for B in 1 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+
 function doequivnoticket() {
 	# No Post Handshake nor Early.
 	for A in 1 2 4
@@ -515,6 +533,13 @@ case .$1 in
 		echo Verifying scenarios for equivalence queries.
 		getfullname $2
 		doequivnoticket $fullname
+		;;
+	.equivticket)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		doequivticket $fullname
 		;;
 	.test)
 		check_previous_fail $2 $3 $4 $5 $6
