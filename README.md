@@ -34,7 +34,7 @@ For equivalence properties, there is an additional main file for the case where 
 
 To obtain the source code, you can either:
 - Go to the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma). Select the branch `improved_scope_lemma` and download the source code from the interface.
-- Clone the repo using `git clone https://gitlab.inria.fr/bblanche/proverif.git` (for HTTPS access) or `git clone git@gitlab.inria.fr:bblanche/proverif.git` (for SSH access)
+- Clone the repo using `git clone https://gitlab.inria.fr/bblanche/proverif.git` (for HTTPS access) or `git clone git@gitlab.inria.fr:bblanche/proverif.git` (for SSH access). Run `git checkout improved_scope_lemma`.
 
 To install ProVerif, you need to run the script `./build` from the subfolder `proverif`. Finally, our script `run_bench` and our `Makefile` assumes that the executable `proverif` is accessible in your PATH.
 
