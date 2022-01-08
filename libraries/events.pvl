@@ -291,6 +291,7 @@ event PreciseIdProcess(channel,idProc,stamp).
 event PreciseMess(channel,idProc,stamp,bitstring).
 event Same(bitstring).
 
+event Client_server_domain(idProc,domain).
 event Client_Rand_client(idProc,bytes32).
 event Client_Rand_server(idProc,bytes32).
 event Client_DH_client(idProc,element).

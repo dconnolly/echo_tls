@@ -90,19 +90,19 @@ restriction idP:idProc,st,st':stamp, i:nat;
 
 (* Sequentiallity of compromised psk. *)
 
-query id_c,id_s,id_s':idProc,config:echConfig, gxy:element,g:group,x:bitstring,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey',s_pkey,c_pkey',c_pkey,new_c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg,msg':bitstring,req_rand:bitstring,st,st':stamp;
-  event(ClientSends(id_c,cr,sr,psk,s_pkey,c_pkey,n,ad,msg)) && attacker(msg) ==>
+query j,j1,j2,j3,j4,j5:time, id_c,id_s,id_s':idProc,config:echConfig, gxy:element,g:group,x:bitstring,cr,sr:bytes32,old_psk,psk:preSharedKey,s_pkey',s_pkey,c_pkey',c_pkey,new_c_pkey:pubkey,cak,sak:aead_key,ems,rms:bitstring,n,i:nat,ad,msg,msg':bitstring,req_rand:bitstring,st,st':stamp;
+  event(ClientSends(id_c,cr,sr,psk,s_pkey,c_pkey,n,ad,msg))@j && attacker(msg) ==>
   (
     event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
-    attacker(gxy) &&
+    attacker(gxy)@j1 && j1 < j &&
     (
-      event(CompromisedLtk(s_pkey)) ||
-      (attacker(psk) && event(Client_PSKChoosen(id_c,psk,false)))
+      (event(CompromisedLtk(s_pkey))@j3 && j3 < j) ||
+      (attacker(psk)@j2 && j2 < j && event(Client_PSKChoosen(id_c,psk,false))@j5 && j5 < j)
     ) && (
       event(ClientEchAcceptance(id_c,false)) ||
       (
         event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
+        (event(CompromisedEchKey(config))@j4 && j4 < j)
       )
     )
   );
@@ -110,27 +110,29 @@ query id_c,id_s,id_s':idProc,config:echConfig, gxy:element,g:group,x:bitstring,c
   (* As an honest server can talk with a dishonest client, the message is not deducible
     the server uses an uncompromised PSK or request a client certificate. *)
 
-  event(ServerSends(id_s,cr,sr,psk,s_pkey,c_pkey,n,ad,msg)) && attacker(msg) ==>
+  event(ServerSends(id_s,cr,sr,psk,s_pkey,c_pkey,n,ad,msg))@j && attacker(msg) ==>
     event(Server_DH_client(id_s,dh_pub(g,x))) &&
-    attacker(x) &&
+    attacker(x)@j1 &&
+    j1 < j &&
     (
-      event(CompromisedPsk(psk)) ||
-      (event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk)) && attacker(psk)) ||
-      (psk = NoPsk && (c_pkey = NoPubKey || event(CompromisedLtk(c_pkey))))
+      (event(CompromisedPsk(psk))@j2 && j2 < j) ||
+      (event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk))@j3 && attacker(psk)@j5 && j3 < j && j5 < j) ||
+      (psk = NoPsk && (c_pkey = NoPubKey || (event(CompromisedLtk(c_pkey))@j4 && j4 < j)))
     );
 
-  event(ClientReceives(id_c,cr,sr,psk,s_pkey,c_pkey,n,ad,msg)) && attacker(msg) ==>
+  event(ClientReceives(id_c,cr,sr,psk,s_pkey,c_pkey,n,ad,msg))@j && attacker(msg) ==>
     (
       event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
-      attacker(gxy) &&
+      attacker(gxy)@j1 &&
+      j1 < j &&
       (
-        event(CompromisedLtk(s_pkey)) ||
-        (attacker(psk) && event(Client_PSKChoosen(id_c,psk,false)))
+        (event(CompromisedLtk(s_pkey))@j2 && j2 < j) ||
+        (attacker(psk)@j3 && event(Client_PSKChoosen(id_c,psk,false)) && j3 < j)
       ) && (
         event(ClientEchAcceptance(id_c,false)) ||
         (
           event(ClientOffersEchConfig(id_c,config)) &&
-          event(CompromisedEchKey(config))
+          event(CompromisedEchKey(config))@j4 && j4 < j
         )
       )
     );

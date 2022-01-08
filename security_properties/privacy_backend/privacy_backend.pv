@@ -4,14 +4,23 @@ set removeEventsForLemma = true.
 
 restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 
-event ConfigOffered(echConfig).
+event ConfigOffered(idProc,echConfig).
 
-restriction config:echConfig;
+restriction id_c:idProc,config:echConfig;
   event(CompromisedEchKey(config)) &&
-  event(ConfigOffered(config)).
+  event(ConfigOffered(id_c,config)).
 
 
 fun idClientDiff(seed):idProc [private].
+
+restriction id:configId, g:group, pkR:element, frontend:domain,h_alg:hash_alg,a_alg:aead_alg,s:seed, s_pkey:pubkey;
+  let config = ech_config(id,g,pkR,frontend,h_alg,a_alg) in
+  let id_c = idClientDiff(s) in
+  event(ConfigOffered(id_c,config)) &&
+  event(Client_server_domain(id_c,frontend)) &&
+  event(Client_Cert_server(id_c,s_pkey)) &&
+  event(CompromisedLtk(s_pkey))
+.
 
 restriction s:seed;
   event(CompromisedPskDiff(idClientDiff(s))).
@@ -173,10 +182,10 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
 
   (* Insertion with id_client_diff cannot be be deducible *)
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idClientDiff(s),diff[safe,safe'])) &&
   attacker(diff[ipsk,ipsk'']);
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idClientDiff(s),diff[safe,safe'])) &&
   attacker(diff[ipsk'',ipsk']);
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[new_psk1,new_psk1'],idP,diff[safe,safe'])) &&
@@ -232,6 +241,8 @@ process
       gen_honest_key
     | gen_dishonest_key
     | all_internal_processes
+    | swap_long_term_keys
+    | swap_pre_shared_keys
   ) | (
     if clients_with_tls then
     (* TLS*)
@@ -280,7 +291,7 @@ process
 
     get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
-    event ConfigOffered(ech_conf);
+    event ConfigOffered(id_client,ech_conf);
 
     run_ech_client_diff(id_client,empty_extra_ext,c_dom,diff[BackendA,BackendB],ech_conf)
   )

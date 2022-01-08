@@ -102,9 +102,9 @@ let gen_dishonest_long_term_keys =
   in(io,a:domain);
   new sk_d:privkey;
   event Same(d2b(a));
-  event CompromisedLtk(pk(sk_d));
   let crt = valid_cert(a,pk(sk_d)) in
   insert long_term_keys(a,sk_d,pk(sk_d),crt,idP);
+  event CompromisedLtk(pk(sk_d));
   out(io,(sk_d,crt))
 .
 
@@ -117,9 +117,9 @@ let gen_dishonest_pre_shared_keys =
   event Same(d2b(s_dom));
   event Same(h2b(h_alg));
   new psk_d:preSharedKey;
-  event CompromisedPsk(psk_d);
   let id = mk_idpsk(s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  event CompromisedPsk(psk_d);
   out(io,psk_d)
 .
 
@@ -131,9 +131,9 @@ let gen_dishonest_pre_shared_keys_fixed =
   event Same(d2b(c_dom));
   event Same(d2b(s_dom));
   new psk_d:preSharedKey;
-  event CompromisedPsk(psk_d);
   let id = mk_idpsk(s_dom,h_alg,psk_d) in
   insert pre_shared_keys(c_dom,s_dom,h_alg,id,psk_d,idP,false);
+  event CompromisedPsk(psk_d);
   out(io,psk_d)
 .
 
@@ -151,10 +151,11 @@ let gen_dishonest_ech_config =
   new skR_d:bitstring;
   let pkR_d = dh_pub(g,skR_d) in
   let config = ech_config(id,g,pkR_d,s_dom,h_alg,a_alg) in
-  event CompromisedEchKey(config);
   insert ech_configurations(config,skR_d);
+  out(io,config);
   (* The configuration and private keys are given to the attacker. *)
-  out(io,(config,skR_d))
+  event CompromisedEchKey(config);
+  out(io,skR_d)
 .
 
 let gen_dishonest_ech_config_fixed =
@@ -168,10 +169,11 @@ let gen_dishonest_ech_config_fixed =
   new skR_d:bitstring;
   let pkR_d = dh_pub(ech_g,skR_d) in
   let config = ech_config(id,ech_g,pkR_d,s_dom,ech_h,ech_a) in
-  event CompromisedEchKey(config);
   insert ech_configurations(config,skR_d);
+  out(io,config);
+  event CompromisedEchKey(config);
   (* The configuration and private keys are given to the attacker. *)
-  out(io,(config,skR_d))
+  out(io,skR_d)
 .
 
 let gen_dishonest_key =

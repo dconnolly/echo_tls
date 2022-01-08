@@ -89,6 +89,8 @@ process
       gen_honest_key
     | gen_dishonest_key
     | all_internal_processes
+    | swap_long_term_keys
+    | swap_pre_shared_keys
   ) | (
     (* TLS*)
     !

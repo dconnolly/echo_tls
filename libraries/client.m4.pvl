@@ -65,11 +65,23 @@ ifdef(<!PSK_or_random!>,<!dnl
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
 !>,<!dnl
     if allow_compromised_ticket && comp_psk
-    then
-      event CompromisedPsk(new_psk);
+    then (
       event CompromisedPskDiff(id_client);
-      out(io,new_psk);
-      insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+      let () =
+        if psk = NoPsk
+        then
+          if uncompromised_privkey(s_pkey)
+          then ()
+          else event UnsafePsk(new_psk); ()
+        else
+          if safe_psk
+          then ()
+          else event UnsafePsk(new_psk); ()
+      in
+      insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false);
+      event CompromisedPsk(new_psk);
+      out(io,new_psk)
+    )
     else
       if psk = NoPsk
       then
@@ -193,6 +205,7 @@ let send_client_finished_message =
   (* Begin Proof Helper *)
   new st[]:stamp;
   event PreciseIdProcess(ch_client_CFIN,id_client,st);
+  event Client_server_domain(id_client,s_dom);
   event Client_Rand_client(id_client,cr);
   event Client_Rand_server(id_client,sr);
   event Client_PSKChoosen(id_client,psk,safe_psk);
@@ -254,7 +267,6 @@ let send_client_certificate_message(id_client:idProc,
   master_secret:bitstring, chk:aead_key, seq_client:nat,shk:aead_key, seq_srv:nat,cfin,sfin:mac_key,
   cur_log:bitstring)
   =
-
   let (sk:privkey,c_pkey:pubkey,crt:certificate) =
     if select_client_certificate_by_restriction
     then (
@@ -263,10 +275,11 @@ let send_client_certificate_message(id_client:idProc,
       event Selected_ltk(c_dom,c_dom',idP);
       (sk,c_pkey,crt)
     )
-    else
+    else (
       get long_term_keys(=c_dom,sk,c_pkey,crt,idP) in
       let () = proof_helper_C_CertMess((c_dom,sk,c_pkey,crt,idP)) in
       (sk,c_pkey,crt)
+    )
   in
   event Client_Cert_client(id_client,c_pkey);
 
@@ -317,6 +330,7 @@ let receive_server_finished_message =
   (* Begin Proof Helper *)
   new st[]:stamp;
   event PreciseIdProcess(ch_client_FIN,id_client,st);
+  event Client_server_domain(id_client,s_dom);
   event Client_Rand_client(id_client,cr);
   event Client_Rand_server(id_client,sr);
   event Client_PSKChoosen(id_client,psk,safe_psk);
@@ -383,6 +397,7 @@ let process_server_certificate_message =
   (* Begin Proof Helper *)
   new st[]:stamp;
   event PreciseIdProcess(ch_client_CRT,id_client,st);
+  event Client_server_domain(id_client,s_dom);
   event Client_Rand_client(id_client,cr);
   event Client_Rand_server(id_client,sr);
   event Client_comp_psk(id_client,comp_psk);
@@ -441,6 +456,7 @@ let receive_after_encrypted_extension =
   (* Begin Proof Helper *)
   new st[]:stamp;
   event PreciseIdProcess(ch_client_after_EE,id_client,st);
+  event Client_server_domain(id_client,s_dom);
   event Client_Rand_client(id_client,cr);
   event Client_Rand_server(id_client,sr);
   event Client_PSKChoosen(id_client,psk,safe_psk);
@@ -565,6 +581,7 @@ let process_server_hello(id_client:idProc,
   event Client_PSKOffer(id_client,psk_offer,id_offer,is_safe_offer);
   event Client_Rand_client(id_client,cr);
   event Client_DH_client(id_client,dh_pub(g,x));
+  event Client_server_domain(id_client,s_dom);
   (* End Proof Helper *)
 
   let SH(sr,mode) = server_hello in

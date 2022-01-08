@@ -113,21 +113,24 @@ query config:echConfig, gxy:element, x:bitstring, g:group,id_c,id_s,id_s':idProc
   ;
 
   event(UnsafePsk(psk)) && attacker(psk) ==>
-    event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
-    attacker(gxy) &&
-    event(Client_new_PSK(id_c,psk)) &&
-    event(Client_Cert_server(id_c,s_pkey)) &&
+    event(CompromisedPsk(psk)) ||
     (
-      event(CompromisedLtk(s_pkey)) ||
+      event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
+      attacker(gxy) &&
+      event(Client_new_PSK(id_c,psk)) &&
+      event(Client_Cert_server(id_c,s_pkey)) &&
       (
-        old_psk <> NoPsk && event(Client_PSKChoosen(id_c,old_psk,false)) && attacker(old_psk)
+        event(CompromisedLtk(s_pkey)) ||
+        (
+          old_psk <> NoPsk && event(Client_PSKChoosen(id_c,old_psk,false)) && attacker(old_psk)
+        )
       )
-    )
-    && (
-      event(ClientEchAcceptance(id_c,false)) ||
-      (
-        event(ClientOffersEchConfig(id_c,config)) &&
-        event(CompromisedEchKey(config))
+      && (
+        event(ClientEchAcceptance(id_c,false)) ||
+        (
+          event(ClientOffersEchConfig(id_c,config)) &&
+          event(CompromisedEchKey(config))
+        )
       )
     )
 .

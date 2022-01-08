@@ -4,13 +4,22 @@ set removeEventsForLemma = true.
 
 restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 
-event ConfigOffered(echConfig).
+event ConfigOffered(idProc,echConfig).
 
 fun idClientDiff(seed):idProc [private].
 
-restriction config:echConfig;
-  event(ConfigOffered(config)) &&
+restriction id_c:idProc,config:echConfig;
+  event(ConfigOffered(id_c,config)) &&
   event(CompromisedEchKey(config))
+.
+
+restriction id:configId, g:group, pkR:element, frontend:domain,h_alg:hash_alg,a_alg:aead_alg,s:seed, s_pkey:pubkey;
+  let config = ech_config(id,g,pkR,frontend,h_alg,a_alg) in
+  let id_c = idClientDiff(s) in
+  event(ConfigOffered(id_c,config)) &&
+  event(Client_server_domain(id_c,frontend)) &&
+  event(Client_Cert_server(id_c,s_pkey)) &&
+  event(CompromisedLtk(s_pkey))
 .
 
 restriction s:seed;
@@ -228,6 +237,8 @@ process
       gen_honest_key
     | gen_dishonest_key
     | all_internal_processes
+    | swap_long_term_keys
+    | swap_pre_shared_keys
   ) | (
     if clients_with_tls then
     (* TLS*)
@@ -279,7 +290,7 @@ process
 
     get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
     let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
-    event ConfigOffered(ech_conf);
+    event ConfigOffered(id_client,ech_conf);
 
     run_ech_client_diff(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
   )
