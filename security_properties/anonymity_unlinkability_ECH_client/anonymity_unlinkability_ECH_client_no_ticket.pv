@@ -65,12 +65,12 @@ let swap_long_term_keys =
 
 let swap_pre_shared_keys =
   !
-  get pre_shared_keys(c_dom1,s_dom,h_alg1,id1,psk1,idP1,safe1) in
+  get pre_shared_keys(c_dom1,s_dom,h_alg,id1,psk1,idP1,safe1) in
   event Same(id2b(idP1));
-  get pre_shared_keys(c_dom2,=s_dom,h_alg2,id2,psk2,idP2,safe2) in
+  get pre_shared_keys(c_dom2,=s_dom,=h_alg,id2,psk2,idP2,safe2) in
   event Same(id2b(idP2));
-  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,diff[h_alg1,h_alg2],diff[id1,id2],diff[psk1,psk2],diff[idP1,idP2],diff[safe1,safe2]);
-  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,diff[h_alg1,h_alg2],diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
+  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,h_alg,diff[id1,id2],diff[psk1,psk2],diff[idP1,idP2],diff[safe1,safe2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,h_alg,diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
 .
 
 expand macro_ech_client(false,false,run_ech_client).
