@@ -1,0 +1,11 @@
+anonymity_unlinkability_TLS_client - Scenario F1 S1 B1 A4 - 1 true queries - Time 1:29.63 - Memory 1406136k 
+anonymity_unlinkability_TLS_client - Scenario F6 S1 B1 A1 - 1 true queries - Time 0:29.61 - Memory 669344k 
+anonymity_unlinkability_TLS_client - Scenario F1 S1 B1 A1 - 1 true queries - Time 0:26.34 - Memory 614420k 
+anonymity_unlinkability_TLS_client - Scenario F1 S2 B1 A1 - 1 true queries - Time 0:30.79 - Memory 680608k 
+anonymity_unlinkability_TLS_client - Scenario F6 S2 B1 A1 - 1 true queries - Time 0:43.97 - Memory 926776k 
+anonymity_unlinkability_TLS_client - Scenario F1 S1 B2 A1 - 1 true queries - Time 1:15.68 - Memory 1225036k 
+anonymity_unlinkability_TLS_client - Scenario F2 S1 B1 A1 - 47 true queries - Time 1:54.95 - Memory 704324k 
+anonymity_unlinkability_TLS_client - Scenario F6 S1 B2 A1 - 1 true queries - Time 3:37.48 - Memory 2453312k 
+anonymity_unlinkability_TLS_client - Scenario F1 S1 B3 A1 - 1 true queries - Time 2:42.19 - Memory 1853476k 
+anonymity_unlinkability_TLS_client - Scenario F1 S2 B2 A1 - 1 true queries - Time 4:40.96 - Memory 1853536k 
+anonymity_unlinkability_TLS_client - Scenario F2 S2 B1 A1 - 47 true queries - Time 8:54.57 - Memory 1298504k 
