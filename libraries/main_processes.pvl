@@ -9,8 +9,8 @@
 
 let gen_honest_long_term_keys =
   !
-  new lgt_id:idProc;
   in(io,a:domain);
+  new lgt_id:idProc;
   event Same(d2b(a));
   (* The honest secret key must be created with gen_honest_privkey as it allows
     us to refer to it in proof_helper. *)
@@ -98,8 +98,8 @@ let gen_honest_key =
 
 let gen_dishonest_long_term_keys =
   !
-  new idP:idProc;
   in(io,a:domain);
+  new idP:idProc;
   new sk_d:privkey;
   event Same(d2b(a));
   let crt = valid_cert(a,pk(sk_d)) in
