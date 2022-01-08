@@ -106,6 +106,17 @@ let swap_pre_shared_keys =
   insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,h_alg,diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
 .
 
+(* Axioms coming from rechability lemmas *)
+
+axiom
+  c_dom,c_dom',s_dom,s_dom':domain,h',h:hash_alg,id,id',id'':identityPsk,idP,idP':idProc,
+  psk,psk',psk'':preSharedKey,is_safe,is_safe':bool,s:seed,log:bitstring,i:nat,x:bitstring,e:element;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h,h'],diff[id,id'],diff[psk,psk'],diff[idP,idP'],diff[is_safe,is_safe'])) ==>
+    attacker(diff[id,id'']) || id = mk_idpsk(s_dom,h,psk);
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h,h'],diff[id,id'],diff[psk,psk'],diff[idP,idP'],diff[is_safe,is_safe'])) ==>
+    attacker(diff[id'',id']) || id' = mk_idpsk(s_dom',h',psk')
+.
+
 (* Lemma to help the proof *)
 
 lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,id',id'':identityPsk,ipsk,ipsk':preSharedKey,s:seed,
@@ -147,7 +158,7 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
     s_dom = s_dom' &&
     h_alg = id_hash(StrongHash,i) &&
     h_alg' = id_hash(StrongHash,i);
-    
+
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
     s_dom = s_dom' &&
     h_alg = id_hash(StrongHash,i) &&
