@@ -44,7 +44,7 @@ expand mk_precise(proof_helper_server,precise_server).
 
 letfun select_client_certificate_by_restriction = true.
 
-letfun select_server_certificate_by_restriction = false.
+letfun select_server_certificate_by_restriction = true.
 
 letfun select_client_pre_shared_key_by_restriction = true.
 
