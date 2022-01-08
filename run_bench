@@ -438,6 +438,16 @@ function specificrow() {
 	done
 }
 
+function specificequivcol() {
+	for F in 1 2 6 7
+	do
+		for S in 1 2
+		do
+			run_scenario $1 $F $S $2 $3
+		done
+	done
+}
+
 function getfullname() {
 	case .$1 in
 		.secrecy)
@@ -557,6 +567,13 @@ case .$1 in
 		echo Verifying scenarios for equivalence queries.
 		getfullname $2
 		specificrow $fullname $3 $4
+		;;
+	.equivcol)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		specificequivcol $fullname $3 $4
 		;;
 	.test)
 		check_previous_fail $2 $3 $4 $5 $6
