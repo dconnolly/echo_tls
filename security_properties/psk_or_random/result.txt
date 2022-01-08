@@ -20,3 +20,6 @@ psk_or_random - Scenario F2 S2 B3 A2 - 0 true queries - Time 11:06:09 - Memory 1
 psk_or_random - Scenario F2 S1 B1 A4 - 41 true queries - Time 11:05.47 - Memory 3960088k 
 psk_or_random - Scenario F2 S2 B1 A4 - 41 true queries - Time 31:09.78 - Memory 6986752k 
 psk_or_random - Scenario F7 S2 B1 A2 - 41 true queries - Time 19:11:03 - Memory 51712924k 
+psk_or_random - Scenario F7 S1 B2 A2 - 0 true queries - Time 33:02:41 - Memory 92386456k Command terminated by signal 9
+psk_or_random - Scenario F7 S1 B3 A2 - 0 true queries - Time 33:15:59 - Memory 80406848k Command terminated by signal 9
+psk_or_random - Scenario F2 S1 B2 A4 - 41 true queries - Time 8:50:48 - Memory 34800628k 

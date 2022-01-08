@@ -48,3 +48,11 @@ strong_secrecy_ee - Scenario F6 S1 B3 A4 - 1 true queries - Time 8:19:23 - Memor
 strong_secrecy_ee - Scenario F6 S2 B1 A4 - 1 true queries - Time 8:57.53 - Memory 4287384k 
 strong_secrecy_ee - Scenario F2 S2 B1 A2 - 39 true queries - Time 18:56.93 - Memory 5156116k 
 strong_secrecy_ee - Scenario F6 S2 B2 A4 - 1 true queries - Time 7:13:44 - Memory 39983240k 
+strong_secrecy_ee - Scenario F2 S1 B3 A2 - 39 true queries - Time 2:33:33 - Memory 34982992k 
+strong_secrecy_ee - Scenario F2 S2 B2 A2 - 39 true queries - Time 5:47:51 - Memory 38644136k 
+strong_secrecy_ee - Scenario F6 S2 B3 A4 - 0 true queries - Time 20:42:12 - Memory 69990220k Command terminated by signal 9
+strong_secrecy_ee - Scenario F2 S2 B3 A2 - 0 true queries - Time 1:37:08 - Memory 87220500k Command terminated by signal 9
+strong_secrecy_ee - Scenario F2 S1 B1 A4 - 39 true queries - Time 4:51.32 - Memory 2950624k 
+strong_secrecy_ee - Scenario F2 S1 B2 A4 - 39 true queries - Time 2:19:23 - Memory 26328364k 
+strong_secrecy_ee - Scenario F2 S1 B3 A4 - 39 true queries - Time 6:15:24 - Memory 68566244k 
+strong_secrecy_ee - Scenario F2 S2 B1 A4 - 39 true queries - Time 24:53.50 - Memory 7366052k 
