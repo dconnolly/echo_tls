@@ -219,7 +219,7 @@ function run_scenario() {
 		# Generation of file names
 		date_str=$(date "+%Y-%m-%d_%Hh%Mm%Ss")
 		mkdir -p "tests/${1}-F${2}_S${3}_B${4}_A${5}-${date_str}"
-		TMPDIR=tests/${1}-${date_str}
+		TMPDIR="tests/${1}-F${2}_S${3}_B${4}_A${5}-${date_str}"
 		outputfile="${TMPDIR}/output.txt"
 		timefile="${TMPDIR}/time.txt"
 

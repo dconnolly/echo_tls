@@ -126,8 +126,8 @@ process
     (* ECH client with Diff *)
     !
     (* Domains *)
-    in(io,ClientA:domain);
-    in(io,ClientB:domain);
+    in(io,ClientA:domain) [precise];
+    in(io,ClientB:domain) [precise];
     let c_dom = diff[ClientA,ClientB] in
     in(io,frontend_dom:domain) [precise];
     event Same(d2b(frontend_dom));
