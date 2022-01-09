@@ -165,12 +165,6 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[mk_idpsk(s_dom,h_alg,ipsk),id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
     id' = mk_idpsk(s_dom',h_alg',ipsk');
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
-  attacker(diff[ipsk,ipsk'']) ==>  safe <> true;
-
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
-  attacker(diff[ipsk'',ipsk']) ==>  safe' <> true;
-
   (* If same idP and one ipsk deducible then both are deducible *)
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
   attacker(diff[ipsk,ipsk'']) ==>  ipsk' = ipsk'' && safe <> true && safe' <> true;
