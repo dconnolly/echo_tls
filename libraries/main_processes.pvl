@@ -101,6 +101,7 @@ let gen_dishonest_long_term_keys =
   in(io,a:domain);
   new idP:idProc;
   new sk_d:privkey;
+  event CompromisedLtkForEquiv(pk(sk_d));
   event Same(d2b(a));
   let crt = valid_cert(a,pk(sk_d)) in
   insert long_term_keys(a,sk_d,pk(sk_d),crt,idP);
@@ -151,6 +152,7 @@ let gen_dishonest_ech_config =
   new skR_d:bitstring;
   let pkR_d = dh_pub(g,skR_d) in
   let config = ech_config(id,g,pkR_d,s_dom,h_alg,a_alg) in
+  event CompromisedEchKeyForEquiv(config);
   insert ech_configurations(config,skR_d);
   out(io,config);
   (* The configuration and private keys are given to the attacker. *)
@@ -169,6 +171,7 @@ let gen_dishonest_ech_config_fixed =
   new skR_d:bitstring;
   let pkR_d = dh_pub(ech_g,skR_d) in
   let config = ech_config(id,ech_g,pkR_d,s_dom,ech_h,ech_a) in
+  event CompromisedEchKeyForEquiv(config);
   insert ech_configurations(config,skR_d);
   out(io,config);
   event CompromisedEchKey(config);

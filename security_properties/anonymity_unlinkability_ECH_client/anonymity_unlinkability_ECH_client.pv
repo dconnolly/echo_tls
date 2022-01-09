@@ -10,7 +10,7 @@ fun idClientDiff(seed):idProc [private].
 
 restriction id_c:idProc,config:echConfig;
   event(ConfigOffered(id_c,config)) &&
-  event(CompromisedEchKey(config))
+  event(CompromisedEchKeyForEquiv(config))
 .
 
 restriction id:configId, g:group, pkR:element, frontend:domain,h_alg:hash_alg,a_alg:aead_alg,s:seed, s_pkey:pubkey;
@@ -19,7 +19,7 @@ restriction id:configId, g:group, pkR:element, frontend:domain,h_alg:hash_alg,a_
   event(ConfigOffered(id_c,config)) &&
   event(Client_server_domain(id_c,frontend)) &&
   event(Client_Cert_server(id_c,s_pkey)) &&
-  event(CompromisedLtk(s_pkey))
+  event(CompromisedLtkForEquiv(s_pkey))
 .
 
 restriction s:seed;

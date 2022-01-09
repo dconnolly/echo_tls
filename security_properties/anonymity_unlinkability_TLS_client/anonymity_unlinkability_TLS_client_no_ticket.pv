@@ -11,7 +11,7 @@ restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 fun idClientDiff(seed):idProc [private].
 
 restriction s:seed,s_pkey:pubkey;
-  event(Client_Cert_server(idClientDiff(s),s_pkey)) && event(CompromisedLtk(s_pkey)).
+  event(Client_Cert_server(idClientDiff(s),s_pkey)) && event(CompromisedLtkForEquiv(s_pkey)).
 
 restriction
   dom1,dom1',dom2,dom2':domain,idP,idP':idProc;

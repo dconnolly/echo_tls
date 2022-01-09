@@ -42,8 +42,10 @@ event ClientOffersGroup(
 
 (* Compromised keys *)
 event CompromisedLtk(pubkey).
+event CompromisedLtkForEquiv(pubkey).
 event CompromisedPsk(preSharedKey).
 event CompromisedEchKey(echConfig).
+event CompromisedEchKeyForEquiv(echConfig).
 
 event UnsafePsk(preSharedKey).
 

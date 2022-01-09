@@ -11,7 +11,7 @@ restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
 event ConfigOffered(echConfig).
 
 restriction config:echConfig;
-  event(CompromisedEchKey(config)) &&
+  event(CompromisedEchKeyForEquiv(config)) &&
   event(ConfigOffered(config)).
 
 
