@@ -17,3 +17,10 @@ post_handshake_data - Scenario F4 S3 B3 A1 - 5 true queries - Time 1:18:11 - Mem
 post_handshake_data - Scenario F3 S3 B3 A2 - 0 true queries - Time 1:05:13 - Memory 106164780k Command terminated by signal 9
 post_handshake_data - Scenario F5 S2 B3 A1 - 5 true queries - Time 59:31.65 - Memory 69991272k
 post_handshake_data - Scenario F8 S2 B3 A1 - 5 true queries - Time 16:10.75 - Memory 8611092k 
+post_handshake_data - Scenario F5 S3 B3 A1 - 5 true queries - Time 1:13:36 - Memory 80408804k 
+post_handshake_data - Scenario F8 S3 B3 A1 - 5 true queries - Time 22:53.27 - Memory 19884232k 
+post_handshake_data - Scenario F4 S2 B3 A2 - 0 true queries - Time 2:10:57 - Memory 138462252k Command terminated by signal 9
+post_handshake_data - Scenario F3 S3 B2 A4 - 5 true queries - Time 2:22:42 - Memory 45939404k 
+post_handshake_data - Scenario F9 S2 B3 A1 - 0 true queries - Time 1:32:42 - Memory 80403040k Command terminated by signal 9
+post_handshake_data - Scenario F3 S2 B3 A4 - 5 true queries - Time 3:39:55 - Memory 45939700k 
+post_handshake_data - Scenario F9 S2 B2 A1 - 5 true queries - Time 6:29:30 - Memory 60663932k 

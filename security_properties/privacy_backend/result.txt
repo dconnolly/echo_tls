@@ -7,3 +7,7 @@ privacy_backend - Scenario F1 S1 B2 A2 - 1 true queries - Time 1:36:13 - Memory 
 privacy_backend - Scenario F6 S2 B1 A2 - 1 true queries - Time 2:08:29 - Memory 15006056k
 privacy_backend - Scenario F2 S1 B1 A2 - 47 true queries - Time 25:54.14 - Memory 3893516k
 privacy_backend - Scenario F2 S1 B1 A4 - 47 true queries - Time 48:01.89 - Memory 5580464k 
+privacy_backend - Scenario F1 S2 B2 A2 - 1 true queries - Time 2:56:15 - Memory 22844376k 
+privacy_backend - Scenario F2 S1 B2 A2 - 0 true queries - Time 2:02:32 - Memory 92384276k Command terminated by signal 9
+privacy_backend - Scenario F1 S1 B3 A2 - 1 true queries - Time 3:38:38 - Memory 22844532k 
+privacy_backend - Scenario F1 S1 B2 A4 - 1 true queries - Time 3:19:45 - Memory 19882896k 
