@@ -49,3 +49,5 @@ letfun select_server_certificate_by_restriction = true.
 letfun select_client_pre_shared_key_by_restriction = false.
 
 letfun select_server_pre_shared_key_by_restriction = true.
+
+letfun add_unsafe_event_for_ticket = false.

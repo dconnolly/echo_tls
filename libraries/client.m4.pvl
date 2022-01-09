@@ -83,21 +83,29 @@ ifdef(<!PSK_or_random!>,<!dnl
       out(io,new_psk)
     )
     else
-      if psk = NoPsk
+      if add_unsafe_event_for_ticket
       then
-        if uncompromised_privkey(s_pkey)
+        if psk = NoPsk
         then
-          insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,true)
+          if uncompromised_privkey(s_pkey)
+          then
+            insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,true)
+          else
+            event UnsafePsk(new_psk);
+            insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
         else
-          event UnsafePsk(new_psk);
-          insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+          if safe_psk
+          then
+            insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,safe_psk)
+          else
+            event UnsafePsk(new_psk);
+            insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
       else
-        if safe_psk
-        then
-          insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,safe_psk)
-        else
-          event UnsafePsk(new_psk);
-          insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+        let is_safe =
+          (psk = NoPsk && uncompromised_privkey(s_pkey)) ||
+          (psk <> NoPsk && safe_psk)
+        in
+        insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,is_safe)
 !>)dnl
   ) | (
     (* Sending date if requested *)
