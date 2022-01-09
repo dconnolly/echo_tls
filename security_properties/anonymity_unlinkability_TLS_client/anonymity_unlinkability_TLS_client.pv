@@ -141,16 +141,14 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
 
   (* -------------- *)
 
-  (* table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
-  event(Selected_psk(diff[c_dom,c_dom'],diff[c_dom,c_dom'],idP,diff[safe,safe'],diff[id,id'])) &&
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
   attacker(diff[id,id'']) ==> id' = id'';
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
-  event(Selected_psk(diff[c_dom,c_dom'],diff[c_dom,c_dom'],idP,diff[safe,safe'],diff[id,id'])) &&
-  attacker(diff[id'',id']) ==> id = id''; *)
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+  attacker(diff[id'',id']) ==> id = id'';
 
-  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],diff[idP,idP'],true)) &&
   attacker(diff[id,id'']) ==> id' = id'';
-  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],diff[idP,idP'],true)) &&
   attacker(diff[id'',id']) ==> id = id'';
 
   (* -------------- *)
@@ -172,12 +170,6 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[mk_idpsk(s_dom,h_alg,ipsk),id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
     id' = mk_idpsk(s_dom',h_alg',ipsk');
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
-  attacker(diff[ipsk,ipsk'']) ==>  safe <> true;
-
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
-  attacker(diff[ipsk'',ipsk']) ==>  safe' <> true;
-
   (* If same idP and one ipsk deducible then both are deducible *)
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
   attacker(diff[ipsk,ipsk'']) ==>  ipsk' = ipsk'' && safe <> true && safe' <> true;
@@ -187,11 +179,14 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
 
   (* Insertion with id_client_diff cannot be be deducible *)
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) &&
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) ==> safe = true;
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) ==> safe' = true;
+
+  (* table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) &&
   attacker(diff[ipsk,ipsk'']);
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) &&
-  attacker(diff[ipsk'',ipsk']);
+  attacker(diff[ipsk'',ipsk']); *)
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idClientDiff(s),idP],diff[safe,safe'])) ==>
     id = mk_idpsk(s_dom,h_alg,ipsk);
