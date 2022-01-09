@@ -1,10 +1,9 @@
 privacy_backend - Scenario F1 S1 B1 A2 - 1 true queries - Time 1:29.98 - Memory 1614408k
 privacy_backend - Scenario F1 S1 B1 A4 - 1 true queries - Time 2:01.59 - Memory 1853620k
 privacy_backend - Scenario F1 S2 B1 A2 - 1 true queries - Time 3:33.20 - Memory 2453344k
-privacy_backend - Scenario F1 S2 B1 A4 - 1 true queries - Time 4:50.59 - Memory 3097344k 
+privacy_backend - Scenario F1 S2 B1 A4 - 1 true queries - Time 4:50.59 - Memory 3097344k
 privacy_backend - Scenario F6 S1 B1 A2 - 1 true queries - Time 38:23.16 - Memory 6498104k
 privacy_backend - Scenario F1 S1 B2 A2 - 1 true queries - Time 1:36:13 - Memory 13058464k
 privacy_backend - Scenario F6 S2 B1 A2 - 1 true queries - Time 2:08:29 - Memory 15006056k
-privacy_backend - Scenario F2 S1 B1 A2 - 47 true queries - Time 25:54.14 - Memory 3893516k 
+privacy_backend - Scenario F2 S1 B1 A2 - 47 true queries - Time 25:54.14 - Memory 3893516k
 privacy_backend - Scenario F2 S1 B1 A4 - 47 true queries - Time 48:01.89 - Memory 5580464k 
-privacy_backend - Scenario F2 S1 B2 A2 - 0 true queries - Time 1:25:26 - Memory 75380844k Command terminated by signal 9

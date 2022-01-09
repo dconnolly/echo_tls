@@ -51,8 +51,9 @@ letfun make_pre_shared_key_extension(
         if select_client_pre_shared_key_by_restriction
         then (
           get pre_shared_keys(c_dom',=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
-          event Selected_psk(c_dom,c_dom',idP,is_safe);
           event Selected_one_time_used_psk(id_client,psk,is_safe);
+          event Selected_psk_with_ID(c_dom,c_dom',id,idP,is_safe);
+          event Selected_psk(c_dom,c_dom',idP,is_safe);
           (id,psk,is_safe)
         )
         else if select_server_pre_shared_key_by_restriction

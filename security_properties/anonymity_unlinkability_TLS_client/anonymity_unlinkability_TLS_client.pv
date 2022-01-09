@@ -140,9 +140,16 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
 
   (* -------------- *)
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  (* table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  event(Selected_psk(diff[c_dom,c_dom'],diff[c_dom,c_dom'],idP,diff[safe,safe'],diff[id,id'])) &&
   attacker(diff[id,id'']) ==> id' = id'';
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  event(Selected_psk(diff[c_dom,c_dom'],diff[c_dom,c_dom'],idP,diff[safe,safe'],diff[id,id'])) &&
+  attacker(diff[id'',id']) ==> id = id''; *)
+
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+  attacker(diff[id,id'']) ==> id' = id'';
+  event(Selected_psk_with_ID(diff[c_dom,c_dom'],diff[c_dom,c_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
   attacker(diff[id'',id']) ==> id = id'';
 
   (* -------------- *)
@@ -189,7 +196,8 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
     id = mk_idpsk(s_dom,h_alg,ipsk);
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idClientDiff(s)],diff[safe,safe'])) ==>
-    id' = mk_idpsk(s_dom',h_alg',ipsk');
+    id' = mk_idpsk(s_dom',h_alg',ipsk')
+  ;
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[new_psk1,new_psk1'],idP,diff[safe,safe'])) &&
   event(Client_new_PSK(id_c,diff[new_psk1,new_psk2']))
