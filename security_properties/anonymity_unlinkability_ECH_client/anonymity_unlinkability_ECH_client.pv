@@ -115,6 +115,7 @@ axiom
     attacker(diff[id,id'']) || id = mk_idpsk(s_dom,h,psk);
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h,h'],diff[id,id'],diff[psk,psk'],diff[idP,idP'],diff[is_safe,is_safe'])) ==>
     attacker(diff[id'',id']) || id' = mk_idpsk(s_dom',h',psk')
+  [fullSat]
 .
 
 (* Lemma to help the proof *)
