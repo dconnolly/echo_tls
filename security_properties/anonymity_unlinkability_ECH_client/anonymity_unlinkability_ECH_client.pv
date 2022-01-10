@@ -63,6 +63,20 @@ restriction
     )
 .
 
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
+  are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
+  or  coming from a ticket *)
+restriction
+  ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
+  (* One time used property *)
+  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
+  event(Selected_one_time_used_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
+  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk],diff[safe1,safe])) &&
+  event(Selected_one_time_used_psk(idP,diff[ipsk2,ipsk],diff[safe2,safe])) ==> idP = idClientDiff(s);
+  (* Ucompromised property *)
+  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
+.
+
 (* We request for the matching that when the requested server is the same on both side,
   and that we already used a psk "pskL" and "pskR" respectively to match them then
   if a new session want to use the psk "pskL" on the left (resp. "pskR" on the right),
