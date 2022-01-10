@@ -24,3 +24,8 @@ post_handshake_data - Scenario F3 S3 B2 A4 - 5 true queries - Time 2:22:42 - Mem
 post_handshake_data - Scenario F9 S2 B3 A1 - 0 true queries - Time 1:32:42 - Memory 80403040k Command terminated by signal 9
 post_handshake_data - Scenario F3 S2 B3 A4 - 5 true queries - Time 3:39:55 - Memory 45939700k 
 post_handshake_data - Scenario F9 S2 B2 A1 - 5 true queries - Time 6:29:30 - Memory 60663932k 
+post_handshake_data - Scenario F4 S2 B2 A2 - 0 true queries - Time 11:12:51 - Memory 116860064k Command terminated by signal 9
+post_handshake_data - Scenario F9 S3 B2 A1 - 5 true queries - Time 8:02:00 - Memory 106161796k 
+post_handshake_data - Scenario F10 S2 B2 A1 - 5 true queries - Time 6:18:55 - Memory 60663972k 
+post_handshake_data - Scenario F8 S2 B2 A2 - 0 true queries - Time 16:25:34 - Memory 106162532k Command terminated by signal 9
+post_handshake_data - Scenario F10 S3 B2 A1 - 5 true queries - Time 8:01:51 - Memory 106161960k 
