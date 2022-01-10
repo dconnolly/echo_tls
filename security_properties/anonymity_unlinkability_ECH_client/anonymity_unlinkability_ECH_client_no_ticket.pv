@@ -52,13 +52,13 @@ restriction
     )
 .
 
-(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
-  are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
-  or  coming from a ticket *)
-restriction
-  ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
-  (* Ucompromised property *)
-  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses a psk
+  and and identity PSK that matches what an honest server generated. There is no missmatch between
+  a psk and its identity. Note that it does not prevent the PSK to be compromised.*)
+restriction s:seed,s_dom,s_dom':domain, h,h':hash_alg, psk,psk':preSharedKey, id,id':identityPsk;
+  event(Selected_psk_no_missmatch(idClientDiff(s),diff[s_dom,s_dom'],diff[h,h'],diff[psk,psk'],diff[id,id'])) ==>
+    id = mk_idpsk(s_dom,h,psk) &&
+    id' = mk_idpsk(s_dom',h',psk')
 .
 
 
