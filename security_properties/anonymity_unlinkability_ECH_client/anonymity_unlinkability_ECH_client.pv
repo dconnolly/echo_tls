@@ -64,15 +64,10 @@ restriction
 .
 
 (* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses psk that
-  are one time used and uncompromised. For the uncompromised keys, they can either be freshly generated
+  are uncompromised. For the uncompromised keys, they can either be freshly generated
   or  coming from a ticket *)
 restriction
   ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
-  (* One time used property *)
-  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
-  event(Selected_one_time_used_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
-  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk],diff[safe1,safe])) &&
-  event(Selected_one_time_used_psk(idP,diff[ipsk2,ipsk],diff[safe2,safe])) ==> idP = idClientDiff(s);
   (* Ucompromised property *)
   event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
 .
@@ -165,6 +160,13 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
     s_dom = s_dom' &&
     h_alg = id_hash(StrongHash,i) &&
     h_alg' = id_hash(StrongHash,i);
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],true)) ==>
+    s_dom = s_dom' &&
+    h_alg = id_hash(StrongHash,i) &&
+    h_alg' = id_hash(StrongHash,i) &&
+    id = mk_idpsk(s_dom,h_alg,ipsk) &&
+    id' = mk_idpsk(s_dom',h_alg',ipsk');
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
     s_dom = s_dom' &&

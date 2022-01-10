@@ -57,11 +57,6 @@ restriction
   or  coming from a ticket *)
 restriction
   ipsk,ipsk1,ipsk2:preSharedKey,idP:idProc,s:seed,safe,safe1,safe2:bool;
-  (* One time used property *)
-  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk,ipsk1],diff[safe,safe1])) &&
-  event(Selected_one_time_used_psk(idP,diff[ipsk,ipsk2],diff[safe,safe2])) ==> idP = idClientDiff(s);
-  event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk],diff[safe1,safe])) &&
-  event(Selected_one_time_used_psk(idP,diff[ipsk2,ipsk],diff[safe2,safe])) ==> idP = idClientDiff(s);
   (* Ucompromised property *)
   event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
 .
