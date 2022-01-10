@@ -157,7 +157,6 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
     c_dom = c_dom' &&
     h_alg = id_hash(StrongHash,i) &&
     h_alg' = id_hash(StrongHash,i) &&
-    safe = safe' &&
     (attacker(diff[id,id']) || (id = mk_idpsk(s_dom,h_alg,ipsk) && id' = mk_idpsk(s_dom',h_alg',ipsk')));
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,mk_idpsk(s_dom',h_alg',ipsk')],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
