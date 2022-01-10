@@ -273,6 +273,14 @@ event Selected_one_time_used_psk(
   bool            (* Safety of the pre shared key. *)
 ).
 
+event Selected_psk_no_missmatch(
+  idProc,         (* The identity of the process using the psk *)
+  domain,         (* The domain of the server *)
+  hash_alg,
+  preSharedKey,
+  identityPsk
+).
+
 event Selected_ltk(
   domain,         (* The domain given as argument *)
   domain,         (* The domain of the table entry *)

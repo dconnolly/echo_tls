@@ -63,6 +63,16 @@ restriction
     )
 .
 
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses a psk
+  and and identity PSK that matches what an honest server generated. There is no missmatch between
+  a psk and its identity. Note that it does not prevent the PSK to be compromised.*)
+restriction s:seed,s_dom,s_dom':domain, h,h':hash_alg, psk,psk':preSharedKey, id,id':identityPsk;
+  event(Selected_psk_no_missmatch(idClientDiff(s),diff[s_dom,s_dom'],diff[h,h'],diff[psk,psk'],diff[id,id'])) ==>
+    id = mk_idpsk(s_dom,h,psk) &&
+    id' = mk_idpsk(s_dom',h',psk')
+.
+
+
 (* We request for the matching that when the requested server is the same on both side,
   and that we already used a psk "pskL" and "pskR" respectively to match them then
   if a new session want to use the psk "pskL" on the left (resp. "pskR" on the right),
