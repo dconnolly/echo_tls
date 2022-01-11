@@ -53,8 +53,8 @@ letfun make_pre_shared_key_extension(
           get pre_shared_keys(c_dom',=s_dom,=h_alg,id,psk,idP,is_safe) [precise] in
           event Selected_one_time_used_psk(id_client,psk,is_safe);
           event Selected_psk(c_dom,c_dom',idP,is_safe);
-          event Selected_psk_with_ID(c_dom,c_dom',id,idP,is_safe);
           event Selected_psk_no_missmatch(id_client,s_dom,h_alg,psk,id);
+          event Selected_psk_with_ID(c_dom,c_dom',id,idP,is_safe);
           (id,psk,is_safe)
         )
         else if select_server_pre_shared_key_by_restriction
@@ -62,6 +62,7 @@ letfun make_pre_shared_key_extension(
           get pre_shared_keys(=c_dom,s_dom',=h_alg,id,psk,idP,is_safe) [precise] in
           event Selected_psk(s_dom,s_dom',idP,is_safe);
           event Selected_psk_no_missmatch(id_client,s_dom,h_alg,psk,id);
+          event Selected_psk_with_ID(s_dom,s_dom',id,idP,is_safe);
           (id,psk,is_safe)
         )
         else (
