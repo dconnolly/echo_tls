@@ -13,3 +13,10 @@ anonymity_unlinkability_ECH_client - Scenario F1 S2 B2 A2 - 1 true queries - Tim
 anonymity_unlinkability_ECH_client - Scenario F6 S1 B1 A4 - 1 true queries - Time 20:24.78 - Memory 4924076k 
 anonymity_unlinkability_ECH_client - Scenario F1 S1 B3 A2 - 1 true queries - Time 2:51:08 - Memory 19886032k 
 anonymity_unlinkability_ECH_client - Scenario F6 S2 B1 A4 - 1 true queries - Time 56:33.72 - Memory 11365372k 
+anonymity_unlinkability_ECH_client - Scenario F1 S1 B2 A4 - 1 true queries - Time 2:49:49 - Memory 17311152k 
+anonymity_unlinkability_ECH_client - Scenario F7 S1 B1 A2 - 45 true queries - Time 8:34:33 - Memory 22540948k 
+anonymity_unlinkability_ECH_client - Scenario F7 S1 B1 A4 - 45 true queries - Time 6:39:23 - Memory 20100980k 
+anonymity_unlinkability_ECH_client - Scenario F2 S2 B2 A2 - 0 true queries - Time 10:14:09 - Memory 92384696k Command terminated by signal 9
+anonymity_unlinkability_ECH_client - Scenario F1 S2 B3 A2 - 1 true queries - Time 9:38:25 - Memory 52788916k 
+anonymity_unlinkability_ECH_client - Scenario F1 S1 B3 A4 - 1 true queries - Time 6:33:46 - Memory 34802432k 
+anonymity_unlinkability_ECH_client - Scenario F1 S2 B2 A4 - 1 true queries - Time 4:38:01 - Memory 26254292k 
