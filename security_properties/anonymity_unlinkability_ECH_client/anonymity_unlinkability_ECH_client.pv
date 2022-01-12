@@ -135,16 +135,18 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
   safe,safe',safe1,safe2:bool, i,i':nat,
   id_c,id_s:idProc, new_psk1,new_psk1',new_psk2,new_psk2',psk,psk':preSharedKey,cr,sr:bytes32, is_rand:bool
   ;
-  event(Selected_psk_with_ID(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+
+  event(Selected_psk_with_ID(c_dom,c_dom,diff[id,id'],diff[idP,idP'],diff[safe,safe'])) &&
   attacker(diff[id,id'']) ==> id' = id'';
-  event(Selected_psk_with_ID(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[id,id'],idP,diff[safe,safe'])) &&
+  event(Selected_psk_with_ID(c_dom,c_dom,diff[id,id'],diff[idP,idP'],diff[safe,safe'])) &&
   attacker(diff[id'',id']) ==> id = id'';
 
-  event(Selected_psk_with_ID(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[id,id'],diff[idP,idP'],true)) &&
-  attacker(diff[id,id'']) ==> id' = id'';
-  event(Selected_psk_with_ID(diff[s_dom,s_dom'],diff[s_dom,s_dom'],diff[id,id'],diff[idP,idP'],true)) &&
-  attacker(diff[id'',id']) ==> id = id'';
-
+  event(Selected_psk_with_ID(c_dom,c_dom,diff[id,id'],diff[idP,idP'],diff[safe,safe'])) &&
+  event(Selected_psk_with_ID(c_dom',c_dom',diff[id,id''],diff[idP'',idP'''],diff[safe'',safe''']))
+  ==> id' = id'';
+  event(Selected_psk_with_ID(c_dom,c_dom,diff[id',id],diff[idP,idP'],diff[safe,safe'])) &&
+  event(Selected_psk_with_ID(c_dom',c_dom',diff[id'',id],diff[idP'',idP'''],diff[safe'',safe''']))
+  ==> id' = id'';
   (* -------------- *)
 
   attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom',h_alg',ipsk')]) ==>
@@ -166,18 +168,10 @@ lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,
     h_alg = id_hash(StrongHash,i) &&
     h_alg' = id_hash(StrongHash,i);
 
-  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],true)) ==>
-    s_dom = s_dom' &&
-    h_alg = id_hash(StrongHash,i) &&
-    h_alg' = id_hash(StrongHash,i) &&
-    id = mk_idpsk(s_dom,h_alg,ipsk) &&
-    id' = mk_idpsk(s_dom',h_alg',ipsk');
-
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
     s_dom = s_dom' &&
     h_alg = id_hash(StrongHash,i) &&
     h_alg' = id_hash(StrongHash,i) &&
-    safe = safe' &&
     (attacker(diff[id,id']) || (id = mk_idpsk(s_dom,h_alg,ipsk) && id' = mk_idpsk(s_dom',h_alg',ipsk')));
 
   table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,mk_idpsk(s_dom',h_alg',ipsk')],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
