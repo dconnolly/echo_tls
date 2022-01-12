@@ -22,6 +22,7 @@ query c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPs
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
   attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
     event(ServerNewTicket(idP,old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk));
+  attacker(mk_idpsk(s_dom,h,psk)) ==> psk <> NoPsk && psk <> b2psk(zero);
   table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==>
     (id = mk_idpsk(s_dom,h,psk) &&
     (event(ServerNewTicket(idP',old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk))))

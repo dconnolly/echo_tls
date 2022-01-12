@@ -68,15 +68,18 @@ ifdef(<!PSK_or_random!>,<!dnl
     then (
       event CompromisedPskDiff(id_client);
       let () =
-        if psk = NoPsk
+        if add_unsafe_event_for_ticket
         then
-          if uncompromised_privkey(s_pkey)
-          then ()
-          else event UnsafePsk(new_psk); ()
-        else
-          if safe_psk
-          then ()
-          else event UnsafePsk(new_psk); ()
+          if psk = NoPsk
+          then
+            if uncompromised_privkey(s_pkey)
+            then ()
+            else event UnsafePsk(new_psk); ()
+          else
+            if safe_psk
+            then ()
+            else event UnsafePsk(new_psk); ()
+        else ()
       in
       insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false);
       event CompromisedPsk(new_psk);
