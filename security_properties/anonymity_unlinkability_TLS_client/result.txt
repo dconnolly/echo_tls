@@ -32,3 +32,4 @@ anonymity_unlinkability_TLS_client - Scenario F7 S2 B1 A1 - 47 true queries - Ti
 anonymity_unlinkability_TLS_client - Scenario F7 S1 B2 A1 - 47 true queries - Time 3:25:47 - Memory 30168424k 
 anonymity_unlinkability_TLS_client - Scenario F7 S1 B3 A1 - 47 true queries - Time 8:20:17 - Memory 69988672k 
 anonymity_unlinkability_TLS_client - Scenario F7 S1 B1 A4 - 47 true queries - Time 4:16:00 - Memory 16659756k 
+anonymity_unlinkability_TLS_client - Scenario F6 S1 B2 A4 - 0 true queries - Time 48:00:30 - Memory 80409056k Command terminated by signal 9
