@@ -15,3 +15,4 @@ downgrade_resilient_ech - Scenario F5 S2 B2 A4 - 1 true queries - Time 1:06:33 -
 downgrade_resilient_ech - Scenario F5 S2 B3 A2 - 1 true queries - Time 2:42:56 - Memory 69986000k 
 downgrade_resilient_ech - Scenario F7 S2 B2 A2 - 1 true queries - Time 24:19:42 - Memory 45938576k 
 downgrade_resilient_ech - Scenario F7 S2 B2 A4 - 1 true queries - Time 24:55:05 - Memory 52788952k 
+downgrade_resilient_ech - Scenario F7 S2 B3 A2 - 0 true queries - Time 23:11:22 - Memory 80405032k Command terminated by signal 9
