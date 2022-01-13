@@ -16,7 +16,7 @@ noticket:
 	-lib ../../libraries/format.pvl \
 	-lib ../../libraries/key_schedule.pvl \
 	-lib ../../libraries/events.pvl \
-	-lib config_proof_helper.pvl \
+	-lib config_proof_helper.m4.pvl \
 	-lib ../../libraries/tls_functions.pvl \
 	-lib ../../libraries/ech_functions.pvl \
 	-lib ../../libraries/server.pvl \
