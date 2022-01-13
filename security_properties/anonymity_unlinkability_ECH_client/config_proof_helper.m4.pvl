@@ -4,7 +4,7 @@
 
 (* In client.pvl *)
 
-letfun precise_C_PH_get = false.
+letfun precise_C_PH_get = true.
 
 letfun strong_PreciseMess_C_CFIN = true.
 letfun medium_PreciseMess_C_CFIN = false.
