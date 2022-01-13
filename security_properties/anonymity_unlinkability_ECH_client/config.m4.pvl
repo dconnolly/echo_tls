@@ -4,7 +4,7 @@
 
 (* When `false`, an honest client will always send its key share with the group.
   Moreover, an honest server will never send a HRR request.*)
-letfun allow_HRR = false.
+letfun allow_HRR = true.
 
 (* When `false`, honest clients and servers are not expecting and sending a new
   session ticket respectively. *)
@@ -16,7 +16,7 @@ letfun allow_PH_data = false.
 
 (* When `false`, honest servers will request post handshake authentication
   and honest clients will never wait for one. *)
-letfun allow_PH_authentication = true.
+letfun allow_PH_authentication = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   early data. *)
@@ -84,7 +84,7 @@ letfun set_use_ech = false.
 letfun default_use_ech = true.
 
 (* TLS client  *)
-letfun clients_with_tls = true.
+letfun clients_with_tls = false.
 
 (* Ech client *)
 letfun clients_with_ech = true.
