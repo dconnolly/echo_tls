@@ -95,6 +95,15 @@ restriction dom:domain,idP,idP',idP'':idProc,safe,safe',safe'':bool;
   event(Selected_psk(dom,dom,diff[idP'',idP],diff[safe'',safe])) ==>
   idP' = idP''.
 
+(* Security properties *)
+
+restriction idP:idProc,st,st':stamp, i:nat;
+  event(ClientSequenceClientDataWriteKey(idP,st,i)) && event(ClientSequenceClientDataWriteKey(idP,st',i)) ==> st = st';
+  event(ClientSequenceServerDataWriteKey(idP,st,i)) && event(ClientSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceServerDataWriteKey(idP,st,i)) && event(ServerSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClientDataWriteKey(idP,st,i)) && event(ServerSequenceClientDataWriteKey(idP,st',i)) ==> st = st'
+.
+
 let swap_long_term_keys =
   !
   get long_term_keys(dom1,sk1,pk1,cert1,idP1) in

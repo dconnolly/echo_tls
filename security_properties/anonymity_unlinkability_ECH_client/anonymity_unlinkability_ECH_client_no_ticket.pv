@@ -61,6 +61,15 @@ restriction s:seed,s_dom,s_dom':domain, h,h':hash_alg, psk,psk':preSharedKey, id
     id' = mk_idpsk(s_dom',h',psk')
 .
 
+(* Security properties *)
+
+restriction idP:idProc,st,st':stamp, i:nat;
+  event(ClientSequenceClientDataWriteKey(idP,st,i)) && event(ClientSequenceClientDataWriteKey(idP,st',i)) ==> st = st';
+  event(ClientSequenceServerDataWriteKey(idP,st,i)) && event(ClientSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceServerDataWriteKey(idP,st,i)) && event(ServerSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClientDataWriteKey(idP,st,i)) && event(ServerSequenceClientDataWriteKey(idP,st',i)) ==> st = st'
+.
+
 
 let swap_long_term_keys =
   !

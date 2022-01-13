@@ -54,6 +54,15 @@ restriction
   event(Selected_one_time_used_psk(idClientDiff(s),diff[ipsk1,ipsk2],diff[safe1,safe2])) ==> safe1 = true && safe2 = true
 .
 
+(* Security properties *)
+
+restriction idP:idProc,st,st':stamp, i:nat;
+  event(ClientSequenceClientDataWriteKey(idP,st,i)) && event(ClientSequenceClientDataWriteKey(idP,st',i)) ==> st = st';
+  event(ClientSequenceServerDataWriteKey(idP,st,i)) && event(ClientSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceServerDataWriteKey(idP,st,i)) && event(ServerSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClientDataWriteKey(idP,st,i)) && event(ServerSequenceClientDataWriteKey(idP,st',i)) ==> st = st'
+.
+
 let swap_long_term_keys =
   !
   get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
