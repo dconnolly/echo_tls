@@ -30,7 +30,7 @@ For equivalence properties, there is an additional main file for the case where 
 
 ### Verifying the security properties
 
-[ProVerif](https://bblanche.gitlabpages.inria.fr/proverif/) should be installed before using our script. Do **not** use the source package of ProVerif 2.04. Indeed, to run properly our models in ProVerif, we asked the developers of ProVerif to add some features, which they did. These new features are currently available only on the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma).
+[ProVerif](https://bblanche.gitlabpages.inria.fr/proverif/) should be installed before using our script. Do **not** use the source package of ProVerif 2.04. Indeed, to run properly our models in ProVerif, we asked the developers of ProVerif to add some features to make lemmas and axioms more expressive, which they did. In particular, we rely in our model on the fact that attacker predicates can be used in the conclusion of a lemma and of an axiom. This is not possible in ProVerif 2.04 and these features are now currently available only on the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma).
 
 To obtain the source code, you can either:
 - Go to the official [ProVerif Gitlab](https://gitlab.inria.fr/bblanche/proverif/-/tree/improved_scope_lemma). Select the branch `improved_scope_lemma` and download the source code from the interface.
