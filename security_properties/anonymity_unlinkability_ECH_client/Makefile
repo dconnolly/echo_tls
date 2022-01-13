@@ -11,7 +11,7 @@ noticket:
 	mkdir -p ../../generated_libraries
 	m4 ../../libraries/client.m4.pvl > ../../generated_libraries/client.pvl
 	proverif \
-	-lib config.pvl \
+	-lib config.m4.pvl \
 	-lib ../../libraries/primitives.pvl \
 	-lib ../../libraries/format.pvl \
 	-lib ../../libraries/key_schedule.pvl \
@@ -29,7 +29,7 @@ ticket:
 	mkdir -p ../../generated_libraries
 	m4 ../../libraries/client.m4.pvl > ../../generated_libraries/client.pvl
 	proverif \
-	-lib config.pvl \
+	-lib config.m4.pvl \
 	-lib ../../libraries/primitives.pvl \
 	-lib ../../libraries/format.pvl \
 	-lib ../../libraries/key_schedule.pvl \
