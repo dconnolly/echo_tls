@@ -60,3 +60,4 @@ strong_secrecy_ee - Scenario F7 S1 B1 A2 - 39 true queries - Time 15:22.56 - Mem
 strong_secrecy_ee - Scenario F7 S1 B1 A4 - 39 true queries - Time 23:44.93 - Memory 7334156k 
 strong_secrecy_ee - Scenario F7 S2 B1 A2 - 39 true queries - Time 2:23:46 - Memory 25718068k 
 strong_secrecy_ee - Scenario F7 S2 B1 A4 - 39 true queries - Time 2:55:03 - Memory 29175344k 
+strong_secrecy_ee - Scenario F2 S2 B2 A4 - 39 true queries - Time 10:39:10 - Memory 65420016k 
