@@ -8,7 +8,7 @@ letfun allow_HRR = false.
 
 (* When `false`, honest clients and servers are not expecting and sending a new
   session ticket respectively. *)
-letfun allow_PH_new_session_ticket = true.
+letfun allow_PH_new_session_ticket = false.
 
 (* When `false`, honest clients and servers will never send or try to receive
   Post Handshake Application Data. *)
@@ -31,10 +31,10 @@ letfun allow_compromised_Ech_keys = true.
 
 (* When `false`, the client never leak the pre shared keys derived from the tickets.
   Otherwise, when `true`, the attacker decides when to compromise or not a key. *)
-letfun allow_compromised_ticket = true.
+letfun allow_compromised_ticket = false.
 
 (* When `true`, external pre shared keys can be compromised. *)
-letfun allow_compromised_ext_PSK = true.
+letfun allow_compromised_ext_PSK = false.
 
 (* When `true`, certificate long term keys can be compromised. *)
 letfun allow_compromised_long_term_keys = true.
