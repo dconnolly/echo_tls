@@ -38,6 +38,25 @@ ifdef(<!PSK_or_random!>,<!dnl
     let new_diff_ticket_id = mk_idpsk(s_dom,h_alg,new_diff_psk) in
     (* We allow the client the "generate the new ID with the random even though it is normally
     the server that does it. *)
+ifdef(<!PSK_or_random_NoInsert!>,<!dnl
+    if psk = NoPsk
+    then
+      if uncompromised_privkey(s_pkey)
+      then (
+        let safe' = if comp_psk then false else true in
+        if comp_psk then
+        out(io,(new_diff_psk,new_diff_ticket_id))
+      )
+      else 0
+    else
+      if safe_psk
+      then (
+        let safe' = if comp_psk then false else true in
+        if comp_psk then
+        out(io,(new_diff_psk,new_diff_ticket_id))
+      )
+      else 0
+!>,<!dnl
     if psk = NoPsk
     then
       if uncompromised_privkey(s_pkey)
@@ -63,6 +82,7 @@ ifdef(<!PSK_or_random!>,<!dnl
       else
         event Client_rand_PSK(id_client,new_psk,psk_rand,false);
         insert pre_shared_keys(c_dom,s_dom,h_alg,ticket_id,new_psk,id_client,false)
+!>)dnl
 !>,<!dnl
     if allow_compromised_ticket && comp_psk
     then (
