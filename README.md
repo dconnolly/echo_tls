@@ -136,7 +136,7 @@ The parameter specify where the property is proved in the presence of specific a
 
 The details for all of verification results can be found in the files `result.txt` of each security property.
 The results were obtain on a  64 X AMD 3.8Ghz-CPU server with 515 GB of RAM. Note that ProVerif is not a multicore
-program so run on a single processor. 
+program so run on a single processor.
 For example, in the result file of the `authentication` folder:
 
 > authentication - Scenario F4 S2 B3 A2 - 2 true queries - Time 42:28.20 - Memory 80406840k
@@ -148,19 +148,3 @@ For example, in the result file of the `authentication` folder:
 > authentication - Scenario F9 S2 B2 A4 - 0 true queries - Time 1:32:41 - Memory 92383056k Command terminated by signal 9
 
 Each line corresponds to a scenario with the execution time, `1:32:41` means 1h 32min and 41s, whereas `42:28.20` means 42min 28s and 20 ms. Memory is given in kilo bytes. Note that when the line contains `Command terminated`, then it indicates that it was terminated either by running out of time (48h max) or by running out of memory. As we ran several script in parallel, file that had been terminating due to lack of memory was usually using between 100GB to 300GB of RAM. As the scenarios are mostly defined in increasing order of difficulties in term of verification, we avoided running more complex scenario than the one that were already timing/memory out.
-
-Here is the summary of the best scenarios we proved for each property:
-- Secrecy:
-- Authentication:
-- Early Data:
-- Downgrade resilience:
-- Key sequentiality:
-- Post Handshake Authentication:
-- Post Handshake Data:
-- Reachbility lemmas:
-- Backend Privacy:
-- PreSharedKey or Random:
-- Strong secrecy of Inner Extension:
-- Strong secrecy of Encrypted Extension:
-- Anonymity and Unlinkability of TLS Clients:
-- Anonymity and Unlinkability of ECH Clients:
