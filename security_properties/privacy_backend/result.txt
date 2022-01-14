@@ -26,3 +26,4 @@ privacy_backend - Scenario F2 S2 B2 A2 - 0 true queries - Time 9:42:25 - Memory 
 privacy_backend - Scenario F7 S1 B1 A4 - 47 true queries - Time 6:39:44 - Memory 19882100k 
 privacy_backend - Scenario F7 S1 B1 A2 - 47 true queries - Time 8:45:36 - Memory 22537716k 
 privacy_backend - Scenario F2 S1 B2 A2 - 47 true queries - Time 24:27:27 - Memory 45940072k 
+privacy_backend - Scenario F7 S2 B1 A4 - 47 true queries - Time 20:48:29 - Memory 52787832k 
