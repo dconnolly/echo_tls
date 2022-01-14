@@ -161,7 +161,7 @@ ifdef(<!PSK_or_random_NoInsert!>,<!dnl
     if is_nat(seq_srv) && is_nat(seq_client) then
 
     (* Reception of a certificate request *)
-    in(io,enc_msg:bitstring) (*[precise]*);
+    in(io,enc_msg:bitstring);
     let m2b(CRTR(rand_crt)) = aead_dec(a_alg,sak,n2b(seq_srv),zero,enc_msg) in
     new st[]:stamp;
     event ClientSequenceServerDataWriteKey(id_client,st,seq_srv); (* To model the sequence of messages using server write key *)
