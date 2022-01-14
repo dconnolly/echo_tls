@@ -48,7 +48,9 @@ restriction
 
 (* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses a psk
   and and identity PSK that matches what an honest server generated. There is no missmatch between
-  a psk and its identity. Note that it does not prevent the PSK to be compromised.*)
+  a psk and its identity. A missmatch can only occur when the PSK is in fact a resumption ticket that
+  has been obtained during a session where the server impersonnated the server.
+  Note that it does not prevent the PSK to be compromised.*)
 restriction s:seed,s_dom,s_dom':domain, h,h':hash_alg, psk,psk':preSharedKey, id,id':identityPsk;
   event(Selected_psk_no_missmatch(idClientDiff(s),diff[s_dom,s_dom'],diff[h,h'],diff[psk,psk'],diff[id,id'])) ==>
     id = mk_idpsk(s_dom,h,psk) &&
