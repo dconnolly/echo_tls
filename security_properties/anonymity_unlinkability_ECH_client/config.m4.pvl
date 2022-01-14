@@ -72,15 +72,15 @@ letfun set_use_grease = true.
 letfun default_use_grease = false.
 
 (* Determine if the server request a certificate from the client. *)
-letfun set_req_cert = true.
-letfun default_req_cert = false.
+letfun set_req_cert = false.
+letfun default_req_cert = true.
 
 (*****************************)
 (*     Scenario of agents    *)
 (*****************************)
 
 (* Determine if the servers uses ECH *)
-letfun set_use_ech = false.
+letfun set_use_ech = true.
 letfun default_use_ech = true.
 
 (* TLS client  *)
