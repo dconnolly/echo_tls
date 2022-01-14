@@ -134,7 +134,10 @@ The parameter specify where the property is proved in the presence of specific a
 
 ### Verification results
 
-The details for all of verification results can be found in the files `result.txt` of each security property. For example, in the result file of the `authentication` folder:
+The details for all of verification results can be found in the files `result.txt` of each security property.
+The results were obtain on a  64 X AMD 3.8Ghz-CPU server with 515 GB of RAM. Note that ProVerif is not a multicore
+program so run on a single processor. 
+For example, in the result file of the `authentication` folder:
 
 > authentication - Scenario F4 S2 B3 A2 - 2 true queries - Time 42:28.20 - Memory 80406840k
 >
