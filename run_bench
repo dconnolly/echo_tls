@@ -598,5 +598,6 @@ case .$1 in
 	.clean)
 		echo Removing all generated files
 		rm -f generated_configs/*.pvl
+		rm -f generated_libraries/*.pvl
 		;;
 esac
