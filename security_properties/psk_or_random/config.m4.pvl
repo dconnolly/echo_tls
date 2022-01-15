@@ -57,7 +57,7 @@ letfun allow_weak_ciphersuite_and_group = false.
 
 (* Each behavior parameters has two variables. When `set_p` is `true` then
   the attacker chooses the value of `p`for each single session. When `set_p`
-  is `false` then the value of `p` is set to `default_p` for all sessions. *)
+  is `true` then the value of `p` is set to `default_p` for all sessions. *)
 
 (* Determine if client send their key share. *)
 letfun set_send_kex = false.
