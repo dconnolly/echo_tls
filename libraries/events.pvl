@@ -1,0 +1,350 @@
+(*******************************)
+(*  Events used in the process *)
+(*******************************)
+
+type stamp.
+
+(*** Event to defined security queries *)
+
+(* Selection of ciphersuite and group by the server *)
+event ServerChoosesAead(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  aead_alg        (* AEAD algorithm *)
+).
+
+event ServerChoosesHash(
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  hash_alg        (* Hash algorithm *)
+).
+
+event ServerChoosesGroup(
+  idProc,         (* Process Identity *)
+  group           (* DH group *)
+).
+
+(* Offer of aead algorithm by the client *)
+event ClientOffersAead(
+  bytes32,        (* Client random *)
+  aead_alg        (* AEAD algorithm *)
+).
+
+event ClientOffersHash(
+  bytes32,        (* Client random *)
+  hash_alg        (* Hash algorithm *)
+).
+
+event ClientOffersGroup(
+  bytes32,        (* Client random *)
+  group           (* DH group *)
+).
+
+(* Compromised keys *)
+event CompromisedLtk(pubkey).
+event CompromisedLtkForEquiv(pubkey).
+event CompromisedPsk(preSharedKey).
+event CompromisedEchKey(echConfig).
+event CompromisedEchKeyForEquiv(echConfig).
+
+event UnsafePsk(preSharedKey).
+
+(* Modelisation of the sequence number for Per-Record Nonce (Section 5.3 of TLS RFC)*)
+
+event ServerSequenceClientDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ServerSequenceServerDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceClientDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceServerDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ServerSequenceClient0RTTDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+event ClientSequenceClient0RTTDataWriteKey(
+  idProc,        (* Process identity *)
+  stamp,          (* Stamp freshly generated before calling the event *)
+  nat             (* The sequence number *)
+).
+
+(* Application Data - 0-RTT *)
+event ServerReceives0(
+  idProc,         (* Process identity *)
+  domain,         (* Server domain *)
+  bytes32,        (* Client random *)
+  preSharedKey,   (* Pre shared key *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientSends0(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  preSharedKey,   (* Pre shared key *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+(* Application Data - Post Handshake *)
+event ServerReceives(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ServerSends(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientReceives(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+event ClientSends(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* Sequence number given as input to Aead *)
+  bitstring,      (* Additional data given as input to Aead *)
+  bitstring       (* Message *)
+).
+
+(* 1-RTT Authentication *)
+
+event ClientFinished(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  aead_key,       (* client_write_key for Application Data record *)
+  aead_key,       (* server_write_key for Application Data record *)
+  bitstring,      (* exporter_master_secret *)
+  bitstring       (* resumption_master_secret *)
+).
+
+event ServerFinished(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  aead_key,       (* client_write_key for Application Data record *)
+  aead_key,       (* server_write_key for Application Data record *)
+  bitstring,      (* exporter_master_secret *)
+  bitstring       (* resumption_master_secret *)
+).
+
+event PreServerFinished(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey          (* Certificate public key of the server *)
+).
+
+(* Post Handshake Authentication *)
+
+event ServerRequestPH(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  bitstring       (* The random in request *)
+).
+
+event ClientFinishedPH(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  bitstring,      (* The random in request *)
+  pubkey          (* Certificate public key of the client *)
+).
+
+event ServerFinishedPH(
+  idProc,         (* Process identity *)
+  bytes32,        (* Client random *)
+  bytes32,        (* Server random *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  bitstring,      (* The random in request *)
+  pubkey          (* Certificate public key of the client *)
+).
+
+event ServerNewTicket(
+  idProc,         (* Process identity *)
+  preSharedKey,   (* Pre shared key used in the session *)
+  pubkey,         (* Certificate public key of the server *)
+  pubkey,         (* Certificate public key of the client *)
+  nat,            (* The sequence number used when receiving the ticket *)
+  preSharedKey    (* Pre shared key used in the session *)
+).
+
+(* Ech events *)
+
+event ClientOffersEchConfig(
+  idProc,         (* Process identity of the client *)
+  echConfig       (* The ECH config of the frontend server *)
+).
+
+event ServerChoosesEchConfig(
+  idProc,         (* Process identity of the server *)
+  echConfig,      (* The ECH config that the frontend server accepts *)
+  bool            (* Indicates if the server was running ECH. *)
+).
+
+event ClientEchAcceptance(
+  idProc,         (* Process identity of the client *)
+  bool            (* True when the client considers that ECH was accepted *)
+).
+
+event ServerEchAcceptance(
+  idProc,         (* Process identity of the server *)
+  bool            (* True when the server accepts ECH. *)
+).
+
+(* Equivalence properties *)
+
+event Selected_psk(
+  domain,         (* The domain given as argument *)
+  domain,         (* The domain of the table entry *)
+  idProc,         (* The identity of the process that generated the psk *)
+  bool            (* Safety of the pre shared key. *)
+).
+
+event Selected_one_time_used_psk(
+  idProc,         (* The identity of the process using the psk *)
+  preSharedKey,   (* The pre shared key *)
+  bool            (* Safety of the pre shared key. *)
+).
+
+event Selected_psk_no_missmatch(
+  idProc,         (* The identity of the process using the psk *)
+  domain,         (* The domain of the server *)
+  hash_alg,
+  preSharedKey,
+  identityPsk
+).
+
+event Selected_ltk(
+  domain,         (* The domain given as argument *)
+  domain,         (* The domain of the table entry *)
+  idProc          (* The identity of the process that generated the long term key. *)
+).
+
+event Selected_ech_config_private_key(
+  element         (* The private key of the Ech Config *)
+).
+
+(* The PSK obtained from ticket when the attacker decided to compromise it. *)
+event CompromisedPskDiff(idProc).
+
+(*** Events for proof helpers *)
+
+event PreciseInput(stamp,bitstring).
+event PreciseIdProcess(channel,idProc,stamp).
+event PreciseMess(channel,idProc,stamp,bitstring).
+event Same(bitstring).
+
+event Selected_psk_with_ID(
+  domain,         (* The domain given as argument *)
+  domain,         (* The domain of the table entry *)
+  identityPsk,
+  idProc,         (* The identity of the process that generated the psk *)
+  bool            (* Safety of the pre shared key. *)
+).
+
+event Client_server_domain(idProc,domain).
+event Client_Rand_client(idProc,bytes32).
+event Client_Rand_server(idProc,bytes32).
+event Client_DH_client(idProc,element).
+event Client_DH_server(idProc,element).
+event Client_DH_gxy(idProc,element).
+event Client_Cert_server(idProc,pubkey).
+event Client_Cert_client(idProc,pubkey).
+event Client_PSKOffer(idProc,preSharedKey,identityPsk,bool).
+event Client_PSKChoosen(idProc,preSharedKey,bool).
+event Client_chk(idProc,aead_key).
+event Client_shk(idProc,aead_key).
+event Client_cfin(idProc,mac_key).
+event Client_sfin(idProc,mac_key).
+event Client_rms(idProc,bitstring).
+event Client_cak(idProc,aead_key).
+event Client_sak(idProc,aead_key).
+event Client_cfkad(idProc,mac_key).
+event Client_comp_psk(idProc,bool).
+event Client_new_PSK(idProc,preSharedKey).
+event Client_rand_PSK(idProc,preSharedKey,preSharedKey,bool).
+
+event Server_Rand_client(idProc,bytes32).
+event Server_Rand_server(idProc,bytes32).
+event Server_DH_client(idProc,element).
+event Server_DH_server(idProc,element).
+event Server_DH_gxy(idProc,element).
+event Server_Cert_server(idProc,pubkey).
+event Server_Cert_client(idProc,pubkey).
+event Server_PSKChoosen(idProc,preSharedKey).
+event Server_chk(idProc,aead_key).
+event Server_shk(idProc,aead_key).
+event Server_cfin(idProc,mac_key).
+event Server_sfin(idProc,mac_key).
+event Server_rms(idProc,bitstring).
+event Server_cak(idProc,aead_key).
+event Server_sak(idProc,aead_key).
+event Server_cfkad(idProc,mac_key).
+event Server_new_PSK(idProc,preSharedKey).

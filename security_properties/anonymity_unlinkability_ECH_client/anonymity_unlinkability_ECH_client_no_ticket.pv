@@ -1,0 +1,162 @@
+set removeEventsForLemma = true.
+
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) / -400000
+.
+
+(* Restriction for equivalence *)
+
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+
+event ConfigOffered(idProc,echConfig).
+
+fun idClientDiff(seed):idProc [private].
+
+restriction id_c:idProc,config:echConfig;
+  event(ConfigOffered(id_c,config)) &&
+  event(CompromisedEchKeyForEquiv(config))
+.
+
+restriction id:configId, g:group, pkR:element, frontend:domain,h_alg:hash_alg,a_alg:aead_alg,s:seed, s_pkey:pubkey;
+  let config = ech_config(id,g,pkR,frontend,h_alg,a_alg) in
+  let id_c = idClientDiff(s) in
+  event(ConfigOffered(id_c,config)) &&
+  event(Client_server_domain(id_c,frontend)) &&
+  event(Client_Cert_server(id_c,s_pkey)) &&
+  event(CompromisedLtkForEquiv(s_pkey))
+.
+
+restriction
+  dom1,dom1',dom2,dom2':domain,idP,idP':idProc;
+  event(Selected_ltk(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&  (* On the left side *)
+    dom1' = dom2' && (* On the right side *)
+    (
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 = dom1' && idP = idP') || (dom1 <> dom1')
+    )
+.
+
+restriction
+  dom1,dom1',dom2,dom2':domain, idP,idP':idProc, s:seed, safe,safe':bool;
+  event(Selected_psk(diff[dom1,dom1'],diff[dom2,dom2'],diff[idP,idP'],diff[safe,safe'])) ==>
+    (* The entries taken from the table should correspond to the requested domains *)
+    dom1 = dom2 &&
+    dom1' = dom2' &&
+    (
+      (* If the requested domains on the left and on the right are the same, we use the same
+         idProc to match them. No condition when the requested domains are different *)
+      (dom1 <> dom1') || (dom1 = dom1' && idP = idP')
+    )
+.
+
+(* We restrict our traces where the process on which we look at the privacy of ClientA/ClientB uses a psk
+  and and identity PSK that matches what an honest server generated. There is no missmatch between
+  a psk and its identity. Note that it does not prevent the PSK to be compromised.*)
+restriction s:seed,s_dom,s_dom':domain, h,h':hash_alg, psk,psk':preSharedKey, id,id':identityPsk;
+  event(Selected_psk_no_missmatch(idClientDiff(s),diff[s_dom,s_dom'],diff[h,h'],diff[psk,psk'],diff[id,id'])) ==>
+    id = mk_idpsk(s_dom,h,psk) &&
+    id' = mk_idpsk(s_dom',h',psk')
+.
+
+(* Security properties *)
+
+restriction idP:idProc,st,st':stamp, i:nat;
+  event(ClientSequenceClientDataWriteKey(idP,st,i)) && event(ClientSequenceClientDataWriteKey(idP,st',i)) ==> st = st';
+  event(ClientSequenceServerDataWriteKey(idP,st,i)) && event(ClientSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceServerDataWriteKey(idP,st,i)) && event(ServerSequenceServerDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClientDataWriteKey(idP,st,i)) && event(ServerSequenceClientDataWriteKey(idP,st',i)) ==> st = st'
+.
+
+
+let swap_long_term_keys =
+  !
+  get long_term_keys(dom1,sk1,pk1,cert1,idP1) in
+  event Same(id2b(idP1));
+  get long_term_keys(dom2,sk2,pk2,cert2,idP2) in
+  event Same(id2b(idP2));
+  insert long_term_keys(diff[dom1,dom2],diff[sk1,sk2],diff[pk1,pk2],diff[cert1,cert2],diff[idP1,idP2]);
+  insert long_term_keys(diff[dom2,dom1],diff[sk2,sk1],diff[pk2,pk1],diff[cert2,cert1],diff[idP2,idP1])
+.
+
+let swap_pre_shared_keys =
+  !
+  get pre_shared_keys(c_dom1,s_dom,h_alg,id1,psk1,idP1,safe1) in
+  event Same(id2b(idP1));
+  get pre_shared_keys(c_dom2,=s_dom,=h_alg,id2,psk2,idP2,safe2) in
+  event Same(id2b(idP2));
+  insert pre_shared_keys(diff[c_dom1,c_dom2],s_dom,h_alg,diff[id1,id2],diff[psk1,psk2],diff[idP1,idP2],diff[safe1,safe2]);
+  insert pre_shared_keys(diff[c_dom2,c_dom1],s_dom,h_alg,diff[id2,id1],diff[psk2,psk1],diff[idP2,idP1],diff[safe2,safe1])
+.
+
+expand macro_ech_client(false,false,run_ech_client).
+expand macro_standard_client(false,run_tls_client).
+
+expand macro_ech_client(true,false,run_ech_client_diff).
+
+process
+  (
+    (* Generates the keys *)
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
+    | swap_long_term_keys
+    | swap_pre_shared_keys
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
+  ) | (
+    (* ECH client *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain);
+    event Same(d2b(backend_dom));
+    in(io,frontend_dom:domain);
+    event Same(d2b(frontend_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  ) | (
+    !
+    (* Server *)
+
+    new id_server:idProc;
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    run_server(id_server,s_dom,empty_extra_ext)
+  ) | (
+    (* ECH client with Diff *)
+    !
+    (* Domains *)
+    in(io,ClientA:domain) [precise];
+    in(io,ClientB:domain) [precise];
+    let c_dom = diff[ClientA,ClientB] in
+    in(io,frontend_dom:domain) [precise];
+    event Same(d2b(frontend_dom));
+    in(io,backend_dom:domain) [precise];
+    event Same(d2b(backend_dom));
+    new s:seed;
+    let id_client = idClientDiff(s) in
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+    event ConfigOffered(id_client,ech_conf);
+
+    run_ech_client_diff(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  )

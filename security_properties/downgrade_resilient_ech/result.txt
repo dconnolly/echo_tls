@@ -1,0 +1,21 @@
+downgrade_resilient_ech - Scenario F2 S2 B2 A2 - 1 true queries - Time 27:08.49 - Memory 8611460k
+downgrade_resilient_ech - Scenario F2 S2 B2 A4 - 1 true queries - Time 33:49.13 - Memory 13057516k
+downgrade_resilient_ech - Scenario F2 S2 B3 A2 - 1 true queries - Time 1:24:56 - Memory 26251952k
+downgrade_resilient_ech - Scenario F2 S2 B3 A4 - 1 true queries - Time 1:53:51 - Memory 45940272k 
+downgrade_resilient_ech - Scenario F3 S2 B2 A2 - 1 true queries - Time 33:43.84 - Memory 9891728k 
+downgrade_resilient_ech - Scenario F3 S2 B2 A4 - 1 true queries - Time 43:36.09 - Memory 15004564k 
+downgrade_resilient_ech - Scenario F3 S2 B3 A2 - 1 true queries - Time 1:45:33 - Memory 30168668k 
+downgrade_resilient_ech - Scenario F3 S2 B3 A4 - 1 true queries - Time 2:21:24 - Memory 52787108k 
+downgrade_resilient_ech - Scenario F4 S2 B2 A2 - 1 true queries - Time 50:37.37 - Memory 19884652k 
+downgrade_resilient_ech - Scenario F4 S2 B2 A4 - 1 true queries - Time 1:07:15 - Memory 30164936k 
+downgrade_resilient_ech - Scenario F4 S2 B3 A2 - 1 true queries - Time 2:38:57 - Memory 69986300k 
+downgrade_resilient_ech - Scenario F4 S2 B3 A4 - 0 true queries - Time 2:42:25 - Memory 106162440k Command terminated by signal 9
+downgrade_resilient_ech - Scenario F5 S2 B2 A2 - 1 true queries - Time 51:23.36 - Memory 19884836k 
+downgrade_resilient_ech - Scenario F5 S2 B2 A4 - 1 true queries - Time 1:06:33 - Memory 30168616k 
+downgrade_resilient_ech - Scenario F5 S2 B3 A2 - 1 true queries - Time 2:42:56 - Memory 69986000k 
+downgrade_resilient_ech - Scenario F7 S2 B2 A2 - 1 true queries - Time 24:19:42 - Memory 45938576k 
+downgrade_resilient_ech - Scenario F7 S2 B2 A4 - 1 true queries - Time 24:55:05 - Memory 52788952k 
+downgrade_resilient_ech - Scenario F7 S2 B3 A2 - 0 true queries - Time 23:11:22 - Memory 80405032k Command terminated by signal 9
+downgrade_resilient_ech - Scenario F2 S3 B2 A2 - 0 true queries - Time 27:10:16 - Memory 92386936k Command terminated by signal 9
+downgrade_resilient_ech - Scenario F8 S2 B2 A2 - 1 true queries - Time 32:15:34 - Memory 52789336k 
+downgrade_resilient_ech - Scenario F8 S2 B2 A4 - 1 true queries - Time 34:16:27 - Memory 60666608k 

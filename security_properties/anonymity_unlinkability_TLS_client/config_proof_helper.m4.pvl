@@ -1,0 +1,53 @@
+(********************************************************)
+(*                Proof helper precision                *)
+(********************************************************)
+
+(* In client.pvl *)
+
+letfun precise_C_PH_get = true.
+
+letfun strong_PreciseMess_C_CFIN = true.
+letfun medium_PreciseMess_C_CFIN = false.
+
+letfun precise_C_CertMess = true.
+
+(* In server.pvl *)
+
+letfun precise_S_CRT_get = true.
+letfun precise_S_get = true.
+
+(* In main process *)
+
+letfun precise_server = true.
+
+(* Expand of macros *)
+
+def mk_precise(proof_helper,setting) {
+  letfun proof_helper(x:bitstring) =
+    if setting
+    then new st[]:stamp; event PreciseInput(st,x); ()
+    else ()
+  .
+}
+
+expand mk_precise(proof_helper_C_PH_get,precise_C_PH_get).
+expand mk_precise(proof_helper_C_CertMess,precise_C_CertMess).
+
+expand mk_precise(proof_helper_S_CRT_get,precise_S_CRT_get).
+expand mk_precise(proof_helper_S,precise_S_get).
+
+expand mk_precise(proof_helper_server,precise_server).
+
+(********************************************************)
+(*    Configuration variables for equivalence queries   *)
+(********************************************************)
+
+letfun select_client_certificate_by_restriction = true.
+
+letfun select_server_certificate_by_restriction = true.
+
+letfun select_client_pre_shared_key_by_restriction = true.
+
+letfun select_server_pre_shared_key_by_restriction = false.
+
+letfun add_unsafe_event_for_ticket = true.

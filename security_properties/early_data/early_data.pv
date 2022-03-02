@@ -1,0 +1,153 @@
+set removeEventsForLemma = true.
+
+nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)).
+
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe))
+.
+
+axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
+  attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
+    event(ServerNewTicket(idP,old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk));
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==>
+    (id = mk_idpsk(s_dom,h,psk) &&
+    (event(ServerNewTicket(idP',old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk))))
+    ||
+    (id <> mk_idpsk(s_dom,h,psk) && (event(UnsafePsk(psk)) || event(CompromisedPsk(psk))));
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> psk <> NoPsk && psk <> b2psk(zero);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  attacker(early_secret);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_ext_res_binder,hash_ideal(i,zero))) in
+  attacker(binder_key);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+  attacker(handshake_secret);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
+  attacker(client_wkh);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
+  attacker(client_fk);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
+  attacker(server_wkh);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+  attacker(server_fk)
+  [fullSat]
+.
+
+(* GsVerif like axioms *)
+
+axiom id:idProc,r,r':bytes32; event(Client_Rand_client(id,r)) && event(Client_Rand_client(id,r')) ==> r = r'.
+axiom id:idProc,r,r':bytes32; event(Client_Rand_server(id,r)) && event(Client_Rand_server(id,r')) ==> r = r'.
+axiom id:idProc,r,r':bytes32; event(Server_Rand_client(id,r)) && event(Server_Rand_client(id,r')) ==> r = r'.
+axiom id:idProc,r,r':bytes32; event(Server_Rand_server(id,r)) && event(Server_Rand_server(id,r')) ==> r = r'.
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+
+(* Security properties *)
+
+restriction idP,idP',id_s,id_s':idProc,cr,cr':bytes32,s_dom:domain,psk:preSharedKey,n,n':nat,ad,ad',m,m':bitstring,st,st':stamp, i:nat;
+  event(ClientSequenceClient0RTTDataWriteKey(idP,st,i)) && event(ClientSequenceClient0RTTDataWriteKey(idP,st',i)) ==> st = st';
+  event(ServerSequenceClient0RTTDataWriteKey(idP,st,i)) && event(ServerSequenceClient0RTTDataWriteKey(idP,st',i)) ==> st = st';
+
+  (* Anti replay system implemented by the server. He we take Single-Use ticket as described in 8.1 of TLS RFC. *)
+  event(ServerReceives0(id_s,s_dom,cr,psk,n,ad,m)) && event(ServerReceives0(id_s',s_dom,cr',psk,n',ad',m')) ==> id_s = id_s'
+.
+
+(* Sequentiallity of compromised psk. *)
+
+query id_c,id_s,id_s':idProc,s_dom:domain,cr:bytes32,old_psk,psk:preSharedKey,s_pkey,c_pkey:pubkey,n,i:nat,ad,m:bitstring;
+  event(ClientSends0(id_c,cr,psk,n,ad,m)) && attacker(m) ==>
+    attacker(psk) && (
+      event(ServerNewTicket(id_s,old_psk,s_pkey,c_pkey,i,psk)) ||
+      event(CompromisedPsk(psk)) ||
+      event(UnsafePsk(psk))
+    )
+  ;
+
+  inj-event(ServerReceives0(id_s,s_dom,cr,psk,n,ad,m)) ==>
+    inj-event(ClientSends0(id_c,cr,psk,n,ad,m)) ||
+    event(CompromisedPsk(psk)) ||
+    (event(ServerNewTicket(id_s',old_psk,s_pkey,c_pkey,i,psk)) && attacker(psk))
+.
+
+expand macro_ech_client(false,false,run_ech_client).
+expand macro_standard_client(false,run_tls_client).
+
+process
+  (
+    (* Generates the keys *)
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    in(io,c_dom:domain);
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
+  ) | (
+    if clients_with_ech then
+    (* ECH client *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain);
+    in(io,frontend_dom:domain);
+    in(io,c_dom:domain);
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  ) | (
+    !
+    (* Server *)
+    new id_server:idProc;
+    in(io,s_dom:domain);
+    run_server(id_server,s_dom,empty_extra_ext)
+  )

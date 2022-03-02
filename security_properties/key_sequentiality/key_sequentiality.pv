@@ -1,0 +1,177 @@
+set removeEventsForLemma = true.
+
+nounif s_dom:domain, h_alg:hash_alg, psk:preSharedKey; attacker(mk_idpsk( *s_dom, *h_alg, *psk)) .
+
+nounif c_dom,s_dom:domain,h:hash_alg,id:identityPsk,x:preSharedKey, idP:idProc,is_safe:bool;
+  table(pre_shared_keys( *c_dom, *s_dom, *h, *id, *x, *idP, *is_safe))
+.
+
+axiom c_dom,c_dom',s_dom,s_dom':domain,h,h_alg,h_alg':hash_alg,id,id':identityPsk,cr,sr:bytes32,old_psk,psk,psk':preSharedKey,idP,idP',id_s,id_c:idProc,is_safe,is_safe':bool,i:nat,e:element,g:group,x:bitstring,s:seed,log:bitstring, s_pkey,c_pkey:pubkey;
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> attacker(id) || id = mk_idpsk(s_dom,h,psk);
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) ==> id = mk_idpsk(s_dom,h,psk);
+  attacker(mk_idpsk(s_dom,h,psk)) && attacker(psk) ==>
+    event(ServerNewTicket(idP,old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk));
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==>
+    (id = mk_idpsk(s_dom,h,psk) &&
+    (event(ServerNewTicket(idP',old_psk,s_pkey,c_pkey,0,psk)) || event(CompromisedPsk(psk))))
+    ||
+    (id <> mk_idpsk(s_dom,h,psk) && (event(UnsafePsk(psk)) || event(CompromisedPsk(psk))));
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) && attacker(psk);
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) && attacker(psk) ==> is_safe = false;
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,is_safe)) ==> psk <> NoPsk && psk <> b2psk(zero);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  attacker(early_secret);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let binder_key = hmac_ideal(i,b2mk(early_secret),(tls13_ext_res_binder,hash_ideal(i,zero))) in
+  attacker(binder_key);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+  attacker(handshake_secret);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_wkh = hmac_ideal(i,b2mk(client_hts),(tls13_key,zero)) in
+  attacker(client_wkh);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let client_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_client_handshake_traffic_secret,hash_ideal(i,log))) in
+  let client_fk = hmac_ideal(i,b2mk(client_hts),(tls13_finished,zero)) in
+  attacker(client_fk);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_wkh = hmac_ideal(i,b2mk(server_hts),(tls13_key,zero)) in
+  attacker(server_wkh);
+  (* ------ *)
+  table(pre_shared_keys(c_dom,s_dom,h,id,psk,idP,true)) &&
+  let early_secret = hmac_ideal(i,b2mk(zero),psk2b_pf(psk)) in
+  let extra_es = hmac_ideal(i,b2mk(early_secret),(tls13_derived,hash_ideal(i,hash_ideal(i,zero)))) in
+  let handshake_secret = hmac_ideal(i,b2mk(extra_es),e2b(e)) in
+
+  let server_hts = hmac_ideal(i,b2mk(handshake_secret),(tls13_server_handshake_traffic_secret,hash_ideal(i,log))) in
+  let server_fk = hmac_ideal(i,b2mk(server_hts),(tls13_finished,zero)) in
+  attacker(server_fk)
+  [fullSat]
+.
+
+(* GsVerif like axioms *)
+
+axiom id:idProc,e,e':element; event(Server_DH_client(id,e)) && event(Server_DH_client(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey; event(Server_PSKChoosen(id,k)) && event(Server_PSKChoosen(id,k')) ==> k = k'.
+axiom id:idProc,b,b':bool; event(Client_comp_psk(id,b)) && event(Client_comp_psk(id,b')) ==> b = b'.
+axiom id:idProc,e,e':element; event(Client_DH_server(id,e)) && event(Client_DH_server(id,e')) ==> e = e'.
+axiom id:idProc,k,k':preSharedKey; event(Client_new_PSK(id,k)) && event(Client_new_PSK(id,k')) ==> k = k'.
+axiom id:idProc,k,k':pubkey; event(Client_Cert_server(id,k)) && event(Client_Cert_server(id,k')) ==> k = k'.
+axiom id:idProc,k,k':preSharedKey,is,is':bool; event(Client_PSKChoosen(id,k,is)) && event(Client_PSKChoosen(id,k',is')) ==> (k,is) = (k',is').
+axiom id:idProc, old_psk,psk,old_psk',psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey':pubkey,i,i':nat;
+  event(ServerNewTicket(id,old_psk,s_pkey,c_pkey,i,psk)) && event(ServerNewTicket(id,old_psk',s_pkey',c_pkey',i',psk')) ==>
+    (old_psk,s_pkey,c_pkey,i,psk) = (old_psk',s_pkey',c_pkey',i',psk')
+.
+
+(* Security properties *)
+
+(* Sequentiallity of compromised psk. *)
+
+query config:echConfig, gxy:element, x:bitstring, g:group,id_c,id_s,id_s':idProc,cr,cr',sr,sr':bytes32,old_psk,old_psk',new_psk,psk,psk':preSharedKey,s_pkey,s_pkey',c_pkey,c_pkey',pk_srv,pk_srv':pubkey,cak,cak',sak,sak':aead_key,ems,ems',rms,rms':bitstring,i:nat,j,j':time;
+  event(ServerNewTicket(id_s,psk,s_pkey,c_pkey,i,new_psk))@j && attacker(new_psk) ==>
+    event(CompromisedPsk(new_psk)) ||
+    (
+      event(Server_DH_client(id_s,dh_pub(g,x))) &&
+      attacker(x) &&
+      event(Server_PSKChoosen(id_s,psk)) &&
+      (
+        (psk = NoPsk && (c_pkey = NoPubKey || event(CompromisedLtk(c_pkey)))) ||
+        event(CompromisedPsk(psk)) ||
+        (event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk))@j' && attacker(psk) && j > j')
+      )
+    );
+
+  event(Client_PSKChoosen(id_c,psk,false)) && attacker(psk) ==>
+    psk = NoPsk ||
+    event(ServerNewTicket(id_s',old_psk,s_pkey',c_pkey',0,psk)) ||
+    event(CompromisedPsk(psk)) ||
+    event(UnsafePsk(psk))
+  ;
+
+  event(UnsafePsk(psk)) && attacker(psk) ==>
+    event(CompromisedPsk(psk)) ||
+    (
+      event(Client_DH_server(id_c,dh_encap_fun(g,dh_pub(g,x),gxy))) &&
+      attacker(gxy) &&
+      event(Client_new_PSK(id_c,psk)) &&
+      event(Client_Cert_server(id_c,s_pkey)) &&
+      (
+        event(CompromisedLtk(s_pkey)) ||
+        (
+          old_psk <> NoPsk && event(Client_PSKChoosen(id_c,old_psk,false)) && attacker(old_psk)
+        )
+      )
+      && (
+        event(ClientEchAcceptance(id_c,false)) ||
+        (
+          event(ClientOffersEchConfig(id_c,config)) &&
+          event(CompromisedEchKey(config))
+        )
+      )
+    )
+.
+
+expand macro_ech_client(false,false,run_ech_client).
+expand macro_standard_client(false,run_tls_client).
+
+process
+  (
+    (* Generates the keys *)
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    in(io,c_dom:domain);
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
+  ) | (
+    if clients_with_ech then
+    (* ECH client *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain);
+    in(io,frontend_dom:domain);
+    in(io,c_dom:domain);
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  ) | (
+    !
+    (* Server *)
+    new id_server:idProc;
+    in(io,s_dom:domain);
+    run_server(id_server,s_dom,empty_extra_ext)
+  )

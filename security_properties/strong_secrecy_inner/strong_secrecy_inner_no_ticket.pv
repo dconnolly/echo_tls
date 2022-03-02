@@ -1,0 +1,85 @@
+set removeEventsForLemma = true.
+
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) / -400000
+.
+
+(* Restriction for equivalence *)
+
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+
+event ConfigOffered(echConfig).
+
+restriction config:echConfig;
+  event(CompromisedEchKey(config)) &&
+  event(ConfigOffered(config)).
+
+expand macro_ech_client(false,false,run_ech_client).
+expand macro_standard_client(false,run_tls_client).
+
+expand macro_ech_client(true,false,run_ech_client_diff).
+
+process
+  (
+    (* Generates the keys *)
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
+  ) | (
+    (* ECH client *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain);
+    event Same(d2b(backend_dom));
+    in(io,frontend_dom:domain);
+    event Same(d2b(frontend_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  ) | (
+    !
+    (* Server *)
+    new id_server:idProc;
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    run_server(id_server,s_dom,empty_extra_ext)
+  ) | (
+    (* ECH client with honest ECH keys *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain) [precise];
+    event Same(d2b(backend_dom));
+    in(io,frontend_dom:domain) [precise];
+    event Same(d2b(frontend_dom));
+    in(io,c_dom:domain) [precise];
+    event Same(d2b(c_dom));
+
+    (* The extra extension *)
+    in(io,x:extraExt) [precise];
+    in(io,x':extraExt) [precise];
+    let inner_ext = diff[x,x'] in
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) [precise] in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+    event ConfigOffered(ech_conf);
+
+    run_ech_client_diff(id_client,inner_ext,c_dom,backend_dom,ech_conf)
+  )

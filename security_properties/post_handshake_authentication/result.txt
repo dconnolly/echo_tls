@@ -1,0 +1,24 @@
+post_handshake_authentication - Scenario F4 S2 B2 A1 - 2 true queries - Time 4:17.37 - Memory 4923940k 
+post_handshake_authentication - Scenario F4 S2 B2 A2 - 2 true queries - Time 1:51:51 - Memory 39983244k 
+post_handshake_authentication - Scenario F4 S2 B2 A4 - 2 true queries - Time 2:35:46 - Memory 60667232k 
+post_handshake_authentication - Scenario F4 S2 B3 A1 - 2 true queries - Time 17:07.35 - Memory 17310696k 
+post_handshake_authentication - Scenario F4 S2 B3 A2 - 0 true queries - Time 5:21:19 - Memory 161706108k Command terminated by signal 9
+post_handshake_authentication - Scenario F4 S2 B3 A4 - 0 true queries - Time 3:55:29 - Memory 208661580k Command terminated by signal 9
+post_handshake_authentication - Scenario F9 S2 B2 A1 - 2 true queries - Time 13:34.58 - Memory 11365872k 
+post_handshake_authentication - Scenario F4 S3 B2 A1 - 2 true queries - Time 6:30.81 - Memory 9891324k 
+post_handshake_authentication - Scenario F4 S3 B3 A1 - 2 true queries - Time 25:58.37 - Memory 34803248k 
+post_handshake_authentication - Scenario F9 S2 B3 A1 - 2 true queries - Time 51:23.83 - Memory 45942720k 
+post_handshake_authentication - Scenario F9 S3 B2 A1 - 2 true queries - Time 21:40.79 - Memory 26251748k 
+post_handshake_authentication - Scenario F9 S3 B3 A1 - 2 true queries - Time 1:26:04 - Memory 92387276k 
+post_handshake_authentication - Scenario F5 S2 B2 A1 - 2 true queries - Time 4:33.41 - Memory 4923036k 
+post_handshake_authentication - Scenario F5 S2 B3 A1 - 2 true queries - Time 17:51.01 - Memory 17309192k 
+post_handshake_authentication - Scenario F5 S3 B2 A1 - 2 true queries - Time 6:55.05 - Memory 9891468k 
+post_handshake_authentication - Scenario F5 S3 B3 A1 - 2 true queries - Time 27:08.03 - Memory 34802992k 
+post_handshake_authentication - Scenario F10 S2 B2 A1 - 2 true queries - Time 14:04.80 - Memory 11360496k 
+post_handshake_authentication - Scenario F10 S2 B3 A1 - 2 true queries - Time 53:33.17 - Memory 45939468k 
+post_handshake_authentication - Scenario F10 S3 B2 A1 - 2 true queries - Time 21:56.64 - Memory 26248376k 
+post_handshake_authentication - Scenario F10 S3 B3 A1 - 2 true queries - Time 1:27:38 - Memory 92383656k 
+post_handshake_authentication - Scenario F4 S3 B2 A2 - 0 true queries - Time 6:54:43 - Memory 80404416k Command terminated by signal 9
+post_handshake_authentication - Scenario F5 S2 B2 A2 - 2 true queries - Time 1:54:35 - Memory 39979776k 
+post_handshake_authentication - Scenario F5 S2 B2 A4 - 2 true queries - Time 2:38:48 - Memory 60667380k 
+post_handshake_authentication - Scenario F9 S2 B2 A2 - 0 true queries - Time 10:19:18 - Memory 122006636k Command terminated by signal 9

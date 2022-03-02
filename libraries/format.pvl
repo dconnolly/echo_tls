@@ -1,19 +1,34 @@
-channel io.
+channel io. (* The public channel *)
 
+(* The type idProc represents process identifiers. Terms of this type are not
+  used in the protocol itself. They are only used in proof helpers or in the
+  lemmas, axioms and restrictions to talk specifically about a particular
+  replicated process. *)
+type idProc.
+fun id2b(idProc):bitstring [typeConverter].
+
+(* The type domain represents the public domain of the clients and servers.
+  All terms of this type will be public. When we refer to a client or a server
+  in our explanation, we always refer to their public domain. *)
 type domain.
-const NoDomain:domain [data].
+const empty_domain:domain [data].
 fun d2b(domain):bitstring [typeConverter].
 
 (********************************************************)
 (* Extra extension                                      *)
 (********************************************************)
 
+(* The type for some unspecified extra extension in the client hello. *)
 type extraExt.
 const empty_extra_ext:extraExt [data].
 
 (********************************************************)
-(* Key Share Extension                                  *)
+(* Key share Extension (4.2.8 in TLS RFC)               *)
 (********************************************************)
+
+(* A client can send only a group which will trigger and Hello Retry Request
+  from the server, or a group and its key share. For Hello Retry Request, the
+  extension consist only of a group. *)
 
 type kex_alg.
 fun DHE_group(group): kex_alg [data].
@@ -28,36 +43,52 @@ fun hrr_kex_ext(group): keyShareExt [data].
 (* Pre Shared Keys Extension                            *)
 (********************************************************)
 
-type internal_preSharedKey.
-fun uc_psk(seed):internal_preSharedKey [private].
-
-fun ipsk2b(internal_preSharedKey):bitstring [typeConverter].
 type preSharedKey.
-const NoPSK: preSharedKey.
-fun PSK(internal_preSharedKey): preSharedKey [data].
 
-reduc forall s:seed; uncompromised_psk(PSK(uc_psk(s))) = true [private].
+(* uc_psk is a private function used when generating uncompromised pre shared
+  keys. Instead of using the classic syntax
+    new psk:preSharedKey; ...
+  we generate a seed and use the private function uc_psk.
+    let psk = new s:seed; uc_psk(s) in ...
+  This is equivalent but it allows us to more easily talk about keys when
+  writing some proof helpers (see proof_helper.m4.pvl) and lemmas, axioms and
+  restrictions. *)
+fun uc_psk(seed):preSharedKey [private].
+letfun gen_honest_psk() =
+  new s:seed;
+  uc_psk(s)
+.
 
-(* fun psk_h(seed):internal_preSharedKey [private].
-fun psk_d(seed):internal_preSharedKey [private].
-letfun mk_psk_h() = new s:seed; psk_h(s).
-letfun mk_psk_d() = new s:seed; psk_d(s). *)
+const NoPsk: preSharedKey [data].
+
+fun b2psk(bitstring):preSharedKey [typeConverter].
+(* A type converter only used for some proof helpers and following definition. *)
+fun psk2b_pf(preSharedKey):bitstring [typeConverter].
+fun psk2b(preSharedKey): bitstring
+reduc
+  psk2b(NoPsk) = zero
+  otherwise forall x:preSharedKey; psk2b(x) = psk2b_pf(x)
+.
 
 type identityPsk.
-fun mk_idpsk(domain,domain,hash_alg,internal_preSharedKey):identityPsk [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_receiver_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = s_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_sender_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = c_dom [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_hash_psk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = h_alg [private].
-reduc forall c_dom,s_dom:domain, h_alg:hash_alg, ipsk:internal_preSharedKey;
-  get_ipsk(mk_idpsk(c_dom,s_dom,h_alg,ipsk)) = ipsk [private].
+fun b2idpsk(bitstring):identityPsk [typeConverter].
 
-fun psk2b(preSharedKey): bitstring
-reduc forall b:internal_preSharedKey; psk2b(PSK(b)) = ipsk2b(b)
-otherwise psk2b(NoPSK) = zero.
+(* The private function mk_idpsk is an abstraction on how the server is able to
+  retrieve the pre shared key from its identity and additional information such
+  as the ciphersuite used and if it is an external or resumption PSK.
+  By defining the function as private and its projections
+  as private, we ensure that only the honest server can access its content.
+  Note that it does not prevent the attacker to play the role of a server. *)
+fun mk_idpsk(domain,hash_alg,preSharedKey):identityPsk [private].
 
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_server_psk(mk_idpsk(s_dom,h_alg,psk)) = s_dom [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_hash_psk(mk_idpsk(s_dom,h_alg,psk)) = h_alg [private].
+reduc forall s_dom:domain, h_alg:hash_alg, psk:preSharedKey;
+  get_psk(mk_idpsk(s_dom,h_alg,psk)) = psk [private].
+
+(* The extension itself *)
 type preSharedKeyExt.
 const empty_psk_ext: preSharedKeyExt [data].
 fun trunc_client_psk_ext(identityPsk):preSharedKeyExt [data].
@@ -65,37 +96,55 @@ fun client_psk_ext(identityPsk,bitstring):preSharedKeyExt [data].
 fun server_psk_ext(nat):preSharedKeyExt [data]. (* We only model a single psk offered
   by the client currently so the server is always suppose to send 1. *)
 
+fun ProofHelperPSK(
+  element,      (* The client public share *)
+  element,      (* The server public share *)
+  element,      (* The g^x^y *)
+  pubkey,       (* The client public key *)
+  pubkey,       (* The server public key *)
+  preSharedKey (* The pre shared key *)
+  ):bitstring [data].
+
+(* The global table storing the pre shared key on the client side. *)
 table pre_shared_keys(
   domain (* Client domain *),
   domain (* Server domain *),
-  hash_alg,identityPsk,internal_preSharedKey).
+  hash_alg, (* The hash algorithm used in the handshake *)
+  identityPsk, (* The identify of the pre shared key generated *)
+  preSharedKey, (* The pre shared key itself *)
+  idProc, (* The process identifier that generated the pre shared key *)
+  bool (* Value determining if the key was considered uncompromised (true) or
+    not (false).*)
+).
 
 (********************************************************)
 (* Long term keys and certificates                      *)
 (********************************************************)
 
 type certificate.
+(* By being private, the function valid_cert represents a certificate that has
+  been created by trusted authority. *)
 fun valid_cert(domain,pubkey):certificate [private].
-fun cert(domain,pubkey):certificate.
 
 fun get_pkey(certificate):pubkey
 reduc
-  forall d:domain, pkey:pubkey; get_pkey(valid_cert(d,pkey)) = pkey
-  otherwise forall d:domain, pkey:pubkey; get_pkey(cert(d,pkey)) = pkey.
+  forall d:domain, pkey:pubkey; get_pkey(valid_cert(d,pkey)) = pkey.
 
 fun get_domain(certificate):domain
 reduc
-  forall d:domain, pkey:pubkey; get_domain(valid_cert(d,pkey)) = d
-  otherwise forall d:domain, pkey:pubkey; get_domain(cert(d,pkey)) = d.
+  forall d:domain, pkey:pubkey; get_domain(valid_cert(d,pkey)) = d.
 
 fun verify_cert(certificate):bool
-reduc forall d:domain, p:pubkey;
-  verify_cert(valid_cert(d,p)) = true .
+reduc
+  forall d:domain, p:pubkey; verify_cert(valid_cert(d,p)) = true.
 
-table long_term_keys(domain,privkey,pubkey,certificate).
+(* The global table storing the long term keys for both the server and client.
+  The value of type idProc corresponds to the process identifier that generated
+  the long term key. *)
+table long_term_keys(domain,privkey,pubkey,certificate,idProc).
 
 (***************************************
-  Echo Configuration
+  Ech Configuration
 ****************************************)
 
 (* Data structure of ECHConfig. We flatten the data structure with respect to the
@@ -107,7 +156,6 @@ table long_term_keys(domain,privkey,pubkey,certificate).
   A server should be parametrised by its ech_config and the private key associated
   to public_key.
 *)
-
 
 type configId.
 
@@ -121,23 +169,11 @@ fun ech_config(
   aead_alg (* aead_id *)
 ):echConfig [data].
 
-letfun get_public_key(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  public_key.
-
-letfun get_cipher_suite(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  (hl,al).
-
-letfun get_config_id(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  id.
-
-letfun get_public_name(conf:echConfig) =
-  let ech_config(id,g,public_key,dom,hl,al) = conf in
-  dom.
-
-const ech_accept_confirmation,tls_ech_str:label.
+const
+  hrr_ech_accept_confirmation, (* "hrr ech accept confirmation" in Section 7.2.1 of ECH RFC *)
+  ech_accept_confirmation, (* "ech accept confirmation" in Section 7.2 of ECH RFC *)
+  tls_ech_str (* "tls ech" in Section 6.1 of ECH RFC *)
+  :label [data].
 
 table ech_configurations(
   echConfig, (* Ech configuration *)
@@ -152,10 +188,10 @@ type echExt.
 fun echExt2b(echExt):bitstring [typeConverter].
 
 (* Represents the absence of extension *)
-const empty_ech_ext: echExt.
+const empty_ech_ext: echExt [data].
 
 (* This extension should only occur in the ClientHelloInner. *)
-const ech_is_inner: echExt.
+const ECHClientHelloInner: echExt [data].
 
 (* This extension should only occur in the ClientHelloOuter. *)
 (* This includes the following element
@@ -165,20 +201,28 @@ const ech_is_inner: echExt.
     - enc of type [opaque] in RFC ([element] in this model). It's the The HPKE encapsulated key
     - payload of type [opaque] in RFC ([bitstring] in this model).
 *)
-fun client_ECH(hash_alg,aead_alg,configId,element,bitstring): echExt [data].
+fun ECHClientHelloOuter(hash_alg,aead_alg,configId,element,bitstring): echExt [data].
 
-(* The Encrypted Client Hello extension for the server. It should normally include
-  a list of accepted ECHConfig but we only model one here.*)
-fun server_ECH(echConfig): echExt [data].
+(* The encrypted_client_hello extension that may be included in the server EncryptedExtensions
+  message (see Section 5 of ECH RFC). It should normally contain retry_configs
+  which is a list of Ech configurations but we only model one here. *)
+fun ECHConfigList(echConfig):echExt [data].
+
+(* The encrypted_client_hello extension that is sent by the backend when sending
+  the HelloRetryRequest (see Section 5 and 7.2.1 of ECH RFC). *)
+fun ECHHelloRetryRequest(bytes8):echExt [data].
 
 (***************************************
   TLS messages
 ****************************************)
 
 type TLS_version.
-const TLS13: TLS_version.
+const TLS13: TLS_version [data].
 
-const rand_HelloRetryRequest:bytes32.
+(* "HelloRetryRequest" in Section 4.1.3 of TLS RFC *)
+const HRR8:bytes8 [data].
+const HRR24:bytes24 [data].
+letfun rand_HelloRetryRequest = B32(HRR24,HRR8).
 
 (* The SNI extension *)
 type sniExt.
@@ -188,20 +232,35 @@ const empty_sni_ext: sniExt [data].
 (* The parameters of the Client and Server Hello. The last argument can be used to
   add any other informations *)
 type params.
-fun nego(TLS_version,hash_alg,aead_alg,keyShareExt,sniExt,echExt,preSharedKeyExt,extraExt):params [data].
+fun nego(
+  TLS_version,
+  hash_alg,
+  aead_alg,
+  keyShareExt,
+  sniExt,
+  echExt,
+  extraExt,
+  preSharedKeyExt):params [data].
 
 type msg.
 fun m2b(msg):bitstring [typeConverter].
 fun CH(bytes32,params):msg [data].
 fun SH(bytes32,params):msg [data].
 
-(* Encrypted Extensions. Can contain zero or any additional extensions. *)
-fun EE(bitstring): msg [data].
+(* Some projection functions *)
+reduc
+  forall r:bytes32, mode:params; get_random(CH(r,mode)) = r;
+  forall r:bytes32, mode:params; get_random(SH(r,mode)) = r.
+
+(* Encrypted Extensions. *)
+fun EE(echExt,extraExt): msg [data].
 
 (* Certificate Request message. We only model the certificate_request_context
-  but not the extesions, even though in the RFC, it is indicated that
+  but not the extensions, even though in the RFC, it is indicated that
     "the "signature_algorithms" extension MUST be specified"
-  Since we only model one signature algorithm, we omit it *)
+  Since we only model one signature algorithm, we omit it.
+  certificate_request_context must be zero during the main handshake and should
+  be a fresh random for post-handshake authentication. *)
 fun CRTR(bitstring): msg [data].
 
 (* The first argument of certificate corresponds to certificate_request_context *)
@@ -214,24 +273,19 @@ fun CV(bitstring):msg [data].
 (* The Finished message *)
 fun FIN(bitstring):msg [data].
 
+(* The NewSessionTicket (Section 4.6.1 in TLS RFC) *)
+fun NST(
+  bitstring, (* ticket_nonce *)
+  identityPsk (* ticket that as used as pre shared key identity *)
+):msg [data].
+
 type error_signal.
 const
   illegal_parameter,unsupported_certificate,decode_error,
   unexpected_message, handshake_failure,
   abort_error,bad_record_mac,
-  unrecognized_name, unsupported_extension
+  unrecognized_name, unsupported_extension,
+  missing_extension, decrypt_error
   :error_signal.
 
-(***************************************
-  Session states
-****************************************)
-
-table clientSession(
-  aead_alg,bytes32,bytes32,
-  preSharedKey,pubkey,
-  aead_key,aead_key,bitstring,bitstring).
-
-table serverSession(
-  aead_alg,bytes32,bytes32,
-  preSharedKey,pubkey,
-  aead_key,aead_key,bitstring,bitstring).
+fun error2b(error_signal):bitstring [typeConverter].

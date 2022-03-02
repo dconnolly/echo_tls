@@ -1,0 +1,29 @@
+psk_or_random - Scenario F2 S1 B1 A1 - 41 true queries - Time 0:52.14 - Memory 642836k 
+psk_or_random - Scenario F2 S1 B2 A1 - 41 true queries - Time 9:31.59 - Memory 2602068k 
+psk_or_random - Scenario F2 S1 B3 A1 - 41 true queries - Time 22:40.47 - Memory 4547440k 
+psk_or_random - Scenario F2 S2 B1 A1 - 41 true queries - Time 1:31.51 - Memory 835528k 
+psk_or_random - Scenario F2 S2 B2 A1 - 41 true queries - Time 21:14.87 - Memory 4229936k 
+psk_or_random - Scenario F2 S2 B3 A1 - 41 true queries - Time 1:24:06 - Memory 14656956k 
+psk_or_random - Scenario F7 S1 B1 A1 - 41 true queries - Time 1:16.19 - Memory 845372k 
+psk_or_random - Scenario F7 S1 B2 A1 - 41 true queries - Time 30:00.31 - Memory 5306164k 
+psk_or_random - Scenario F7 S1 B3 A1 - 41 true queries - Time 1:17:31 - Memory 12302332k 
+psk_or_random - Scenario F7 S2 B1 A1 - 41 true queries - Time 3:10.80 - Memory 1299068k 
+psk_or_random - Scenario F7 S2 B2 A1 - 41 true queries - Time 1:09:31 - Memory 10497180k 
+psk_or_random - Scenario F7 S2 B3 A1 - 41 true queries - Time 4:49:15 - Memory 34095408k 
+psk_or_random - Scenario F2 S1 B1 A2 - 41 true queries - Time 7:13.28 - Memory 2602336k 
+psk_or_random - Scenario F2 S1 B2 A2 - 41 true queries - Time 5:42:12 - Memory 22408316k 
+psk_or_random - Scenario F2 S1 B3 A2 - 41 true queries - Time 9:30:06 - Memory 45004316k 
+psk_or_random - Scenario F2 S2 B1 A2 - 41 true queries - Time 22:52.75 - Memory 5223104k 
+psk_or_random - Scenario F2 S2 B2 A2 - 41 true queries - Time 14:53:20 - Memory 39169784k 
+psk_or_random - Scenario F7 S1 B1 A2 - 41 true queries - Time 5:26:31 - Memory 19481160k 
+psk_or_random - Scenario F2 S2 B3 A2 - 0 true queries - Time 11:06:09 - Memory 122007444k Command terminated by signal 9
+psk_or_random - Scenario F2 S1 B1 A4 - 41 true queries - Time 11:05.47 - Memory 3960088k 
+psk_or_random - Scenario F2 S2 B1 A4 - 41 true queries - Time 31:09.78 - Memory 6986752k 
+psk_or_random - Scenario F7 S2 B1 A2 - 41 true queries - Time 19:11:03 - Memory 51712924k 
+psk_or_random - Scenario F7 S1 B2 A2 - 0 true queries - Time 33:02:41 - Memory 92386456k Command terminated by signal 9
+psk_or_random - Scenario F7 S1 B3 A2 - 0 true queries - Time 33:15:59 - Memory 80406848k Command terminated by signal 9
+psk_or_random - Scenario F2 S1 B2 A4 - 41 true queries - Time 8:50:48 - Memory 34800628k 
+psk_or_random - Scenario F7 S1 B1 A4 - 41 true queries - Time 3:44:37 - Memory 15179140k 
+psk_or_random - Scenario F7 S2 B1 A4 - 41 true queries - Time 12:47:16 - Memory 36993628k 
+psk_or_random - Scenario F2 S2 B2 A4 - 41 true queries - Time 20:33:09 - Memory 68570104k 
+psk_or_random - Scenario F2 S1 B3 A4 - 41 true queries - Time 21:15:34 - Memory 78771700k 

@@ -1,0 +1,157 @@
+set removeEventsForLemma = true.
+(* set verboseRules = true. *)
+(* Restriction for equivalence *)
+
+restriction x,x':bitstring; event(Same(diff[x,x'])) ==> x = x'.
+
+(* Lemma to help the proof *)
+
+nounif s_dom,s_dom':domain, h_alg,h_alg':hash_alg, psk,psk':preSharedKey;
+  attacker(mk_idpsk(diff[*s_dom,*s_dom'],diff[*h_alg,*h_alg'],diff[*psk,*psk'])) [ignoreAFewTimes]
+.
+
+nounif c_dom,c_dom',s_dom,s_dom':domain,h,h':hash_alg,id,id':identityPsk,x,x':preSharedKey,safe,safe':bool,idP,idP':idProc;
+  table(pre_shared_keys( diff[*c_dom,*c_dom'], diff[*s_dom,*s_dom'], diff[*h,*h'], diff[*id,*id'], diff[*x,*x'], diff[*idP,*idP'], diff[ *safe, *safe'])) [ignoreAFewTimes]
+.
+
+lemma c_dom,c_dom',s_dom,s_dom',s_dom'':domain,h_alg',h_alg,h_alg'':hash_alg,id,id',id'':identityPsk,ipsk,ipsk':preSharedKey,s:seed,
+  c_dom1,c_dom1',c_dom2,c_dom2',s_dom1,s_dom1',s_dom2,s_dom2',c_dom3,c_dom3',c_dom4,c_dom4',s_dom3,s_dom3',s_dom4,s_dom4':domain,
+  h_alg1,h_alg2:hash_alg,id1,id1',id2:identityPsk,ipsk1,ipsk1',ipsk'',ipsk2:preSharedKey,idP,idP',idP1,idP2,idP1':idProc,
+  safe,safe',safe1,safe2:bool, i,i':nat,
+  id_c,id_s:idProc, new_psk1,new_psk1',new_psk2,new_psk2',psk,psk':preSharedKey,cr,sr:bytes32, is_rand:bool
+  ;
+  attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom',h_alg',ipsk')]) ==>
+    s_dom = s_dom' &&
+    h_alg = h_alg' && ipsk <> NoPsk && ipsk <> b2psk(zero) && ipsk' <> NoPsk && ipsk' <> b2psk(zero)
+    ;
+  attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom,h_alg,ipsk')]) && attacker(diff[ipsk,ipsk'']) ==> ipsk' = ipsk'';
+  attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom,h_alg,ipsk')]) && attacker(diff[ipsk'',ipsk']) ==> ipsk = ipsk'';
+
+  (* ----------- *)
+
+  attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom,h_alg,ipsk')]) && attacker(diff[s_dom,s_dom']) ==> s_dom = s_dom';
+  attacker(diff[mk_idpsk(s_dom,h_alg,ipsk),mk_idpsk(s_dom,h_alg,ipsk')]) && attacker(diff[s_dom',s_dom]) ==> s_dom = s_dom';
+
+  (* -------------- *)
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) ==>
+    h_alg = id_hash(StrongHash,1) &&
+    h_alg' = id_hash(StrongHash,1) &&
+    c_dom = c_dom' &&
+    s_dom = s_dom' &&
+    safe = safe' &&
+    idP = idP';
+
+  (* -------------- *)
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[id,id'']) ==> id' = id'';
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[id'',id']) ==> id = id'';
+
+  (* -------------- *)
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
+    c_dom = c_dom' &&
+    h_alg = id_hash(StrongHash,i) &&
+    h_alg' = id_hash(StrongHash,i) &&
+    safe = safe' &&
+    (attacker(diff[id,id']) || (id = mk_idpsk(s_dom,h_alg,ipsk) && id' = mk_idpsk(s_dom',h_alg',ipsk')));
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,mk_idpsk(s_dom',h_alg',ipsk')],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
+    id = mk_idpsk(s_dom,h_alg,ipsk);
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[mk_idpsk(s_dom,h_alg,ipsk),id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) ==>
+    id' = mk_idpsk(s_dom',h_alg',ipsk');
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  attacker(diff[ipsk,ipsk'']) ==>  safe <> true;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],diff[idP,idP'],diff[safe,safe'])) &&
+  attacker(diff[ipsk'',ipsk']) ==>  safe' <> true;
+
+  (* If same idP and one ipsk deducible then both are deducible *)
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[ipsk,ipsk'']) ==>  ipsk' = ipsk'' && safe <> true && safe' <> true;
+
+  table(pre_shared_keys(diff[c_dom,c_dom'],diff[s_dom,s_dom'],diff[h_alg,h_alg'],diff[id,id'],diff[ipsk,ipsk'],idP,diff[safe,safe'])) &&
+  attacker(diff[ipsk'',ipsk']) ==>  ipsk = ipsk'' && safe <> true && safe' <> true;
+
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',psk],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,is_rand))
+   ==>
+    new_psk1 = new_psk1' && idP = id_c && is_rand = true;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1,new_psk2'],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,true))
+   ==>
+    psk = new_psk2' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1,new_psk2'],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,false))
+   ==>
+    new_psk2 = new_psk2' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',new_psk2],idP,safe)) &&
+  event(Client_rand_PSK(id_c,diff[new_psk1,new_psk2],psk,false))
+   ==>
+    new_psk1 = new_psk1' && idP = id_c;
+
+  table(pre_shared_keys(c_dom,s_dom,h_alg,diff[id,id'],diff[new_psk1',new_psk2],idP,safe)) &&
+  event(Server_new_PSK(id_s,diff[new_psk1,new_psk2]))
+   ==>
+    new_psk1 = new_psk1'
+  [induction,fullSat]
+.
+
+axiom id,id1,id2:idProc,k,k',k1,k2:preSharedKey, r,r',r1,r2:preSharedKey,is,is',is1,is2:bool;
+  event(Client_rand_PSK(diff[id,id1],diff[k,k1],diff[r,r1],diff[is,is1])) && event(Client_rand_PSK(diff[id,id2],diff[k',k2],diff[r',r2],diff[is',is2])) ==> (k,r,is) = (k',r',is');
+  event(Client_rand_PSK(diff[id1,id],diff[k1,k],diff[r1,r],diff[is1,is])) && event(Client_rand_PSK(diff[id2,id],diff[k2,k'],diff[r2,r'],diff[is2,is'])) ==> (k,r,is) = (k',r',is')
+.
+
+expand macro_ech_client(false,false,run_ech_client).
+expand macro_standard_client(false,run_tls_client).
+
+process
+  (
+    (* Generates the keys *)
+      gen_honest_key
+    | gen_dishonest_key
+    | all_internal_processes
+  ) | (
+    if clients_with_tls then
+    (* TLS*)
+    !
+    new id_tls_client:idProc;
+    (* Domains *)
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    run_tls_client(id_tls_client,c_dom,s_dom)
+  ) | (
+    if clients_with_ech then
+    (* ECH client *)
+    !
+    new id_client:idProc;
+    (* Domains *)
+    in(io,backend_dom:domain);
+    event Same(d2b(backend_dom));
+    in(io,frontend_dom:domain);
+    event Same(d2b(frontend_dom));
+    in(io,c_dom:domain);
+    event Same(d2b(c_dom));
+
+    get ech_configurations(ech_config(id,g,pkR,=frontend_dom,h_alg,a_alg),skR) in
+    let ech_conf = ech_config(id,g,pkR,frontend_dom,h_alg,a_alg) in
+
+    run_ech_client(id_client,empty_extra_ext,c_dom,backend_dom,ech_conf)
+  ) | (
+    !
+    (* Server *)
+    new id_server:idProc;
+    in(io,s_dom:domain);
+    event Same(d2b(s_dom));
+    run_server(id_server,s_dom,empty_extra_ext)
+  )

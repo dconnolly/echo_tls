@@ -1,1 +1,13 @@
-*SCENARIO*.pv
+generated_models
+generated_libraries
+generated_configs
+tests
+tmp
+**.DS_Store
+tmp.*
+**/*.cmi
+**/*.cmo
+**/*.o
+**/*.cmx
+**/compute
+ongoing.txt

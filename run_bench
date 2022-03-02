@@ -2,83 +2,602 @@
 
 max_time=172800
 
-lib_reach="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl"
-lib_equiv="-lib libraries/primitives.pvl -lib libraries/format.pvl -lib libraries/key_schedule.pvl -lib libraries/secrecy_assumption_equiv.pvl -lib libraries/misc.pvl -lib libraries/client.pvl -lib libraries/client_ech.pvl -lib libraries/server.pvl -lib libraries/main_processes.pvl -lib libraries/main_processes_ror.pvl"
+mkdir -p tests
+mkdir -p generated_configs
+mkdir -p generated_libraries
 
-mkdir -p results
+fullname=""
+isequiv=0
+isror=0
 
-if [ \( .$1 = .clean \) ]
-then
-	rm results/*.txt
-else
-	# Result folder
-	folder_results=results
+# Arguments:
+# 	$1: name of the query
+#		$2: Functionalities
+#		$3: Safety
+#		$4: Behavior
+#		$5: Agents
+#		$6: Output file
+#		$7: 0 when query is reachability, 1 when equivalence
+function header() {
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "  Result of the execution of the following command: " >> $6
+	echo "" >> $6
+	echo "    proverif \\" >> $6
+	echo "      -lib generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl \\" >> $6
+	echo "      -lib libraries/primitives.pvl \\" >> $6
+	echo "      -lib libraries/format.pvl \\" >> $6
+	echo "      -lib libraries/key_schedule.pvl \\" >> $6
+	echo "      -lib libraries/events.pvl \\" >> $6
+	echo "      -lib security_properties/${1}/config_proof_helper.m4.pvl \\" >> $6
+	echo "      -lib libraries/tls_functions.pvl \\" >> $6
+	echo "      -lib libraries/ech_functions.pvl \\" >> $6
+	echo "      -lib libraries/main_processes.pvl \\" >> $6
+	if [ $isror -eq 0 ]; then
+		echo "      -lib generated_libraries/client.pvl \\" >> $6
+	else
+		echo "      -lib generated_libraries/client_psk_or_random.pvl \\" >> $6
+	fi
+	echo "      -lib generated_libraries/client.pvl \\" >> $6
+	echo "      -lib libraries/main_processes.pvl \\" >> $6
+	if [ $isequiv -eq 0 ]; then
+		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
+	else
+		echo "      -lib libraries/proof_helper_equivalence.pvl \\" >> $6
+	fi
+	if [ $isequiv -eq 0 ]; then
+		echo "      security_properties/${1}/${1}.pv" >> $6
+	else
+		if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+			echo "      security_properties/${1}/${1}_no_ticket.pv" >> $6
+		else
+			echo "      security_properties/${1}/${1}.pv" >> $6
+		fi
+	fi
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "" >> $6
+	m4 -D F$2 -D S$3 -D B$4 -D A$5 m4_declarations.m4 scenario.m4 >> $6
+	echo "" >> $6
+	echo "---------------------------------------------------------------------" >> $6
+	echo "" >> $6
+	echo "   ProVerif output:" >> $6
+	echo "" >> $6
+}
 
-	# Summary results
-	summary_results=summary_results.txt
-	summary_time_results=summary_time_results.txt
+shortname=$2
 
-	# Proverif executable
-	proverif="proverif"
+function forbidden_options() {
+	if [[ $4 -eq 4 && $5 -eq 1 ]]; then
+		echo 1
+	else
+		case .$shortname in
+			.secrecy)
+				echo 0
+				;;
+			.early)
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 4 || $2 -eq 6 || $2 -eq 7 || $2 -eq 8 || $2 -eq 9 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.auth)
+				echo 0
+				;;
+			.downgrade)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.key)
+				echo 0
+				;;
+			.PHauth)
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 3 || $2 -eq 6 || $2 -eq 7 || $2 -eq 8 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.PHdata)
+				if [[ $2 -eq 1 || $2 -eq 2 || $2 -eq 6 || $2 -eq 7 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.Rlemma)
+				echo 0
+				;;
+			.backend)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.PSKorR)
+				if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.inner)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.ee)
+				echo 0
+				;;
+			.anonymityTLS)
+				if [[ $5 -eq 2 || $5 -eq 3 ]]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+			.anonymityECH)
+				if [ $5 -eq 1 ]; then
+					echo 1
+				else
+					echo 0
+				fi
+				;;
+		esac
+	fi
+}
 
-	# Main analysis function
+# Tests if a previous option got terminated
+function check_previous_fail() {
+	file="security_properties/${1}/result.txt"
+	isFail=0
+	test=$(($2-5))
+	Fseq1=
+	Fseq2=
+	if [ $2 -lt 6 ]; then
+		Fseq1=$(seq 1 1 $2)
+	else
+		Fseq2=$(seq 6 1 $2)
+		Fseq1=$(seq 1 1 $test)
+	fi
+	for F in $Fseq1 $Fseq2
+	do
+		for S in $(seq 1 1 $3)
+		do
+			for B in $(seq 1 1 $4)
+			do
+				for A in $(seq 1 1 $5)
+				do
+					nbFail="$(cat $file | grep 'Command terminated by signal' | grep -c "Scenario F${F} S${S} B${B} A${A}")"
+					if [ $nbFail -eq 1 ]; then
+						isFail=1
+					fi
+				done
+			done
+		done
+	done
+	echo $isFail
+}
 
-	# Contains x arguments:
-	#	1 - Path of the file
-	# 2 - prefix file
+# Arguments:
+# 	$1: name of the query
+function run_scenario() {
+	forbidden="$(forbidden_options $1 $2 $3 $4 $5)"
+	isFail=0
+	querydone=0
+	ongoing=0
+	if [ -f "security_properties/${1}/result.txt" ]; then
+		querydone="$(grep -c "${1} - Scenario F${2} S${3} B${4} A${5}" security_properties/${1}/result.txt)"
+	fi
+	if [ -f "ongoing.txt" ]; then
+		ongoing="$(grep -c "Starting ${1} - Scenario F${2} S${3} B${4} A${5}" ongoing.txt)"
+	fi
+	if [[ $querydone -eq 0 && $forbidden -eq 0 && "$6" != "PV" && $ongoing -eq 0 ]]; then
+		if [ -f "security_properties/${1}/result.txt" ]; then
+			isFail="$(check_previous_fail $1 $2 $3 $4 $5)"
+		fi
+	fi
+	if [[ ($querydone -eq 0 && $forbidden -eq 0 && $isFail -eq 0 && $ongoing -eq 0) || "$6" = "PV" ]]; then
+		if [ "$6" = "PV" ]; then
+			echo "Starting ${1} - Scenario F${2} S${3} B${4} A${5}"
+		else
+			echo "Starting ${1} - Scenario F${2} S${3} B${4} A${5}" >> ongoing.txt
+		fi
+		# Generation of the config file
+		cat m4_declarations.m4 > tmp.m4
+		cat libraries/config_script.m4.pvl >> tmp.m4
+		m4 -D F$2 -D S$3 -D B$4 -D A$5 tmp.m4 > generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl
+		rm tmp.m4
 
-	function analyze() {
-		path=$1
-		name_file=${path##*/}
-		output_file="$folder_results/$2-$name_file.txt"
-		time_file="$folder_results/.$2-$name_file.tmp"
+		# Generation of file names
+		date_str=$(date "+%Y-%m-%d_%Hh%Mm%Ss")
+		mkdir -p "tests/${1}-F${2}_S${3}_B${4}_A${5}-${date_str}"
+		TMPDIR="tests/${1}-F${2}_S${3}_B${4}_A${5}-${date_str}"
+		outputfile="${TMPDIR}/output.txt"
+		timefile="${TMPDIR}/time.txt"
 
-		if [ -f $output_file ]; then
-			echo "A bench with file $1 has already been run. Delete the corresponding output file in results/ to rerun the bench"
+		header $1 $2 $3 $4 $5 $outputfile
+
+		#Generation of the librairies
+		lib="-lib generated_configs/config_F${2}_S${3}_B${4}_A${5}.pvl"
+		lib="${lib} -lib libraries/primitives.pvl"
+		lib="${lib} -lib libraries/format.pvl"
+		lib="${lib} -lib libraries/key_schedule.pvl"
+		lib="${lib} -lib libraries/events.pvl"
+		lib="${lib} -lib security_properties/${1}/config_proof_helper.m4.pvl"
+		lib="${lib} -lib libraries/tls_functions.pvl"
+		lib="${lib} -lib libraries/ech_functions.pvl"
+		lib="${lib} -lib libraries/server.pvl"
+		if [ $isror -eq 0 ]; then
+			lib="${lib} -lib generated_libraries/client.pvl"
+		else
+			lib="${lib} -lib generated_libraries/client_psk_or_random.pvl"
+		fi
+		lib="${lib} -lib libraries/main_processes.pvl"
+		if [ $isequiv -eq 0 ]; then
+			lib="${lib} -lib libraries/proof_helper_reachability.pvl"
+		else
+			lib="${lib} -lib libraries/proof_helper_equivalence.pvl"
+		fi
+		if [ $isequiv -eq 0 ]; then
+			lib="${lib} security_properties/${1}/${1}.pv"
+		else
+			if [[ $2 -eq 1 || $2 -eq 6 ]]; then
+				lib="${lib} security_properties/${1}/${1}_no_ticket.pv"
+			else
+				lib="${lib} security_properties/${1}/${1}.pv"
+			fi
+		fi
+		command="proverif ${lib}"
+		if [ "$6" = "PV" ]; then
+			$command
 		else
 			(ulimit -t $max_time > .tmp; ulimit -H -t > .tmp;
-			echo PROTOCOL $1 > $output_file;
-			echo $proverif $lib_equiv $1;
-			{ /usr/bin/time -f "Time %E - Memory %Mk" $proverif $lib_equiv $1 >> $output_file ;} 2> $time_file;
-			time_tmp=$(cat $time_file | grep Time);
-			limit_tmp=$(cat $time_file | grep 'Command terminated by signal 9');
-			echo "File: $1 - $time_tmp $limit_tmp"  >> $summary_time_results;
-			egrep '(PROTOCOL|RESULT)' $output_file >> $summary_results;
-			rm $time_file;
+			if uname -a | egrep -q \(Darwin\)
+			then
+				{ gtime -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+			else
+				{ /usr/bin/time -f "Time %E - Memory %Mk" $command >> $outputfile ;} 2> $timefile;
+			fi
+			time_tmp=$(cat $timefile | grep Time);
+			limit_tmp=$(cat $timefile | grep 'Command terminated by signal');
+			nbTrue="$(grep -c 'RESULT.*is true.' ${outputfile})"
+			echo "${1} - Scenario F${2} S${3} B${4} A${5} - ${nbTrue} true queries - ${time_tmp} ${limit_tmp}" >> security_properties/${1}/result.txt
 			rm .tmp
+			echo "Verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
 			)
 		fi
-	}
-
-	### Prepare the scenation
-
-	./prepare
-
-	if [ \( .$1 = .all \) ]
-	then
-		for file in generated_models/*.pv
-		do
-			analyze $file "log"
-		done
-	elif [ \( .$1 = .inner \) ]
-	then
-		analyze "generated_models/strong_secrecy_inner_SCENARIO$2.pv" "log"
-	elif [ \( .$1 = .backend \) ]
-	then
-		analyze "generated_models/privacy_backend_SCENARIO$2.pv" "log"
-	elif [ \( .$1 = .client \) ]
-	then
-		analyze "generated_models/privacy_client_SCENARIO$2.pv" "log"
-	elif [ \( .$1 = .client_ech \) ]
-	then
-		analyze "generated_models/privacy_client_ech_SCENARIO$2.pv" "log"
-	elif [ \( .$1 = .ror \) ]
-	then
-		analyze "generated_models/real_or_random_psk_SCENARIO$2.pv" "log"
 	else
-		for file in generated_models/*$1.pv
-		do
-			analyze $file "log"
-		done
+		if [ $querydone -eq 0 ]; then
+			if [ $isFail -eq 1 ]; then
+				echo "Scenario ignored (OOM): ${1} - Scenario F${2} S${3} B${4} A${5}"
+			else
+				if [ $ongoing -eq 0 ]; then
+					echo "Scenario ignored: ${1} - Scenario F${2} S${3} B${4} A${5}"
+				else
+					echo "Scenario ongoing: ${1} - Scenario F${2} S${3} B${4} A${5}"
+				fi
+			fi
+		else
+			echo "Already verified: ${1} - Scenario F${2} S${3} B${4} A${5}"
+		fi
 	fi
-fi
+}
+
+function doreach() {
+	# NoHRR
+	for F in 2 3 4 5 7 8 9 10
+	do
+		for S in 2 3
+		do
+			for B in 2 3
+			do
+				for A in 1 2 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function doequiv() {
+	# No Post Handshake nor Early.
+	for A in 1 2 4
+	do
+		for F in 1 2 6 7
+		do
+			for S in 1 2
+			do
+				for B in 1 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function doequivticket() {
+	# No Post Handshake nor Early.
+	for F in 2 7
+	do
+		for A in 1 2 4
+		do
+			for S in 1 2
+			do
+				for B in 1 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+
+function doequivnoticket() {
+	# No Post Handshake nor Early.
+	for A in 1 2 4
+	do
+		for F in 1 6
+		do
+			for S in 1 2
+			do
+				for B in 1 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function specific() {
+	# No Post Handshake nor Early.
+	for F in 2 3 4 5 7 8 9 10
+	do
+		for S in 2
+		do
+			for B in 2 3
+			do
+				for A in 1 2 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function specificgroup() {
+	# No Post Handshake nor Early.
+	for F in 2 3 4 5 7 8 9 10
+	do
+		for S in 3
+		do
+			for B in 2 3
+			do
+				for A in 1 2 4
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function specificABFS() {
+	# No Post Handshake nor Early.
+	for A in 1 2 4
+	do
+		for B in 2 3
+		do
+			for F in 2 3 4 5 7 8 9 10
+			do
+				for S in 2 3
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function specifictls() {
+	# No Post Handshake nor Early.
+	for F in 2 7 3 8 4 9 5 10
+	do
+		for S in 2 3
+		do
+			for B in 2 3
+			do
+				for A in 1
+				do
+					run_scenario $1 $F $S $B $A
+				done
+			done
+		done
+	done
+}
+
+function specificrow() {
+	for A in 1 2 4
+	do
+		for B in 1 2 3
+		do
+			run_scenario $1 $2 $3 $B $A
+		done
+	done
+}
+
+function specificequivcol() {
+	for F in 1 2 6 7
+	do
+		for S in 1 2
+		do
+			run_scenario $1 $F $S $2 $3
+		done
+	done
+}
+
+function specificreachcol() {
+	for F in 2 3 4 5 7 8 9 10
+	do
+		for S in 2 3
+		do
+			run_scenario $1 $F $S $2 $3
+		done
+	done
+}
+
+function getfullname() {
+	case .$1 in
+		.secrecy)
+			fullname="secrecy"
+			;;
+		.early)
+			fullname="early_data"
+			;;
+		.auth)
+			fullname="authentication"
+			;;
+		.downgrade)
+			fullname="downgrade_resilient_ech"
+			;;
+		.key)
+			fullname="key_sequentiality"
+			;;
+		.PHauth)
+			fullname="post_handshake_authentication"
+			;;
+		.PHdata)
+			fullname="post_handshake_data"
+			;;
+		.Rlemma)
+			fullname="lemmas_reachability"
+			;;
+		.backend)
+			isequiv=1
+			fullname="privacy_backend"
+			;;
+		.PSKorR)
+			isequiv=1
+			isror=1
+			fullname="psk_or_random"
+			;;
+		.inner)
+			isequiv=1
+			fullname="strong_secrecy_inner"
+			;;
+		.ee)
+			isequiv=1
+			fullname="strong_secrecy_ee"
+			;;
+		.anonymityTLS)
+			isequiv=1
+			fullname="anonymity_unlinkability_TLS_client"
+			;;
+		.anonymityECH)
+			isequiv=1
+			fullname="anonymity_unlinkability_ECH_client"
+			;;
+	esac
+}
+
+case .$1 in
+	.one)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		getfullname $2
+		echo Verifying the property $fullname for the scenario F=$3, S=$4, B=$5, A=$6.
+		run_scenario $fullname $3 $4 $5 $6 $7
+		;;
+	.reach)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		getfullname $2
+		echo Verifying all reachbility scenarios for the property $fullname
+		doreach $fullname
+		;;
+	.specific)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specific $fullname
+		;;
+	.specifictls)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specifictls $fullname
+		;;
+	.specificgroup)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specificgroup $fullname
+		;;
+	.specificABFS)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specificABFS $fullname
+		;;
+	.reachcol)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		echo Verifying specific scenarios.
+		getfullname $2
+		specificreachcol $fullname $3 $4
+		;;
+	.equiv)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		getfullname $2
+		echo Verifying all equivalence scenarios for the property $fullname
+		doequiv $fullname
+		;;
+	.equivnoticket)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		doequivnoticket $fullname
+		;;
+	.equivticket)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		doequivticket $fullname
+		;;
+	.equivrow)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		specificrow $fullname $3 $4
+		;;
+	.equivcol)
+		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
+		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
+		echo Verifying scenarios for equivalence queries.
+		getfullname $2
+		specificequivcol $fullname $3 $4
+		;;
+
+	.test)
+		check_previous_fail $2 $3 $4 $5 $6
+		;;
+	.clean)
+		echo Removing all generated files
+		rm -f generated_configs/*.pvl
+		rm -f generated_libraries/*.pvl
+		;;
+esac
