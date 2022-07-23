@@ -491,6 +491,7 @@ function getfullname() {
 			fullname="post_handshake_data"
 			;;
 		.Rlemma)
+      issecrecy=1
 			fullname="lemmas_reachability"
 			;;
 		.backend)
