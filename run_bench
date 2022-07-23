@@ -39,7 +39,11 @@ function header() {
 		echo "      -lib generated_libraries/client_psk_or_random.pvl \\" >> $6
 	fi
 	echo "      -lib generated_libraries/client.pvl \\" >> $6
-	echo "      -lib libraries/main_processes.pvl \\" >> $6
+  if [ $issecrecy -eq 0 ]; then
+		echo "      -lib generated_libraries/main_processes.pvl \\" >> $6
+	else
+		echo "      -lib generated_libraries/main_processes_secrecy.pvl \\" >> $6
+	fi
 	if [ $isequiv -eq 0 ]; then
 		echo "      -lib libraries/proof_helper_reachability.pvl \\" >> $6
 	else
@@ -240,7 +244,11 @@ function run_scenario() {
 		else
 			lib="${lib} -lib generated_libraries/client_psk_or_random.pvl"
 		fi
-		lib="${lib} -lib libraries/main_processes.pvl"
+    if [ $issecrecy -eq 0 ]; then
+			lib="${lib} -lib generated_libraries/main_processes.pvl"
+		else
+			lib="${lib} -lib generated_libraries/main_processes_secrecy.pvl"
+		fi
 		if [ $isequiv -eq 0 ]; then
 			lib="${lib} -lib libraries/proof_helper_reachability.pvl"
 		else
@@ -461,6 +469,7 @@ function specificreachcol() {
 function getfullname() {
 	case .$1 in
 		.secrecy)
+      issecrecy=1
 			fullname="secrecy"
 			;;
 		.early)
@@ -514,6 +523,8 @@ function getfullname() {
 
 case .$1 in
 	.one)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl 
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		getfullname $2
@@ -521,42 +532,56 @@ case .$1 in
 		run_scenario $fullname $3 $4 $5 $6 $7
 		;;
 	.reach)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl 
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		getfullname $2
 		echo Verifying all reachbility scenarios for the property $fullname
 		doreach $fullname
 		;;
 	.specific)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl 
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying specific scenarios.
 		getfullname $2
 		specific $fullname
 		;;
 	.specifictls)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying specific scenarios.
 		getfullname $2
 		specifictls $fullname
 		;;
 	.specificgroup)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying specific scenarios.
 		getfullname $2
 		specificgroup $fullname
 		;;
 	.specificABFS)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying specific scenarios.
 		getfullname $2
 		specificABFS $fullname
 		;;
 	.reachcol)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		echo Verifying specific scenarios.
 		getfullname $2
 		specificreachcol $fullname $3 $4
 		;;
 	.equiv)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		getfullname $2
@@ -564,6 +589,8 @@ case .$1 in
 		doequiv $fullname
 		;;
 	.equivnoticket)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
@@ -571,6 +598,8 @@ case .$1 in
 		doequivnoticket $fullname
 		;;
 	.equivticket)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
@@ -578,6 +607,8 @@ case .$1 in
 		doequivticket $fullname
 		;;
 	.equivrow)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
@@ -585,6 +616,8 @@ case .$1 in
 		specificrow $fullname $3 $4
 		;;
 	.equivcol)
+    m4 libraries/main_processes.m4.pvl > generated_libraries/main_processes.pvl 
+    m4 -D Secrecy libraries/main_processes.m4.pvl > generated_libraries/main_processes_secrecy.pvl
 		m4 libraries/client.m4.pvl > generated_libraries/client.pvl
 		m4 -D PSK_or_random libraries/client.m4.pvl > generated_libraries/client_psk_or_random.pvl
 		echo Verifying scenarios for equivalence queries.
