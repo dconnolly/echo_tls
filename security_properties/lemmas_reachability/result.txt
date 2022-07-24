@@ -55,3 +55,8 @@ lemmas_reachability - Scenario F5 S3 B3 A2 - 34 true queries - Time 2:58:44 - Me
 lemmas_reachability - Scenario F4 S3 B3 A4 - 34 true queries - Time 4:15:38 - Memory 3657988k 
 lemmas_reachability - Scenario F9 S2 B2 A1 - 34 true queries - Time 12:15.69 - Memory 459280k 
 lemmas_reachability - Scenario F5 S3 B3 A4 - 34 true queries - Time 4:18:53 - Memory 3658212k 
+lemmas_reachability - Scenario F7 S2 B2 A2 - 34 true queries - Time 17:05:00 - Memory 1824304k 
+lemmas_reachability - Scenario F9 S2 B3 A1 - 34 true queries - Time 21:27.85 - Memory 795200k 
+lemmas_reachability - Scenario F8 S2 B2 A2 - 34 true queries - Time 17:20:47 - Memory 1824308k 
+lemmas_reachability - Scenario F9 S2 B2 A2 - 34 true queries - Time 17:17:18 - Memory 1910424k 
+lemmas_reachability - Scenario F9 S3 B2 A1 - 34 true queries - Time 15:21.84 - Memory 605100k 
