@@ -473,21 +473,27 @@ function getfullname() {
 			fullname="secrecy"
 			;;
 		.early)
+      issecrecy=1
 			fullname="early_data"
 			;;
 		.auth)
+      issecrecy=1
 			fullname="authentication"
 			;;
 		.downgrade)
+      issecrecy=1
 			fullname="downgrade_resilient_ech"
 			;;
 		.key)
+      issecrecy=1
 			fullname="key_sequentiality"
 			;;
 		.PHauth)
+      issecrecy=1
 			fullname="post_handshake_authentication"
 			;;
 		.PHdata)
+      issecrecy=1
 			fullname="post_handshake_data"
 			;;
 		.Rlemma)
@@ -495,27 +501,33 @@ function getfullname() {
 			fullname="lemmas_reachability"
 			;;
 		.backend)
+      issecrecy=1
 			isequiv=1
 			fullname="privacy_backend"
 			;;
 		.PSKorR)
+      issecrecy=1
 			isequiv=1
 			isror=1
 			fullname="psk_or_random"
 			;;
 		.inner)
+      issecrecy=1
 			isequiv=1
 			fullname="strong_secrecy_inner"
 			;;
 		.ee)
+      issecrecy=1
 			isequiv=1
 			fullname="strong_secrecy_ee"
 			;;
 		.anonymityTLS)
+      issecrecy=1
 			isequiv=1
 			fullname="anonymity_unlinkability_TLS_client"
 			;;
 		.anonymityECH)
+      issecrecy=1
 			isequiv=1
 			fullname="anonymity_unlinkability_ECH_client"
 			;;
