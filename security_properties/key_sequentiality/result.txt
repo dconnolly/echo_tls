@@ -1,0 +1,1 @@
+key_sequentiality - Scenario F2 S2 B2 A1 - 3 true queries - Time 0:39.36 - Memory 267092k 

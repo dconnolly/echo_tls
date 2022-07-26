@@ -1,0 +1,1 @@
+early_data - Scenario F5 S2 B2 A1 - 2 true queries - Time 0:45.48 - Memory 350312k 
