@@ -60,3 +60,23 @@ lemmas_reachability - Scenario F9 S2 B3 A1 - 34 true queries - Time 21:27.85 - M
 lemmas_reachability - Scenario F8 S2 B2 A2 - 34 true queries - Time 17:20:47 - Memory 1824308k 
 lemmas_reachability - Scenario F9 S2 B2 A2 - 34 true queries - Time 17:17:18 - Memory 1910424k 
 lemmas_reachability - Scenario F9 S3 B2 A1 - 34 true queries - Time 15:21.84 - Memory 605100k 
+lemmas_reachability - Scenario F7 S2 B2 A4 - 34 true queries - Time 42:05:16 - Memory 3222688k 
+lemmas_reachability - Scenario F8 S2 B2 A4 - 34 true queries - Time 41:44:08 - Memory 3222532k 
+lemmas_reachability - Scenario F9 S3 B3 A1 - 34 true queries - Time 29:55.64 - Memory 1046940k 
+lemmas_reachability - Scenario F9 S2 B2 A4 - 34 true queries - Time 42:02:53 - Memory 3141676k 
+lemmas_reachability - Scenario F7 S2 B3 A2 - 15 true queries - Time 48:00:00 - Memory 4500328k Command terminated by signal 9
+lemmas_reachability - Scenario F10 S2 B2 A1 - 34 true queries - Time 11:53.01 - Memory 459272k 
+lemmas_reachability - Scenario F7 S2 B3 A4 - 15 true queries - Time 48:00:00 - Memory 4581272k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S3 B2 A2 - 15 true queries - Time 48:00:00 - Memory 3525636k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S3 B2 A4 - 15 true queries - Time 48:00:00 - Memory 3973292k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S3 B3 A2 - 15 true queries - Time 48:00:00 - Memory 6141152k Command terminated by signal 9
+lemmas_reachability - Scenario F7 S3 B3 A4 - 15 true queries - Time 48:00:00 - Memory 4735048k Command terminated by signal 9
+lemmas_reachability - Scenario F10 S2 B3 A1 - 34 true queries - Time 21:32.88 - Memory 795152k 
+lemmas_reachability - Scenario F10 S3 B2 A1 - 34 true queries - Time 15:29.72 - Memory 605152k 
+lemmas_reachability - Scenario F10 S3 B3 A1 - 34 true queries - Time 29:12.82 - Memory 1046800k 
+lemmas_reachability - Scenario F8 S2 B3 A2 - 15 true queries - Time 48:00:00 - Memory 4570624k Command terminated by signal 9
+lemmas_reachability - Scenario F8 S2 B3 A4 - 15 true queries - Time 48:00:00 - Memory 4780604k Command terminated by signal 9
+lemmas_reachability - Scenario F8 S3 B2 A2 - 15 true queries - Time 48:00:00 - Memory 3318416k Command terminated by signal 9
+lemmas_reachability - Scenario F8 S3 B2 A4 - 15 true queries - Time 48:00:00 - Memory 4179492k Command terminated by signal 9
+lemmas_reachability - Scenario F8 S3 B3 A2 - 15 true queries - Time 48:00:00 - Memory 6094344k Command terminated by signal 9
+lemmas_reachability - Scenario F8 S3 B3 A4 - 15 true queries - Time 48:00:00 - Memory 4587600k Command terminated by signal 9
