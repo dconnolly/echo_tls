@@ -1,1 +1,6 @@
 post_handshake_authentication - Scenario F4 S2 B2 A1 - 2 true queries - Time 4:58.54 - Memory 2277620k 
+post_handshake_authentication - Scenario F4 S2 B2 A2 - 2 true queries - Time 1:53:31 - Memory 22690944k 
+post_handshake_authentication - Scenario F4 S2 B3 A1 - 2 true queries - Time 20:28.78 - Memory 8187768k 
+post_handshake_authentication - Scenario F4 S2 B2 A4 - 2 true queries - Time 2:54:06 - Memory 39327392k 
+post_handshake_authentication - Scenario F4 S2 B3 A2 - 2 true queries - Time 6:26:38 - Memory 82109144k 
+post_handshake_authentication - Scenario F4 S3 B2 A1 - 2 true queries - Time 6:42.23 - Memory 2210264k 
