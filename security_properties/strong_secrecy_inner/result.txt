@@ -1,0 +1,6 @@
+strong_secrecy_inner - Scenario F1 S1 B1 A2 - 1 true queries - Time 1:07.58 - Memory 693932k 
+strong_secrecy_inner - Scenario F1 S1 B2 A2 - 1 true queries - Time 5:32.25 - Memory 1047516k 
+strong_secrecy_inner - Scenario F1 S2 B1 A2 - 1 true queries - Time 1:51.50 - Memory 693924k 
+strong_secrecy_inner - Scenario F1 S1 B3 A2 - 1 true queries - Time 9:25.41 - Memory 1206212k 
+strong_secrecy_inner - Scenario F1 S2 B2 A2 - 1 true queries - Time 12:05.37 - Memory 1206476k 
+strong_secrecy_inner - Scenario F2 S1 B1 A2 - 39 true queries - Time 3:48.96 - Memory 694216k 

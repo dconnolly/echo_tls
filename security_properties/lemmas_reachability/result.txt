@@ -83,3 +83,4 @@ lemmas_reachability - Scenario F8 S3 B3 A4 - 15 true queries - Time 48:00:00 - M
 lemmas_reachability - Scenario F9 S2 B3 A2 - 15 true queries - Time 48:00:00 - Memory 4642504k Command terminated by signal 9
 lemmas_reachability - Scenario F10 S2 B2 A2 - 34 true queries - Time 17:03:07 - Memory 2066996k 
 lemmas_reachability - Scenario F9 S2 B3 A4 - 15 true queries - Time 48:00:00 - Memory 4780728k Command terminated by signal 9
+lemmas_reachability - Scenario F9 S3 B2 A2 - 15 true queries - Time 48:00:00 - Memory 3608896k Command terminated by signal 9

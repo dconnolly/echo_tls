@@ -44,3 +44,9 @@ key_sequentiality - Scenario F5 S3 B2 A2 - 3 true queries - Time 34:12.53 - Memo
 key_sequentiality - Scenario F5 S2 B3 A4 - 3 true queries - Time 58:19.84 - Memory 2414384k 
 key_sequentiality - Scenario F5 S3 B3 A1 - 3 true queries - Time 4:12.53 - Memory 693592k 
 key_sequentiality - Scenario F5 S3 B2 A4 - 3 true queries - Time 44:04.02 - Memory 2094672k 
+key_sequentiality - Scenario F5 S3 B3 A2 - 3 true queries - Time 1:48:17 - Memory 3657988k 
+key_sequentiality - Scenario F7 S2 B2 A1 - 3 true queries - Time 2:04.74 - Memory 350372k 
+key_sequentiality - Scenario F5 S3 B3 A4 - 3 true queries - Time 2:28:42 - Memory 4845288k 
+key_sequentiality - Scenario F7 S2 B2 A2 - 3 true queries - Time 1:44:25 - Memory 1383744k 
+key_sequentiality - Scenario F7 S2 B3 A1 - 3 true queries - Time 5:18.93 - Memory 459200k 
+key_sequentiality - Scenario F7 S2 B2 A4 - 3 true queries - Time 1:51:26 - Memory 1588668k 

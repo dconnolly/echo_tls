@@ -21,3 +21,4 @@ early_data - Scenario F10 S3 B2 A2 - 2 true queries - Time 1:49:33 - Memory 3184
 early_data - Scenario F10 S3 B3 A1 - 2 true queries - Time 10:49.87 - Memory 1205764k 
 early_data - Scenario F10 S3 B2 A4 - 2 true queries - Time 2:09:19 - Memory 4202752k 
 early_data - Scenario F10 S3 B3 A2 - 2 true queries - Time 5:00:56 - Memory 6394216k 
+early_data - Scenario F10 S3 B3 A4 - 2 true queries - Time 5:58:07 - Memory 8475124k 
