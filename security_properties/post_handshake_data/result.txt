@@ -10,3 +10,7 @@ post_handshake_data - Scenario F3 S3 B3 A1 - 5 true queries - Time 5:47.63 - Mem
 post_handshake_data - Scenario F3 S3 B2 A4 - 5 true queries - Time 2:41:33 - Memory 11048280k 
 post_handshake_data - Scenario F3 S3 B3 A2 - 5 true queries - Time 9:29:08 - Memory 33784752k 
 post_handshake_data - Scenario F4 S2 B2 A1 - 5 true queries - Time 14:47.48 - Memory 13481144k 
+post_handshake_data - Scenario F4 S2 B2 A2 - 5 true queries - Time 3:33:06 - Memory 129358648k 
+post_handshake_data - Scenario F3 S3 B3 A4 - 5 true queries - Time 16:29:00 - Memory 44592692k 
+post_handshake_data - Scenario F4 S2 B3 A1 - 5 true queries - Time 56:37.44 - Memory 55107220k 
+post_handshake_data - Scenario F4 S2 B2 A4 - 5 true queries - Time 6:16:38 - Memory 204783304k 

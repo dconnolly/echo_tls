@@ -1,3 +1,15 @@
 psk_or_random - Scenario F2 S1 B1 A1 - 41 true queries - Time 1:27.23 - Memory 526464k 
 psk_or_random - Scenario F2 S1 B2 A1 - 41 true queries - Time 14:22.26 - Memory 693740k 
 psk_or_random - Scenario F2 S2 B1 A1 - 41 true queries - Time 2:12.40 - Memory 526464k 
+psk_or_random - Scenario F2 S1 B3 A1 - 41 true queries - Time 37:17.05 - Memory 795600k 
+psk_or_random - Scenario F2 S2 B2 A1 - 41 true queries - Time 28:09.07 - Memory 726124k 
+psk_or_random - Scenario F7 S1 B1 A1 - 41 true queries - Time 1:59.28 - Memory 526308k 
+psk_or_random - Scenario F7 S1 B2 A1 - 41 true queries - Time 45:24.73 - Memory 832648k 
+psk_or_random - Scenario F2 S2 B3 A1 - 41 true queries - Time 1:53:24 - Memory 1037900k 
+psk_or_random - Scenario F7 S2 B1 A1 - 41 true queries - Time 4:10.04 - Memory 605304k 
+psk_or_random - Scenario F7 S1 B3 A1 - 41 true queries - Time 1:58:24 - Memory 955620k 
+psk_or_random - Scenario F7 S2 B2 A1 - 41 true queries - Time 1:35:39 - Memory 1037332k 
+psk_or_random - Scenario F2 S1 B1 A2 - 41 true queries - Time 8:51.53 - Memory 694108k 
+psk_or_random - Scenario F7 S2 B3 A1 - 41 true queries - Time 6:13:31 - Memory 1800268k 
+psk_or_random - Scenario F2 S1 B2 A2 - 41 true queries - Time 6:41:15 - Memory 1568008k 
+psk_or_random - Scenario F2 S2 B1 A2 - 41 true queries - Time 23:49.33 - Memory 833140k 
