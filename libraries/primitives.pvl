@@ -124,6 +124,31 @@ letfun dh_decap(g:group,gy:element,x:bitstring) =
     dh_f(s).
 
 (**************************************************************)
+(* Generic IND-CCA KEM                                        *)
+(**************************************************************)
+type kem_decaps_key.
+type kem_encaps_key.
+
+fun kem_derive_encaps_key(kem_decaps_key): kem_encaps_key.
+fun kem_pke_encrypt(kem_encaps_key, bitstring): bitstring.
+fun kem_pke_decrypt(kem_decaps_key, bitstring): bitstring
+reduc forall sk:kem_decaps_key, m:bitstring;
+       kem_pke_decrypt(sk, kem_pke_encrypt(kem_derive_pk(sk), m)) = m.
+
+letfun kem_priv2pub(k:kem_decaps_key) = kem_derive_encaps_key(k).
+
+letfun kem_keygen() =
+       new sk[]: kem_decaps_key;
+       (sk, kem_derive_encaps_key(sk)).
+
+letfun kem_encaps(pk:kem_encaps_key) =
+       new ss:bitstring;
+       (kem_pke_encrypt(pk, ss), ss).
+
+letfun kem_decaps(sk:kem_decaps_key, ct:bitstring) =
+       kem_pke_decrypt(sk, ct).
+
+(**************************************************************)
 (* Hash Functions, including those with collisions. See SLOTH *)
 (**************************************************************)
 
@@ -224,8 +249,12 @@ letfun hkdf_expand_label(a:hash_alg,k:bitstring,l:label,h:bitstring) = prf(a,k,(
 
 (* Cryptographic dependencies (Section 4 of HPKE RFC) *)
 
-letfun hpke_encap(g:group,pkR:element) = dh_encap(g,pkR,e2b(pkR)).
-letfun hpke_decap(g:group,enc:element,skR:bitstring) = dh_decap(g,enc,skR).
+(* letfun hpke_encap(g:group,pkR:element) = dh_encap(g,pkR,e2b(pkR)).
+letfun hpke_decap(g:group,enc:element,skR:bitstring) = dh_decap(g,enc,skR). *)
+
+letfun hpke_encap(pkR:kem_encaps_key) = kem_encaps(pkR).
+letfun hpke_decap(enc:bitstring, skR:kem_decaps_key) = kems_decaps(enc, skR).
+
 letfun hpke_label_extract(h_alg:hash_alg,salt:bitstring,label:label,ikm:bitstring) = hkdf_extract(h_alg,salt,(label,ikm)).
 letfun hpke_label_expand(h_alg:hash_alg,prk:bitstring,label:label,info:bitstring) = hkdf_expand_label(h_alg,prk,label,info).
   (* Compare to the RFC, we removed the argument of the size. *)
@@ -269,10 +298,10 @@ letfun hpke_key_schedule(h:hash_alg,r:hpkeRole,shared_secret:element,info:bitstr
 
 (* SetupBaseS and SetupBaseR (5.1.1 of RFC HPKE )*)
 
-letfun hpke_setup_base_S(h:hash_alg,g:group,pkR:element,info:bitstring) =
-  let (shared_secret:element,enc:element) = hpke_encap(g,pkR) in
-  (enc,hpke_key_schedule(h,S,shared_secret,info)).
+letfun hpke_setup_base_S(h:hash_alg, pkR:kem_encaps_key, info:bitstring) =
+  let (shared_secret:element, enc:element) = hpke_encap(pkR) in
+  (enc, hpke_key_schedule(h, S, shared_secret, info)).
 
-letfun hpke_setup_base_R(h:hash_alg,g:group,enc:element,skR:bitstring,info:bitstring) =
-  let shared_secret = hpke_decap(g,enc,skR) in
-  hpke_key_schedule(h,R,shared_secret,info).
+letfun hpke_setup_base_R(h:hash_alg, enc:bitstring, skR:kem_decaps_key, info:bitstring) =
+  let shared_secret = hpke_decap(enc,skR) in
+  hpke_key_schedule(h, R, shared_secret, info).
