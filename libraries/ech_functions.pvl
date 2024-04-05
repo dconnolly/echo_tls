@@ -14,21 +14,21 @@ letfun generate_client_hello_outer_AAD(client_hello_outer:msg) =
 
 (* Generation of enc and context *)
 letfun generate_enc_context_client(
-  ech_h:hash_alg,ech_g:group,
-  pkR:element, (* The public key of config *)
+  ech_h:hash_alg,
+  pkR:kem_encaps_key, (* The public key of config *)
   config:echConfig (* The ECH configuration *)
   ) =
-  hpke_setup_base_S(ech_h,ech_g,pkR,(tls_ech_str,config))
+  hpke_setup_base_S(ech_h, pkR, (tls_ech_str,config))
 .
 
 (* Generation of the context for frontserver (Section 7.1 of ECH RFC) *)
 letfun generate_context_frontend_server(
-  ech_h:hash_alg,ech_g:group,
-  skR:bitstring, (* The private key associated to the public key of config *)
+  ech_h:hash_alg,
+  skR:kem_decaps_key, (* The private key associated to the public key of config *)
   config:echConfig, (* The ECH configuration *)
-  enc:element (* ECHClientHelloOuter.enc found in the client hello. *)
+  enc:bitstring (* ECHClientHelloOuter.enc found in the client hello. *)
   ) =
-  hpke_setup_base_R(ech_h,ech_g,enc,skR,(tls_ech_str,config))
+  hpke_setup_base_R(ech_h, enc, skR, (tls_ech_str,config))
 .
 
 (* Generation of an "encrypted_client_hello" extension with retry configuration *)
@@ -113,7 +113,7 @@ letfun generate_initial_client_hello_ech(
   i_extra:extraExt
   ) =
 
-  let ech_config(config_id,ech_g,pkR,o_dom,ech_h,ech_a) = ech_conf in
+  let ech_config(config_id, ech_g, pkR, o_dom, ech_h, ech_a) = ech_conf in
 
   (* The key share extension *)
   let (i_kex_ext:keyShareExt,i_kex_data:bitstring) = make_key_share_extension(backend_g,send_kex) in
@@ -129,9 +129,9 @@ letfun generate_initial_client_hello_ech(
     then (
       new payload[]:bitstring;
       new configid[]:configId;
-      let (x_grease:bitstring,gx_grease:element) = dh_keygen(ech_g) in
-      let (secret_grease:element,enc_grease:element) = hpke_encap(ech_g,gx_grease) in
-      ECHClientHelloOuter(ech_h,ech_a,configid,enc_grease,payload)
+      let (x_grease:kem_decaps_key, gx_grease:kem_encaps_key) = kem_keygen() in
+      let (secret_grease:bitstring, enc_grease:bitstring) = hpke_encap(gx_grease) in
+      ECHClientHelloOuter(ech_h, ech_a, configid, enc_grease, payload)
     ) else ECHClientHelloInner
   in
 
